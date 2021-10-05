@@ -9,6 +9,7 @@ import {
   BUTTON_POSITION_TYPE,
   EMBED_TRANSLATION_ITEM,
   IStreamData,
+  LOGIN_PROVIDER_TYPE,
   NetworkInterface,
   PAYMENT_PROVIDER_TYPE,
   PaymentParams,
@@ -26,6 +27,7 @@ import {
   FEATURES_CONFIRM_WINDOW,
   FEATURES_DEFAULT_WALLET_WINDOW,
   FEATURES_PROVIDER_CHANGE_WINDOW,
+  getPopupFeatures,
   getTorusUrl,
   getUserLanguage,
   getWindowId,
@@ -84,17 +86,15 @@ class Torus {
 
   private isIframeFullScreen: boolean;
 
-  public requestedLoginProvider: string;
+  public requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
 
-  public currentLoginProvider: string;
+  public currentLoginProvider?: LOGIN_PROVIDER_TYPE;
 
   embedTranslations: EMBED_TRANSLATION_ITEM;
 
   provider: TorusInpageProvider;
 
   communicationMux: ObjectMultiplex;
-
-  isLoginCallback: () => void;
 
   dappStorageKey: string;
 
@@ -104,8 +104,8 @@ class Torus {
     this.isLoggedIn = false;
     this.isInitialized = false; // init done
     this.torusWidgetVisibility = true;
-    this.requestedLoginProvider = "";
-    this.currentLoginProvider = "";
+    this.requestedLoginProvider = null;
+    this.currentLoginProvider = null;
     this.apiKey = apiKey;
     setAPIKey(apiKey);
     this.modalZIndex = modalZIndex;
@@ -224,9 +224,9 @@ class Torus {
     return dappStorageKey;
   }
 
-  login({ verifier = "" } = {}): Promise<string[]> {
+  login(params: { loginProvider?: LOGIN_PROVIDER_TYPE }): Promise<string[]> {
     if (!this.isInitialized) throw new Error("Call init() first");
-    this.requestedLoginProvider = verifier;
+    this.requestedLoginProvider = params.loginProvider || null;
     return this.provider.enable();
   }
 
@@ -243,8 +243,8 @@ class Torus {
       const statusStreamHandler = (status) => {
         if (!status.loggedIn) {
           this.isLoggedIn = false;
-          this.currentLoginProvider = "";
-          this.requestedLoginProvider = "";
+          this.currentLoginProvider = null;
+          this.requestedLoginProvider = null;
           resolve();
         } else reject(new Error("Some Error Occured"));
       };
@@ -280,10 +280,10 @@ class Torus {
   }
 
   /** @ignore */
-  _createPopupBlockAlert(preopenInstanceId: string, url: string): void {
-    const logoUrl = this._getLogoUrl();
+  async _createPopupBlockAlert(windowId: string, url: string): Promise<void> {
+    const logoUrl = this.getLogoUrl();
     const torusAlert = htmlToElement<HTMLDivElement>(
-      '<div id="torusAlert" class="torus-alert--v2">' +
+      '<div id="torusAlert" class="torus-alert--v2" style="display:block;">' +
         `<div id="torusAlert__logo"><img src="${logoUrl}" /></div>` +
         "<div>" +
         `<h1 id="torusAlert__title">${this.embedTranslations.actionRequired}</h1>` +
@@ -298,26 +298,23 @@ class Torus {
     torusAlert.appendChild(btnContainer);
     const bindOnLoad = () => {
       successAlert.addEventListener("click", () => {
-        this._handleWindow(preopenInstanceId, {
+        this._handleWindow(windowId, {
           url,
           target: "_blank",
-          features: FEATURES_CONFIRM_WINDOW,
+          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
         });
         torusAlert.remove();
-
         if (this.torusAlertContainer.children.length === 0) this.torusAlertContainer.style.display = "none";
       });
     };
 
-    this._setEmbedWhiteLabel(torusAlert);
-
     const attachOnLoad = () => {
-      this.torusAlertContainer.style.display = "block";
       this.torusAlertContainer.appendChild(torusAlert);
     };
 
-    runOnLoad(attachOnLoad);
-    runOnLoad(bindOnLoad);
+    await documentReady();
+    attachOnLoad();
+    bindOnLoad();
   }
 
   /** @ignore */
@@ -402,8 +399,8 @@ class Torus {
     // because the MetamaskInpageProvider also attempts to do so.
     // We create another LocalMessageDuplexStream for communication between dapp <> iframe
     const communicationStream = new PostMessageStream({
-      name: "embed_comm",
-      target: "iframe_comm",
+      name: "embed_communication",
+      target: "iframe_communication",
       targetWindow: this.torusIframe.contentWindow,
     });
 
@@ -427,52 +424,32 @@ class Torus {
     inpageProvider.enable = () => {
       return new Promise((resolve, reject) => {
         // If user is already logged in, we assume they have given access to the website
-        inpageProvider.sendAsync({ jsonrpc: "2.0", id: getWindowId(), method: "casper_requestAccounts", params: [] }, (err, response) => {
-          const { result: res } = (response as { result: unknown }) || {};
-          if (err) {
-            setTimeout(() => {
+        inpageProvider.sendAsync(
+          { jsonrpc: "2.0", id: getWindowId(), method: "casper_requestAccounts", params: [this.requestedLoginProvider] },
+          (err, response) => {
+            const { result: res } = (response as { result: unknown }) || {};
+            if (err) {
               reject(err);
-            }, 50);
-          } else if (Array.isArray(res) && res.length > 0) {
-            // If user is already rehydrated, resolve this
-            // else wait for something to be written to status stream
-            const handleLoginCb = () => {
-              if (this.requestedLoginProvider !== "" && this.currentLoginProvider !== this.requestedLoginProvider) {
-                const { requestedLoginProvider: requestedVerifier } = this;
-                // eslint-disable-next-line promise/no-promise-in-callback
-                this.logout()
-                  // eslint-disable-next-line promise/always-return
-                  .then((_) => {
-                    this.requestedLoginProvider = requestedVerifier;
-                    this._showLoginPopup(true, resolve, reject);
-                  })
-                  .catch((error) => reject(error));
-              } else {
-                resolve(res);
-              }
-            };
-            if (this.isLoggedIn) {
-              handleLoginCb();
+            } else if (Array.isArray(res) && res.length > 0) {
+              resolve(res);
             } else {
-              this.isLoginCallback = handleLoginCb;
+              // set up listener for login
+              this._showLoginPopup(true, resolve, reject);
             }
-          } else {
-            // set up listener for login
-            this._showLoginPopup(true, resolve, reject);
           }
-        });
+        );
       });
     };
 
-    inpageProvider.tryPreopenHandle = (payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
+    inpageProvider.tryWindowHandle = (payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
       const _payload = payload;
       if (!Array.isArray(_payload) && UNSAFE_METHODS.includes(_payload.method)) {
-        const preopenInstanceId = getWindowId();
-        this._handleWindow(preopenInstanceId, {
+        const windowId = getWindowId();
+        this._handleWindow(windowId, {
           target: "_blank",
-          features: FEATURES_CONFIRM_WINDOW,
+          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
         });
-        _payload.windowId = preopenInstanceId;
+        _payload.windowId = windowId;
       }
       inpageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
     };
@@ -494,7 +471,7 @@ class Torus {
       if (chunk.name === "create_window") {
         // url is the url we need to open
         // we can pass the final url upfront so that it removes the step of redirecting to /redirect and waiting for finalUrl
-        this._createPopupBlockAlert(chunk.data.preopenInstanceId, chunk.data.url);
+        this._createPopupBlockAlert(chunk.data.windowId, chunk.data.url);
       }
     });
 
@@ -514,10 +491,6 @@ class Torus {
         this.currentLoginProvider = status.verifier;
       } // logout
       else this._displayIframe();
-      if (this.isLoginCallback) {
-        this.isLoginCallback();
-        delete this.isLoginCallback;
-      }
     });
 
     this.provider = proxiedInpageProvider;
@@ -539,22 +512,22 @@ class Torus {
       else if (resolve) resolve([selectedAddress]);
       if (this.isIframeFullScreen) this._displayIframe();
     };
-    const oauthStream = this.communicationMux.getStream("oauth");
+    const oauthStream = this.communicationMux.getStream("oauth") as Substream;
     if (!this.requestedLoginProvider) {
       this._displayIframe(true);
       handleStream(oauthStream, "data", loginHandler);
       oauthStream.write({ name: "oauth_modal", data: { calledFromEmbed } });
     } else {
       handleStream(oauthStream, "data", loginHandler);
-      const preopenInstanceId = getPreopenInstanceId();
-      this._handleWindow(preopenInstanceId);
-      oauthStream.write({ name: "oauth", data: { calledFromEmbed, verifier: this.requestedLoginProvider, preopenInstanceId } });
+      const windowId = getWindowId();
+      this._handleWindow(windowId);
+      oauthStream.write({ name: "oauth", data: { calledFromEmbed, verifier: this.requestedLoginProvider, windowId } });
     }
   }
 
   setProvider({ host = "mainnet", chainId = null, networkName = "", ...rest } = {}): Promise<void> {
     return new Promise((resolve, reject) => {
-      const providerChangeStream = this.communicationMux.getStream("provider_change");
+      const providerChangeStream = this.communicationMux.getStream("provider_change") as Substream;
       const handler = (chunk) => {
         const { err, success } = chunk.data;
         log.info(chunk);
@@ -565,10 +538,10 @@ class Torus {
         } else reject(new Error("some error occured"));
       };
       handleStream(providerChangeStream, "data", handler);
-      const preopenInstanceId = getPreopenInstanceId();
+      const preopenInstanceId = getWindowId();
       this._handleWindow(preopenInstanceId, {
         target: "_blank",
-        features: FEATURES_PROVIDER_CHANGE_WINDOW,
+        features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW),
       });
       providerChangeStream.write({
         name: "show_provider_change",
@@ -586,39 +559,8 @@ class Torus {
     });
   }
 
-  /** @ignore */
-  _setProvider({ host = "mainnet", chainId = null, networkName = "", ...rest } = {}): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.isInitialized) {
-        const providerChangeStream = this.communicationMux.getStream("provider_change");
-        const handler = (ev) => {
-          log.info(ev);
-          const { err, success } = ev.data;
-          if (err) {
-            reject(err);
-          } else if (success) {
-            resolve();
-          } else reject(new Error("some error occured"));
-        };
-        handleStream(providerChangeStream, "data", handler);
-        providerChangeStream.write({
-          name: "show_provider_change",
-          data: {
-            network: {
-              host,
-              chainId,
-              networkName,
-              ...rest,
-            },
-            override: true,
-          },
-        });
-      } else reject(new Error("Already initialized"));
-    });
-  }
-
   showWallet(path: WALLET_PATH, params: Record<string, string> = {}): void {
-    const showWalletStream = this.communicationMux.getStream("show_wallet");
+    const showWalletStream = this.communicationMux.getStream("show_wallet") as Substream;
     const finalPath = path ? `/${path}` : "";
     showWalletStream.write({ name: "show_wallet", data: { path: finalPath } });
 
@@ -636,7 +578,7 @@ class Torus {
         if (this.dappStorageKey) {
           finalUrl.hash = `#dappStorageKey=${this.dappStorageKey}`;
         }
-        const walletWindow = new PopupHandler({ url: finalUrl, features: FEATURES_DEFAULT_WALLET_WINDOW });
+        const walletWindow = new PopupHandler({ url: finalUrl, features: getPopupFeatures(FEATURES_DEFAULT_WALLET_WINDOW) });
         walletWindow.open();
       }
     };
@@ -644,43 +586,20 @@ class Torus {
     handleStream(showWalletStream, "data", showWalletHandler);
   }
 
-  getUserInfo(message: string): Promise<UserInfo> {
+  getUserInfo(): Promise<UserInfo> {
     return new Promise((resolve, reject) => {
       if (this.isLoggedIn) {
-        const userInfoAccessStream = this.communicationMux.getStream("user_info_access");
-        userInfoAccessStream.write({ name: "user_info_access_request" });
-        const userInfoAccessHandler = (chunk) => {
-          const {
-            name,
-            data: { approved, payload, rejected, newRequest },
-          } = chunk;
-          if (name === "user_info_access_response") {
-            if (approved) {
-              resolve(payload);
-            } else if (rejected) {
+        const userInfoStream = this.communicationMux.getStream("user_info") as Substream;
+        const userInfoHandler = (handlerChunk) => {
+          if (handlerChunk.name === "user_info_response") {
+            if (handlerChunk.data.approved) {
+              resolve(handlerChunk.data.payload);
+            } else {
               reject(new Error("User rejected the request"));
-            } else if (newRequest) {
-              const userInfoStream = this.communicationMux.getStream("user_info");
-              const userInfoHandler = (handlerChunk) => {
-                if (handlerChunk.name === "user_info_response") {
-                  if (handlerChunk.data.approved) {
-                    resolve(handlerChunk.data.payload);
-                  } else {
-                    reject(new Error("User rejected the request"));
-                  }
-                }
-              };
-              handleStream(userInfoStream, "data", userInfoHandler);
-              const preopenInstanceId = getPreopenInstanceId();
-              this._handleWindow(preopenInstanceId, {
-                target: "_blank",
-                features: FEATURES_PROVIDER_CHANGE_WINDOW,
-              });
-              userInfoStream.write({ name: "user_info_request", data: { message, preopenInstanceId } });
             }
           }
         };
-        handleStream(userInfoAccessStream, "data", userInfoAccessHandler);
+        handleStream(userInfoStream, "data", userInfoHandler);
       } else reject(new Error("User has not logged in yet"));
     });
   }
@@ -688,7 +607,7 @@ class Torus {
   /** @ignore */
   _handleWindow(preopenInstanceId: string, { url, target, features }: { url?: string; target?: string; features?: string } = {}): void {
     if (preopenInstanceId) {
-      const windowStream = this.communicationMux.getStream("window");
+      const windowStream = this.communicationMux.getStream("window") as Substream;
       const finalUrl = new URL(url || `${this.torusUrl}/redirect?preopenInstanceId=${preopenInstanceId}`);
       if (this.dappStorageKey) {
         // If multiple instances, it returns the first one
@@ -726,12 +645,10 @@ class Torus {
     }
   }
 
-  paymentProviders = configuration.paymentProviders;
-
   initiateTopup(provider: PAYMENT_PROVIDER_TYPE, params: PaymentParams): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (this.isInitialized) {
-        const topupStream = this.communicationMux.getStream("topup");
+        const topupStream = this.communicationMux.getStream("topup") as Substream;
         const topupHandler = (chunk) => {
           if (chunk.name === "topup_response") {
             if (chunk.data.success) {
@@ -742,11 +659,16 @@ class Torus {
           }
         };
         handleStream(topupStream, "data", topupHandler);
-        const preopenInstanceId = getPreopenInstanceId();
+        const preopenInstanceId = getWindowId();
         this._handleWindow(preopenInstanceId);
         topupStream.write({ name: "topup_request", data: { provider, params, preopenInstanceId } });
       } else reject(new Error("Torus is not initialized yet"));
     });
+  }
+
+  private getLogoUrl(): string {
+    const logoUrl = `${this.torusUrl}/images/torus_icon-blue.svg`;
+    return logoUrl;
   }
 }
 

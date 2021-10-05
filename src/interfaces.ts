@@ -1,13 +1,5 @@
 import { JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
-export const LOGIN_PROVIDER = {
-  GOOGLE: "google",
-  FACEBOOK: "facebook",
-  TWITCH: "twitch",
-  REDDIT: "reddit",
-  DISCORD: "discord",
-} as const;
-
 export const PAYMENT_PROVIDER = {
   MOONPAY: "moonpay",
   WYRE: "wyre",
@@ -285,3 +277,22 @@ export interface IStreamData<T> {
    */
   error?: string;
 }
+
+export const LOGIN_PROVIDER = {
+  GOOGLE: "google",
+  FACEBOOK: "facebook",
+  REDDIT: "reddit",
+  DISCORD: "discord",
+  TWITCH: "twitch",
+  APPLE: "apple",
+  LINE: "line",
+  GITHUB: "github",
+  KAKAO: "kakao",
+  LINKEDIN: "linkedin",
+  TWITTER: "twitter",
+  WEIBO: "weibo",
+  WECHAT: "wechat",
+  EMAIL_PASSWORDLESS: "email_passwordless",
+} as const;
+
+export type LOGIN_PROVIDER_TYPE = typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER];

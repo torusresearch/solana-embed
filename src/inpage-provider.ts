@@ -70,7 +70,9 @@ class TorusInpageProvider extends SafeEventEmitter {
     hasEmittedConnection: false,
   };
 
-  tryPreopenHandle: (payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
+  tryWindowHandle: (payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
+
+  enable: () => Promise<string[]>;
 
   constructor(
     connectionStream: Duplex,
@@ -268,7 +270,7 @@ class TorusInpageProvider extends SafeEventEmitter {
         return;
       }
     }
-    this.tryPreopenHandle(_payload, cb);
+    this.tryWindowHandle(_payload, cb);
   }
 
   /**

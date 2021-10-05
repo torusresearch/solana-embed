@@ -36,8 +36,6 @@ const baseConfig = {
       "bn.js": path.resolve(__dirname, "node_modules/bn.js"),
       lodash: path.resolve(__dirname, "node_modules/lodash"),
       "js-sha3": path.resolve(__dirname, "node_modules/js-sha3"),
-      "web3-providers-ipc": path.resolve(__dirname, "node_modules/empty-module"),
-      "web3-providers-ws": path.resolve(__dirname, "node_modules/empty-module"),
     },
   },
   module: {
