@@ -13,6 +13,7 @@ import {
   NetworkInterface,
   PAYMENT_PROVIDER_TYPE,
   PaymentParams,
+  STATUS_STREAM_DATA,
   TORUS_BUILD_ENV,
   TorusCtorArgs,
   TorusParams,
@@ -174,8 +175,8 @@ class Torus {
       const initStream = this.communicationMux.getStream("init") as Substream;
       const initCompletePromise = new Promise<void>((resolve, reject) => {
         const initHandler = (chunk: IStreamData<string>) => {
-          const { name, data, error } = chunk;
-          if (name === "init" && data === "success") {
+          const { data, error } = chunk;
+          if (data === "success") {
             // resolve promise
             resolve();
           } else if (error) {
@@ -183,7 +184,7 @@ class Torus {
           }
           // Otherwise, it's not me who will handle this.
         };
-        handleStream(initStream, "data", initHandler);
+        handleStream({ handle: initStream, eventName: "data", chunkName: "init" }, initHandler);
       });
       initStream.write({
         name: "init",
@@ -238,17 +239,20 @@ class Torus {
       }
 
       const logOutStream = this.communicationMux.getStream("logout") as Substream;
-      logOutStream.write({ name: "logOut" });
+      logOutStream.write({ name: "logOut" } as IStreamData<void>);
       const statusStream = this.communicationMux.getStream("status") as Substream;
-      const statusStreamHandler = (status) => {
-        if (!status.loggedIn) {
+      const statusStreamHandler = (chunk: IStreamData<STATUS_STREAM_DATA>) => {
+        const { data, error } = chunk;
+        if (!data.loggedIn) {
           this.isLoggedIn = false;
           this.currentLoginProvider = null;
           this.requestedLoginProvider = null;
           resolve();
-        } else reject(new Error("Some Error Occured"));
+        } else if (error) {
+          reject(new Error(error));
+        }
       };
-      handleStream(statusStream, "data", statusStreamHandler);
+      handleStream({ handle: statusStream, eventName: "data", chunkName: "dapp_logout" }, statusStreamHandler);
     });
   }
 
@@ -515,10 +519,10 @@ class Torus {
     const oauthStream = this.communicationMux.getStream("oauth") as Substream;
     if (!this.requestedLoginProvider) {
       this._displayIframe(true);
-      handleStream(oauthStream, "data", loginHandler);
+      handleStream({ handle: oauthStream }, loginHandler);
       oauthStream.write({ name: "oauth_modal", data: { calledFromEmbed } });
     } else {
-      handleStream(oauthStream, "data", loginHandler);
+      handleStream({ handle: oauthStream }, loginHandler);
       const windowId = getWindowId();
       this._handleWindow(windowId);
       oauthStream.write({ name: "oauth", data: { calledFromEmbed, verifier: this.requestedLoginProvider, windowId } });
@@ -537,7 +541,7 @@ class Torus {
           resolve();
         } else reject(new Error("some error occured"));
       };
-      handleStream(providerChangeStream, "data", handler);
+      handleStream({ handle: providerChangeStream }, handler);
       const preopenInstanceId = getWindowId();
       this._handleWindow(preopenInstanceId, {
         target: "_blank",
@@ -565,25 +569,23 @@ class Torus {
     showWalletStream.write({ name: "show_wallet", data: { path: finalPath } });
 
     const showWalletHandler = (chunk) => {
-      if (chunk.name === "show_wallet_instance") {
-        // Let the error propogate up (hence, no try catch)
-        const { instanceId } = chunk.data;
-        const finalUrl = new URL(`${this.torusUrl}/wallet${finalPath}`);
-        // Using URL constructor to prevent js injection and allow parameter validation.!
-        finalUrl.searchParams.append("integrity", "true");
-        finalUrl.searchParams.append("instanceId", instanceId);
-        Object.keys(params).forEach((x) => {
-          finalUrl.searchParams.append(x, params[x]);
-        });
-        if (this.dappStorageKey) {
-          finalUrl.hash = `#dappStorageKey=${this.dappStorageKey}`;
-        }
-        const walletWindow = new PopupHandler({ url: finalUrl, features: getPopupFeatures(FEATURES_DEFAULT_WALLET_WINDOW) });
-        walletWindow.open();
+      // Let the error propogate up (hence, no try catch)
+      const { instanceId } = chunk.data;
+      const finalUrl = new URL(`${this.torusUrl}/wallet${finalPath}`);
+      // Using URL constructor to prevent js injection and allow parameter validation.!
+      finalUrl.searchParams.append("integrity", "true");
+      finalUrl.searchParams.append("instanceId", instanceId);
+      Object.keys(params).forEach((x) => {
+        finalUrl.searchParams.append(x, params[x]);
+      });
+      if (this.dappStorageKey) {
+        finalUrl.hash = `#dappStorageKey=${this.dappStorageKey}`;
       }
+      const walletWindow = new PopupHandler({ url: finalUrl, features: getPopupFeatures(FEATURES_DEFAULT_WALLET_WINDOW) });
+      walletWindow.open();
     };
 
-    handleStream(showWalletStream, "data", showWalletHandler);
+    handleStream({ handle: showWalletStream, chunkName: "show_wallet_instance" }, showWalletHandler);
   }
 
   getUserInfo(): Promise<UserInfo> {
@@ -591,15 +593,13 @@ class Torus {
       if (this.isLoggedIn) {
         const userInfoStream = this.communicationMux.getStream("user_info") as Substream;
         const userInfoHandler = (handlerChunk) => {
-          if (handlerChunk.name === "user_info_response") {
-            if (handlerChunk.data.approved) {
-              resolve(handlerChunk.data.payload);
-            } else {
-              reject(new Error("User rejected the request"));
-            }
+          if (handlerChunk.data.approved) {
+            resolve(handlerChunk.data.payload);
+          } else {
+            reject(new Error("User rejected the request"));
           }
         };
-        handleStream(userInfoStream, "data", userInfoHandler);
+        handleStream({ handle: userInfoStream, chunkName: "user_info_response" }, userInfoHandler);
       } else reject(new Error("User has not logged in yet"));
     });
   }
@@ -658,7 +658,7 @@ class Torus {
             }
           }
         };
-        handleStream(topupStream, "data", topupHandler);
+        handleStream({ handle: topupStream, chunkName: "topup_response" }, topupHandler);
         const preopenInstanceId = getWindowId();
         this._handleWindow(preopenInstanceId);
         topupStream.write({ name: "topup_request", data: { provider, params, preopenInstanceId } });

@@ -296,3 +296,8 @@ export const LOGIN_PROVIDER = {
 } as const;
 
 export type LOGIN_PROVIDER_TYPE = typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER];
+
+export type STATUS_STREAM_DATA = {
+  loggedIn: boolean;
+  loginProvider: LOGIN_PROVIDER_TYPE;
+};
