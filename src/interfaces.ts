@@ -251,7 +251,7 @@ export type WalletProviderState = {
   isUnlocked: boolean;
 };
 
-export interface UnvalidatedJsonRpcRequest extends JRPCRequest<unknown> {
+export interface UnValidatedJsonRpcRequest extends JRPCRequest<unknown> {
   windowId?: string;
 }
 

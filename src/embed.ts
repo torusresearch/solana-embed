@@ -3,7 +3,7 @@ import { JRPCRequest, ObjectMultiplex, PostMessageStream, setupMultiplex, Substr
 
 import configuration from "./config";
 import { documentReady, handleStream, htmlToElement } from "./embedUtils";
-import TorusInpageProvider from "./inpage-provider";
+import TorusInPageProvider from "./inPageProvider";
 import {
   BUTTON_POSITION,
   BUTTON_POSITION_TYPE,
@@ -17,7 +17,7 @@ import {
   TORUS_BUILD_ENV,
   TorusCtorArgs,
   TorusParams,
-  UnvalidatedJsonRpcRequest,
+  UnValidatedJsonRpcRequest,
   UserInfo,
   WALLET_PATH,
 } from "./interfaces";
@@ -93,7 +93,7 @@ class Torus {
 
   embedTranslations: EMBED_TRANSLATION_ITEM;
 
-  provider: TorusInpageProvider;
+  provider: TorusInPageProvider;
 
   communicationMux: ObjectMultiplex;
 
@@ -134,8 +134,8 @@ class Torus {
     const dappStorageKey = this.handleDappStorageKey(useLocalStorage);
 
     const torusIframeUrl = new URL(torusUrl);
-    if (torusIframeUrl.pathname.endsWith("/")) torusIframeUrl.pathname += "popup";
-    else torusIframeUrl.pathname += "/popup";
+    if (torusIframeUrl.pathname.endsWith("/")) torusIframeUrl.pathname += "frame";
+    else torusIframeUrl.pathname += "/frame";
 
     const hashParams = new URLSearchParams();
     if (dappStorageKey) hashParams.append("dappStorageKey", dappStorageKey);
@@ -408,15 +408,15 @@ class Torus {
       targetWindow: this.torusIframe.contentWindow,
     });
 
-    // compose the inpage provider
-    const inpageProvider = new TorusInpageProvider(metamaskStream);
+    // compose the inPage provider
+    const inPageProvider = new TorusInPageProvider(metamaskStream);
 
     // detect eth_requestAccounts and pipe to enable for now
     const detectAccountRequestPrototypeModifier = (m) => {
-      const originalMethod = inpageProvider[m];
-      inpageProvider[m] = function providerFunc(method, ...args) {
+      const originalMethod = inPageProvider[m];
+      inPageProvider[m] = function providerFunc(method, ...args) {
         if (method && method === "casper_requestAccounts") {
-          return inpageProvider.enable();
+          return inPageProvider.enable();
         }
         return originalMethod.apply(this, [method, ...args]);
       };
@@ -425,10 +425,10 @@ class Torus {
     detectAccountRequestPrototypeModifier("send");
     detectAccountRequestPrototypeModifier("sendAsync");
 
-    inpageProvider.enable = () => {
+    inPageProvider.enable = () => {
       return new Promise((resolve, reject) => {
         // If user is already logged in, we assume they have given access to the website
-        inpageProvider.sendAsync(
+        inPageProvider.sendAsync(
           { jsonrpc: "2.0", id: getWindowId(), method: "casper_requestAccounts", params: [this.requestedLoginProvider] },
           (err, response) => {
             const { result: res } = (response as { result: unknown }) || {};
@@ -445,7 +445,7 @@ class Torus {
       });
     };
 
-    inpageProvider.tryWindowHandle = (payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
+    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
       const _payload = payload;
       if (!Array.isArray(_payload) && UNSAFE_METHODS.includes(_payload.method)) {
         const windowId = getWindowId();
@@ -455,12 +455,12 @@ class Torus {
         });
         _payload.windowId = windowId;
       }
-      inpageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
+      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
     };
 
     // Work around for web3@1.0 deleting the bound `sendAsync` but not the unbound
     // `sendAsync` method on the prototype, causing `this` reference issues with drizzle
-    const proxiedInpageProvider = new Proxy(inpageProvider, {
+    const proxiedInPageProvider = new Proxy(inPageProvider, {
       // straight up lie that we deleted the property so that it doesn't
       // throw an error in strict mode
       deleteProperty: () => true,
@@ -497,10 +497,10 @@ class Torus {
       else this._displayIframe();
     });
 
-    this.provider = proxiedInpageProvider;
+    this.provider = proxiedInPageProvider;
 
     if (this.provider.shouldSendMetadata) sendSiteMetadata(this.provider._rpcEngine);
-    inpageProvider._initializeState();
+    inPageProvider._initializeState();
     log.debug("Torus - injected provider");
   }
 
@@ -539,11 +539,11 @@ class Torus {
           reject(err);
         } else if (success) {
           resolve();
-        } else reject(new Error("some error occured"));
+        } else reject(new Error("some error occurred"));
       };
       handleStream({ handle: providerChangeStream }, handler);
-      const preopenInstanceId = getWindowId();
-      this._handleWindow(preopenInstanceId, {
+      const windowId = getWindowId();
+      this._handleWindow(windowId, {
         target: "_blank",
         features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW),
       });
@@ -556,7 +556,7 @@ class Torus {
             networkName,
             ...rest,
           },
-          preopenInstanceId,
+          windowId,
           override: false,
         },
       });

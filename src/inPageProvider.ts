@@ -15,7 +15,7 @@ import { isDuplexStream } from "is-stream";
 import pump from "pump";
 import type { Duplex } from "readable-stream";
 
-import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnvalidatedJsonRpcRequest, WalletProviderState } from "./interfaces";
+import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest, WalletProviderState } from "./interfaces";
 import log from "./loglevel";
 import messages from "./messages";
 import { createErrorMiddleware, logStreamDisconnectWarning } from "./utils";
@@ -36,7 +36,7 @@ const getRpcPromiseCallback =
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
  * @param {boolean} opts.shouldSendMetadata - Whether the provider should send page metadata
  */
-class TorusInpageProvider extends SafeEventEmitter {
+class TorusInPageProvider extends SafeEventEmitter {
   /**
    * The chain ID of the currently connected Casper chain.
    * See [chainId.network]{@link https://chainid.network} for more information.
@@ -70,7 +70,7 @@ class TorusInpageProvider extends SafeEventEmitter {
     hasEmittedConnection: false,
   };
 
-  tryWindowHandle: (payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
+  tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
 
   enable: () => Promise<string[]>;
 
@@ -87,7 +87,7 @@ class TorusInpageProvider extends SafeEventEmitter {
 
     // private state
     this._state = {
-      ...TorusInpageProvider._defaultState,
+      ...TorusInPageProvider._defaultState,
     };
 
     // public state
@@ -248,7 +248,7 @@ class TorusInpageProvider extends SafeEventEmitter {
    * Also remap ids inbound and outbound
    */
   protected _rpcRequest(
-    payload: UnvalidatedJsonRpcRequest | UnvalidatedJsonRpcRequest[],
+    payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[],
     callback: (...args: any[]) => void,
     isInternal = false
   ): void {
@@ -430,4 +430,4 @@ class TorusInpageProvider extends SafeEventEmitter {
   }
 }
 
-export default TorusInpageProvider;
+export default TorusInPageProvider;

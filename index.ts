@@ -1,3 +1,3 @@
 export { default } from "./src/embed";
-export { default as TorusInpageProvider } from "./src/inpage-provider";
+export { default as TorusInPageProvider } from "./src/inPageProvider";
 export * from "./src/interfaces";
