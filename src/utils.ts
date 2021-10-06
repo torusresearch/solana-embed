@@ -1,4 +1,4 @@
-import { JRPCMiddleware, JRPCResponse, SafeEventEmitter } from "@toruslabs/openlogin-jrpc";
+import { JRPCMiddleware, SafeEventEmitter } from "@toruslabs/openlogin-jrpc";
 import { ethErrors } from "eth-rpc-errors";
 import { LogLevelDesc } from "loglevel";
 
@@ -34,19 +34,6 @@ export function createErrorMiddleware(): JRPCMiddleware<unknown, unknown> {
     });
   };
 }
-
-// resolve response.result or response, reject errors
-export const getRpcPromiseCallback =
-  (resolve: (value?: any) => void, reject: (error?: Error) => void, unwrapResult = true) =>
-  (error: Error, response: JRPCResponse<unknown>): void => {
-    if (error || response.error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      reject(error || response.error);
-    } else {
-      resolve(!unwrapResult || Array.isArray(response) ? response : response.result);
-    }
-  };
 
 /**
  * Logs a stream disconnection error. Emits an 'error' if given an

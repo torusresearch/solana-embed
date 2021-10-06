@@ -1,42 +1,26 @@
-import {
-  createIdRemapMiddleware,
-  createStreamMiddleware,
-  JRPCEngine,
-  JRPCRequest,
-  JRPCResponse,
-  JRPCSuccess,
-  ObjectMultiplex,
-  SafeEventEmitter,
-  Stream,
-} from "@toruslabs/openlogin-jrpc";
-import { EthereumRpcError, ethErrors } from "eth-rpc-errors";
+import { JRPCRequest, JRPCSuccess } from "@toruslabs/openlogin-jrpc";
+import { EthereumRpcError } from "eth-rpc-errors";
 import dequal from "fast-deep-equal";
-import { isDuplexStream } from "is-stream";
-import pump from "pump";
 import type { Duplex } from "readable-stream";
 
-import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest, WalletProviderState } from "./interfaces";
+import BaseProvider from "./baseProvider";
+import {
+  InPageProviderState,
+  InPageWalletProviderState,
+  NetworkInterface,
+  ProviderOptions,
+  RequestArguments,
+  UnValidatedJsonRpcRequest,
+} from "./interfaces";
 import log from "./loglevel";
 import messages from "./messages";
-import { createErrorMiddleware, logStreamDisconnectWarning } from "./utils";
-
-// resolve response.result, reject errors
-const getRpcPromiseCallback =
-  (resolve, reject, unwrapResult = true) =>
-  (error, response) => {
-    if (error || response.error) {
-      return reject(error || response.error);
-    }
-    return !unwrapResult || Array.isArray(response) ? resolve(response) : resolve(response.result);
-  };
 
 /**
  * @param {Object} connectionStream - A Node.js duplex stream
  * @param {Object} opts - An options bag
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
- * @param {boolean} opts.shouldSendMetadata - Whether the provider should send page metadata
  */
-class TorusInPageProvider extends SafeEventEmitter {
+class TorusInPageProvider extends BaseProvider<InPageProviderState> {
   /**
    * The chain ID of the currently connected Casper chain.
    * See [chainId.network]{@link https://chainid.network} for more information.
@@ -50,18 +34,7 @@ class TorusInPageProvider extends SafeEventEmitter {
    */
   public selectedAddress: string | null;
 
-  protected _state: BaseProviderState;
-
-  _rpcEngine: JRPCEngine;
-
-  shouldSendMetadata: boolean;
-
-  /**
-   * Indicating that this provider is a Torus provider.
-   */
-  public readonly isTorus: true;
-
-  protected static _defaultState: BaseProviderState = {
+  protected static _defaultState: InPageProviderState = {
     accounts: null,
     isConnected: false,
     isUnlocked: false,
@@ -72,18 +45,8 @@ class TorusInPageProvider extends SafeEventEmitter {
 
   tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
 
-  enable: () => Promise<string[]>;
-
-  constructor(
-    connectionStream: Duplex,
-    { maxEventListeners = 100, shouldSendMetadata = true, jsonRpcStreamName = "provider" }: ProviderOptions = {}
-  ) {
-    super();
-    if (!isDuplexStream(connectionStream)) {
-      throw new Error(messages.errors.invalidDuplexStream());
-    }
-    this.isTorus = true;
-    this.setMaxListeners(maxEventListeners);
+  constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider" }: ProviderOptions) {
+    super(connectionStream, { maxEventListeners, jsonRpcStreamName });
 
     // private state
     this._state = {
@@ -93,34 +56,11 @@ class TorusInPageProvider extends SafeEventEmitter {
     // public state
     this.selectedAddress = null;
     this.chainId = null;
-    this.shouldSendMetadata = shouldSendMetadata;
 
     // bind functions (to prevent e.g. web3@1.x from making unbound calls)
     this._handleAccountsChanged = this._handleAccountsChanged.bind(this);
     this._handleChainChanged = this._handleChainChanged.bind(this);
     this._handleUnlockStateChanged = this._handleUnlockStateChanged.bind(this);
-    this._handleConnect = this._handleConnect.bind(this);
-    this._handleDisconnect = this._handleDisconnect.bind(this);
-    this._handleStreamDisconnect = this._handleStreamDisconnect.bind(this);
-
-    this._rpcRequest = this._rpcRequest.bind(this);
-    this._initializeState = this._initializeState.bind(this);
-
-    this.request = this.request.bind(this);
-    this.sendAsync = this.sendAsync.bind(this);
-    // this.enable = this.enable.bind(this);
-
-    // setup connectionStream multiplexing
-    const mux = new ObjectMultiplex();
-    pump(
-      connectionStream as unknown as Stream,
-      mux as unknown as Stream,
-      connectionStream as unknown as Stream,
-      this._handleStreamDisconnect.bind(this, "Torus")
-    );
-
-    // ignore phishing warning message (handled elsewhere)
-    mux.ignoreStream("phishing");
 
     // setup own event listeners
 
@@ -129,34 +69,19 @@ class TorusInPageProvider extends SafeEventEmitter {
       this._state.isConnected = true;
     });
 
-    // connect to async provider
-
-    const jsonRpcConnection = createStreamMiddleware();
-    pump(
-      jsonRpcConnection.stream as unknown as Stream,
-      mux.createStream(jsonRpcStreamName) as unknown as Stream,
-      jsonRpcConnection.stream as unknown as Stream,
-      this._handleStreamDisconnect.bind(this, "Torus RpcProvider")
-    );
-
-    // handle RPC requests via dapp-side rpc engine
-    const rpcEngine = new JRPCEngine();
-    rpcEngine.push(createIdRemapMiddleware());
-    rpcEngine.push(createErrorMiddleware());
-    rpcEngine.push(jsonRpcConnection.middleware);
-    this._rpcEngine = rpcEngine;
-
-    // json rpc notification listener
-    jsonRpcConnection.events.on("notification", (payload) => {
+    const jsonRpcNotificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
       if (method === "wallet_accountsChanged") {
-        this._handleAccountsChanged(params);
+        this._handleAccountsChanged(params as unknown[]);
       } else if (method === "wallet_unlockStateChanged") {
-        this._handleUnlockStateChanged(params);
+        this._handleUnlockStateChanged(params as Record<string, unknown>);
       } else if (method === "wallet_chainChanged") {
-        this._handleChainChanged(params);
+        this._handleChainChanged(params as Record<string, unknown>);
       }
-    });
+    };
+
+    // json rpc notification listener
+    this.jsonRpcConnectionEvents.on("notification", jsonRpcNotificationHandler);
   }
 
   /**
@@ -166,55 +91,6 @@ class TorusInPageProvider extends SafeEventEmitter {
     return this._state.isConnected;
   }
 
-  /**
-   * Submits an RPC request for the given method, with the given params.
-   * Resolves with the result of the method call, or rejects on error.
-   *
-   * @param {Object} args - The RPC request arguments.
-   * @param {string} args.method - The RPC method name.
-   * @param {unknown[] | Object} [args.params] - The parameters for the RPC method.
-   * @returns {Promise<unknown>} A Promise that resolves with the result of the RPC method,
-   * or rejects if an error is encountered.
-   */
-  async request<T>(args: RequestArguments): Promise<Maybe<T>> {
-    if (!args || typeof args !== "object" || Array.isArray(args)) {
-      throw ethErrors.rpc.invalidRequest({
-        message: messages.errors.invalidRequestArgs(),
-        data: args,
-      });
-    }
-
-    const { method, params } = args;
-
-    if (typeof method !== "string" || method.length === 0) {
-      throw ethErrors.rpc.invalidRequest({
-        message: messages.errors.invalidRequestMethod(),
-        data: args,
-      });
-    }
-
-    if (params !== undefined && !Array.isArray(params) && (typeof params !== "object" || params === null)) {
-      throw ethErrors.rpc.invalidRequest({
-        message: messages.errors.invalidRequestParams(),
-        data: args,
-      });
-    }
-
-    return new Promise((resolve, reject) => {
-      this._rpcRequest({ method, params }, getRpcPromiseCallback(resolve, reject));
-    });
-  }
-
-  /**
-   * Submits an RPC request per the given JSON-RPC request object.
-   *
-   * @param {Object} payload - The RPC request object.
-   * @param {Function} cb - The callback function.
-   */
-  sendAsync(payload: JRPCRequest<unknown>, callback: (error: Error | null, result?: JRPCResponse<unknown>) => void): void {
-    this._rpcRequest(payload, callback);
-  }
-
   // Private Methods
   //= ===================
   /**
@@ -222,11 +98,12 @@ class TorusInPageProvider extends SafeEventEmitter {
    * Populates initial state by calling 'wallet_getProviderState' and emits
    * necessary events.
    */
-  async _initializeState(): Promise<void> {
+  async _initializeState({ network }: { network: NetworkInterface }): Promise<void> {
     try {
       const { accounts, chainId, isUnlocked } = (await this.request({
         method: "wallet_getProviderState",
-      })) as WalletProviderState;
+        params: [network],
+      })) as InPageWalletProviderState;
 
       // indicate that we've connected, for EIP-1193 compliance
       this.emit("connect", { chainId });
@@ -247,11 +124,7 @@ class TorusInPageProvider extends SafeEventEmitter {
    * Internal RPC method. Forwards requests to background via the RPC engine.
    * Also remap ids inbound and outbound
    */
-  protected _rpcRequest(
-    payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[],
-    callback: (...args: any[]) => void,
-    isInternal = false
-  ): void {
+  _rpcRequest(payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], callback: (...args: any[]) => void, isInternal = false): void {
     let cb = callback;
     const _payload = payload;
     if (!Array.isArray(_payload)) {
@@ -325,16 +198,6 @@ class TorusInPageProvider extends SafeEventEmitter {
 
       this.emit("disconnect", error);
     }
-  }
-
-  /**
-   * Called when connection is lost to critical streams.
-   *
-   * @emits TorusInpageProvider#disconnect
-   */
-  protected _handleStreamDisconnect(streamName: string, error: Error): void {
-    logStreamDisconnectWarning(streamName, error, this);
-    this._handleDisconnect(false, error ? error.message : undefined);
   }
 
   /**

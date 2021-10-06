@@ -21,6 +21,12 @@
     "project": "./tsconfig.json"
   },
   "rules": {
+    "@typescript-eslint/no-this-alias": [
+      "error",
+      {
+        "allowedNames": ["self"] // Allow `const self = this`; `[]` by default
+      }
+    ],
     "@typescript-eslint/naming-convention": [
       "error",
       {

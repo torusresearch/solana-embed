@@ -1,7 +1,3 @@
-import type { Duplex } from "readable-stream";
-
-import { IStreamData } from "./interfaces";
-
 export const handleEvent = (handle: EventTarget, eventName: string, handler: (...args: unknown[]) => void, ...handlerArgs: unknown[]): void => {
   const handlerWrapper = () => {
     handler(...handlerArgs);
@@ -25,19 +21,4 @@ export const htmlToElement = <T extends Element>(html: string): T => {
   const trimmedHtml = html.trim(); // Never return a text node of whitespace as the result
   template.innerHTML = trimmedHtml;
   return template.content.firstChild as T;
-};
-
-export const handleStream = (
-  params: { handle: Duplex; eventName?: string; chunkName?: string },
-  handler: (chunk: IStreamData<unknown>) => void
-): void => {
-  const { handle, eventName = "data", chunkName } = params;
-  const handlerWrapper = (chunk: IStreamData<unknown>) => {
-    const { name } = chunk;
-    if ((chunkName && name === chunkName) || !chunkName) {
-      handler(chunk);
-      handle.removeListener(eventName, handlerWrapper);
-    }
-  };
-  handle.on(eventName, handlerWrapper);
 };

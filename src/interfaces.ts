@@ -39,24 +39,31 @@ export type BUTTON_POSITION_TYPE = typeof BUTTON_POSITION[keyof typeof BUTTON_PO
 
 export type WALLET_PATH = "transfer" | "topup" | "home" | "settings" | "history";
 
-export interface TorusCtorArgs {
-  /**
-   * Determines where the torus widget is visible on the page.
-   * @default bottom-left
-   */
-  buttonPosition?: BUTTON_POSITION_TYPE;
+export const LOGIN_PROVIDER = {
+  GOOGLE: "google",
+  FACEBOOK: "facebook",
+  REDDIT: "reddit",
+  DISCORD: "discord",
+  TWITCH: "twitch",
+  APPLE: "apple",
+  LINE: "line",
+  GITHUB: "github",
+  KAKAO: "kakao",
+  LINKEDIN: "linkedin",
+  TWITTER: "twitter",
+  WEIBO: "weibo",
+  WECHAT: "wechat",
+  EMAIL_PASSWORDLESS: "email_passwordless",
+} as const;
 
+export type LOGIN_PROVIDER_TYPE = typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER];
+
+export interface TorusCtorArgs {
   /**
    * Z-index of the modal and iframe
    * @default 99999
    */
   modalZIndex?: number;
-
-  /**
-   * Api key
-   * Get yours today at {@link https://developer.tor.us | Dashboard}
-   */
-  apiKey?: string;
 }
 
 export interface NetworkInterface {
@@ -182,6 +189,17 @@ export interface LocaleLinks<T> {
 
 export interface TorusParams {
   /**
+   * Determines where the torus widget is visible on the page.
+   * @default bottom-left
+   */
+  buttonPosition?: BUTTON_POSITION_TYPE;
+  /**
+   * Api key
+   * Get yours today at {@link https://developer.tor.us | Dashboard}
+   */
+  apiKey?: string;
+
+  /**
    * Torus Network Object
    */
   network?: NetworkInterface;
@@ -235,21 +253,37 @@ export interface ProviderOptions {
 }
 
 export interface BaseProviderState {
-  accounts: null | string[];
   isConnected: boolean;
-  isUnlocked: boolean;
   initialized: boolean;
   isPermanentlyDisconnected: boolean;
   hasEmittedConnection: boolean;
 }
 
-export type Maybe<T> = Partial<T> | null | undefined;
+export interface InPageProviderState extends BaseProviderState {
+  accounts: null | string[];
+  isUnlocked: boolean;
+}
 
-export type WalletProviderState = {
+export type InPageWalletProviderState = {
   accounts: string[];
   chainId: string;
   isUnlocked: boolean;
 };
+
+export interface CommunicationProviderState extends BaseProviderState {
+  buttonPosition: string;
+  isLoggedIn: boolean;
+  torusWidgetVisibility: boolean;
+  currentLoginProvider: LOGIN_PROVIDER_TYPE;
+  isIframeFullScreen: boolean;
+}
+
+export type CommunicationWalletProviderState = {
+  isLoggedIn: boolean;
+  currentLoginProvider: LOGIN_PROVIDER_TYPE;
+};
+
+export type Maybe<T> = Partial<T> | T | null | undefined;
 
 export interface UnValidatedJsonRpcRequest extends JRPCRequest<unknown> {
   windowId?: string;
@@ -262,42 +296,3 @@ export interface RequestArguments {
   /** The params of the RPC method, if any. */
   params?: unknown[] | Record<string, unknown>;
 }
-
-export interface IStreamData<T> {
-  /**
-   * Name of the stream chunk
-   */
-  name: string;
-  /**
-   * Payload of the stream
-   */
-  data: T;
-  /**
-   * Error if any of the stream
-   */
-  error?: string;
-}
-
-export const LOGIN_PROVIDER = {
-  GOOGLE: "google",
-  FACEBOOK: "facebook",
-  REDDIT: "reddit",
-  DISCORD: "discord",
-  TWITCH: "twitch",
-  APPLE: "apple",
-  LINE: "line",
-  GITHUB: "github",
-  KAKAO: "kakao",
-  LINKEDIN: "linkedin",
-  TWITTER: "twitter",
-  WEIBO: "weibo",
-  WECHAT: "wechat",
-  EMAIL_PASSWORDLESS: "email_passwordless",
-} as const;
-
-export type LOGIN_PROVIDER_TYPE = typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER];
-
-export type STATUS_STREAM_DATA = {
-  loggedIn: boolean;
-  loginProvider: LOGIN_PROVIDER_TYPE;
-};

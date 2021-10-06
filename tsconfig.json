@@ -11,6 +11,7 @@
     "declaration": true,
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true
   }
 }

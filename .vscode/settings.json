@@ -1,5 +1,5 @@
 {
-  "cSpell.words": ["jrpc", "jsdelivr", "loglevel", "openlogin", "proxied", "toruslabs"],
+  "cSpell.words": ["jrpc", "jsdelivr", "loglevel", "openlogin", "proxied", "Topup", "toruslabs"],
   "eslint.options": {
     "extends": [
       "airbnb-typescript/base",
@@ -23,6 +23,12 @@
       "project": "./tsconfig.json"
     },
     "rules": {
+      "@typescript-eslint/no-this-alias": [
+        "error",
+        {
+          "allowedNames": ["self"] // Allow `const self = this`; `[]` by default
+        }
+      ],
       "@typescript-eslint/naming-convention": [
         "error",
         {
