@@ -45,13 +45,14 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   protected static _defaultState: CommunicationProviderState = {
     buttonPosition: "bottom-left",
     currentLoginProvider: null,
+    torusWidgetVisibility: true,
     hasEmittedConnection: false,
+
+    isIframeFullScreen: false,
     initialized: false,
     isLoggedIn: false,
-    torusWidgetVisibility: true,
     isPermanentlyDisconnected: false,
     isConnected: false,
-    isIframeFullScreen: false,
   };
 
   tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
@@ -79,24 +80,15 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       this._state.isConnected = true;
     });
 
-    const windowEventHandler = (payload: RequestArguments) => {
+    const notificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
-      if (method === "create_window") {
+      if (method === "widget_status") this._displayIframe((params as Record<string, boolean>).isFullScreen);
+      else if (method === "create_window") {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
       } else if (method === "close_window") {
         this._handleCloseWindow(params as Record<string, unknown>);
-      }
-    };
-
-    const widgetEventHandler = (payload: RequestArguments) => {
-      const { method, params } = payload;
-      if (method === "widget_status") this._displayIframe((params as Record<string, boolean>).isFullScreen);
-    };
-
-    const statusEventHandler = (payload: RequestArguments) => {
-      const { method, params } = payload;
-      if (method === "user_logged_in") {
+      } else if (method === "user_logged_in") {
         const { currentLoginProvider } = params as Record<string, unknown>;
         this._state.isLoggedIn = true;
         this._state.currentLoginProvider = currentLoginProvider as LOGIN_PROVIDER_TYPE;
@@ -107,9 +99,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       }
     };
 
-    this.jsonRpcConnectionEvents.on("window", windowEventHandler);
-    this.jsonRpcConnectionEvents.on("widget", widgetEventHandler);
-    this.jsonRpcConnectionEvents.on("status", statusEventHandler);
+    this.jsonRpcConnectionEvents.on("notification", notificationHandler);
   }
 
   /**
@@ -241,7 +231,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     // Add to collection only if window is opened
     this.windowRefs[windowId] = handledWindow;
     // We tell the iframe that the window has been successfully opened
-    this._rpcEngine.emit("window", {
+    this._rpcEngine.emit("notification", {
       name: "opened_window",
       data: {
         windowId,
@@ -250,7 +240,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     handledWindow.once("close", () => {
       // user closed the window
       delete this.windowRefs[windowId];
-      this._rpcEngine.emit("window", {
+      this._rpcEngine.emit("notification", {
         name: "closed_window",
         data: {
           windowId,
@@ -371,7 +361,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   }
 
   private _sendWidgetVisibilityStatus(visible: boolean): void {
-    this._rpcEngine.emit("widget", {
+    this._rpcEngine.emit("notification", {
       name: "widget_visibility",
       data: {
         visible,

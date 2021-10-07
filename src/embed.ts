@@ -358,7 +358,7 @@ class Torus {
       features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW),
     });
     await this.communicationProvider.request({
-      method: "setProvider",
+      method: "set_provider",
       params: { ...params, windowId },
     });
   }
