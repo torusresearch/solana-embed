@@ -1,3 +1,4 @@
+import { PROVIDER_JRPC_METHODS, PROVIDER_NOTIFICATIONS } from "@toruslabs/base-controllers";
 import { JRPCRequest, JRPCSuccess } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import dequal from "fast-deep-equal";
@@ -64,11 +65,11 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
 
     const jsonRpcNotificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
-      if (method === "wallet_accountsChanged") {
+      if (method === PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED) {
         this._handleAccountsChanged(params as unknown[]);
-      } else if (method === "wallet_unlockStateChanged") {
+      } else if (method === PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED) {
         this._handleUnlockStateChanged(params as Record<string, unknown>);
-      } else if (method === "wallet_chainChanged") {
+      } else if (method === PROVIDER_NOTIFICATIONS.CHAIN_CHANGED) {
         this._handleChainChanged(params as Record<string, unknown>);
       }
     };
@@ -94,7 +95,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
   async _initializeState(): Promise<void> {
     try {
       const { accounts, chainId, isUnlocked } = (await this.request({
-        method: "wallet_getProviderState",
+        method: PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE,
         params: [],
       })) as InPageWalletProviderState;
 

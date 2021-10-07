@@ -1,3 +1,4 @@
+import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
@@ -232,14 +233,14 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     this.windowRefs[windowId] = handledWindow;
     // We tell the iframe that the window has been successfully opened
     this.request<void>({
-      method: "opened_window",
+      method: COMMUNICATION_JRPC_METHODS.OPENED_WINDOW,
       params: { windowId },
     });
     handledWindow.once("close", () => {
       // user closed the window
       delete this.windowRefs[windowId];
       this.request<void>({
-        method: "closed_window",
+        method: COMMUNICATION_JRPC_METHODS.CLOSED_WINDOW,
         params: { windowId, closed: true },
       });
     });
@@ -358,7 +359,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   private _sendWidgetVisibilityStatus(visible: boolean): void {
     //  TODO: if i need to wait for this
     this.request<void>({
-      method: "widget_visibility",
+      method: COMMUNICATION_JRPC_METHODS.WIDGET_VISIBILITY,
       params: { visible },
     });
   }
