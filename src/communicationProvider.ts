@@ -231,21 +231,16 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     // Add to collection only if window is opened
     this.windowRefs[windowId] = handledWindow;
     // We tell the iframe that the window has been successfully opened
-    this._rpcEngine.emit("notification", {
-      name: "opened_window",
-      data: {
-        windowId,
-      },
+    this.request<void>({
+      method: "opened_window",
+      params: { windowId },
     });
     handledWindow.once("close", () => {
       // user closed the window
       delete this.windowRefs[windowId];
-      this._rpcEngine.emit("notification", {
-        name: "closed_window",
-        data: {
-          windowId,
-          closed: true,
-        },
+      this.request<void>({
+        method: "closed_window",
+        params: { windowId, closed: true },
       });
     });
   }
@@ -361,11 +356,10 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   }
 
   private _sendWidgetVisibilityStatus(visible: boolean): void {
-    this._rpcEngine.emit("notification", {
-      name: "widget_visibility",
-      data: {
-        visible,
-      },
+    //  TODO: if i need to wait for this
+    this.request<void>({
+      method: "widget_visibility",
+      params: { visible },
     });
   }
 }
