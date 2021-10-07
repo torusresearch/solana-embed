@@ -7,7 +7,6 @@ import { documentReady, htmlToElement } from "./embedUtils";
 import TorusInPageProvider from "./inPageProvider";
 import {
   BUTTON_POSITION,
-  BUTTON_POSITION_TYPE,
   LOGIN_PROVIDER_TYPE,
   NetworkInterface,
   PAYMENT_PROVIDER_TYPE,
@@ -144,11 +143,19 @@ class Torus {
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
+      this.torusIframe.addEventListener("load", () => {
+        // send init params here
+        this.torusIframe.contentWindow.postMessage(
+          {
+            buttonPosition,
+            torusWidgetVisibility: showTorusButton,
+            apiKey,
+            network,
+          },
+          torusIframeUrl.origin
+        );
+      });
       await this._setupWeb3({
-        buttonPosition,
-        torusWidgetVisibility: showTorusButton,
-        apiKey,
-        network,
         torusUrl,
       });
       this.isInitialized = true;
@@ -258,13 +265,7 @@ class Torus {
   /** @ignore */
 
   /** @ignore */
-  private async _setupWeb3(providerParams: {
-    buttonPosition: BUTTON_POSITION_TYPE;
-    torusWidgetVisibility: boolean;
-    apiKey: string;
-    network: NetworkInterface;
-    torusUrl: string;
-  }): Promise<void> {
+  private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
     log.info("setupWeb3 running");
     // setup background connection
     const metamaskStream = new PostMessageStream({
@@ -338,11 +339,10 @@ class Torus {
     this.communicationProvider = proxiedCommunicationProvider;
 
     if (this.communicationProvider.shouldSendMetadata) sendSiteMetadata(this.communicationProvider._rpcEngine);
-    const { network, ...rest } = providerParams;
     await Promise.all([
-      inPageProvider._initializeState({ network }),
+      inPageProvider._initializeState(),
       communicationProvider._initializeState({
-        ...rest,
+        ...providerParams,
         dappStorageKey: this.dappStorageKey,
         torusAlertContainer: this.torusAlertContainer,
         torusIframe: this.torusIframe,

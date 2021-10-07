@@ -4,14 +4,7 @@ import dequal from "fast-deep-equal";
 import type { Duplex } from "readable-stream";
 
 import BaseProvider from "./baseProvider";
-import {
-  InPageProviderState,
-  InPageWalletProviderState,
-  NetworkInterface,
-  ProviderOptions,
-  RequestArguments,
-  UnValidatedJsonRpcRequest,
-} from "./interfaces";
+import { InPageProviderState, InPageWalletProviderState, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest } from "./interfaces";
 import log from "./loglevel";
 import messages from "./messages";
 
@@ -98,11 +91,11 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    * Populates initial state by calling 'wallet_getProviderState' and emits
    * necessary events.
    */
-  async _initializeState({ network }: { network: NetworkInterface }): Promise<void> {
+  async _initializeState(): Promise<void> {
     try {
       const { accounts, chainId, isUnlocked } = (await this.request({
         method: "wallet_getProviderState",
-        params: [network],
+        params: [],
       })) as InPageWalletProviderState;
 
       // indicate that we've connected, for EIP-1193 compliance

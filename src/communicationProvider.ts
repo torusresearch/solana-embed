@@ -134,10 +134,10 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       this.dappStorageKey = dappStorageKey as string;
       this.torusAlertContainer = torusAlertContainer as HTMLDivElement;
       this.torusIframe = torusIframe as HTMLIFrameElement;
-      this.torusIframe.onload = () => {
+      this.torusIframe.addEventListener("load", () => {
         // only do this if iframe is not full screen
         if (!this._state.isIframeFullScreen) this._displayIframe();
-      };
+      });
       const { currentLoginProvider, isLoggedIn } = (await this.request({
         method: "communication_getProviderState",
         params,

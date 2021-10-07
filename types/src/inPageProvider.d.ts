@@ -1,6 +1,6 @@
 import type { Duplex } from "readable-stream";
 import BaseProvider from "./baseProvider";
-import { InPageProviderState, NetworkInterface, ProviderOptions, UnValidatedJsonRpcRequest } from "./interfaces";
+import { InPageProviderState, ProviderOptions, UnValidatedJsonRpcRequest } from "./interfaces";
 /**
  * @param {Object} connectionStream - A Node.js duplex stream
  * @param {Object} opts - An options bag
@@ -30,9 +30,7 @@ declare class TorusInPageProvider extends BaseProvider<InPageProviderState> {
      * Populates initial state by calling 'wallet_getProviderState' and emits
      * necessary events.
      */
-    _initializeState({ network }: {
-        network: NetworkInterface;
-    }): Promise<void>;
+    _initializeState(): Promise<void>;
     /**
      * Internal RPC method. Forwards requests to background via the RPC engine.
      * Also remap ids inbound and outbound
