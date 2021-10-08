@@ -1,7 +1,7 @@
 # Torus Embed — New Frictionless login for Dapps
 
-[![npm version](https://badge.fury.io/js/%40toruslabs%2Ftorus-embed.svg)](https://badge.fury.io/js/%40toruslabs%2Ftorus-embed)
-![npm](https://img.shields.io/npm/dw/@toruslabs/torus-embed)
+[![npm version](https://badge.fury.io/js/%40toruslabs%2Fcasper-embed.svg)](https://badge.fury.io/js/%40toruslabs%2Fcasper-embed)
+![npm](https://img.shields.io/npm/dw/@toruslabs/casper-embed)
 
 ## Introduction
 
@@ -40,13 +40,13 @@ CDN's serve the non-core-js polyfilled version by default. You can use a differe
 jsdeliver
 
 ```js
-<script src="https://cdn.jsdelivr.net/npm/@toruslabs/torus-embed"></script>
+<script src="https://cdn.jsdelivr.net/npm/@toruslabs/casper-embed"></script>
 ```
 
 unpkg
 
 ```js
-<script src="https://unpkg.com/@toruslabs/torus-embed"></script>
+<script src="https://unpkg.com/@toruslabs/casper-embed"></script>
 ```
 
 ### Tips for NUXT
@@ -70,8 +70,8 @@ The samples provided in the [examples](examples) folder illustrate the above cas
 Ensure you have a `Node.JS` development environment setup:
 
 ```
-git clone https://github.com/torusresearch/torus-embed.git
-cd torus-embed
+git clone https://github.com/torusresearch/casper-embed.git
+cd casper-embed
 npm install
 npm run build
 ```
@@ -92,4 +92,4 @@ entry-point: `index.js`
 
 ## License
 
-`torus-embed` is [MIT Licensed](LICENSE)
+`casper-embed` is [MIT Licensed](LICENSE)

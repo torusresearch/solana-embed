@@ -23,5 +23,5 @@ yarn-error.log*
 disc.html
 
 secrets.json
-toruslabs-torus-embed*
+toruslabs-casper-embed*
 .eslintcache
