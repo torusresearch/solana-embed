@@ -1,4 +1,4 @@
-import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
+import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS } from "@toruslabs/base-controllers";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
@@ -83,17 +83,17 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
     const notificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
-      if (method === "widget_status") this._displayIframe((params as Record<string, boolean>).isFullScreen);
-      else if (method === "create_window") {
+      if (method === COMMUNICATION_NOTIFICATIONS.WIDGET_STATUS) this._displayIframe((params as Record<string, boolean>).isFullScreen);
+      else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
-      } else if (method === "close_window") {
+      } else if (method === COMMUNICATION_NOTIFICATIONS.CLOSE_WINDOW) {
         this._handleCloseWindow(params as Record<string, unknown>);
-      } else if (method === "user_logged_in") {
+      } else if (method === COMMUNICATION_NOTIFICATIONS.USER_LOGGED_IN) {
         const { currentLoginProvider } = params as Record<string, unknown>;
         this._state.isLoggedIn = true;
         this._state.currentLoginProvider = currentLoginProvider as LOGIN_PROVIDER_TYPE;
-      } else if (method === "user_logged_out") {
+      } else if (method === COMMUNICATION_NOTIFICATIONS.USER_LOGGED_OUT) {
         this._state.isLoggedIn = false;
         this._state.currentLoginProvider = null;
         this._displayIframe();
@@ -241,7 +241,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       delete this.windowRefs[windowId];
       this.request<void>({
         method: COMMUNICATION_JRPC_METHODS.CLOSED_WINDOW,
-        params: { windowId, closed: true },
+        params: { windowId },
       });
     });
   }
