@@ -1,4 +1,4 @@
-import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS } from "@toruslabs/base-controllers";
+import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS, CommunicationWalletProviderState } from "@toruslabs/base-controllers";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
@@ -9,7 +9,6 @@ import { documentReady, htmlToElement } from "./embedUtils";
 import {
   BUTTON_POSITION,
   CommunicationProviderState,
-  CommunicationWalletProviderState,
   EMBED_TRANSLATION_ITEM,
   ProviderOptions,
   RequestArguments,
@@ -130,8 +129,8 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
         if (!this._state.isIframeFullScreen) this._displayIframe();
       });
       const { currentLoginProvider, isLoggedIn } = (await this.request({
-        method: "communication_getProviderState",
-        params,
+        method: COMMUNICATION_JRPC_METHODS.GET_PROVIDER_STATE,
+        params: [],
       })) as CommunicationWalletProviderState;
 
       // indicate that we've connected, for EIP-1193 compliance
@@ -141,7 +140,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     } catch (error) {
       log.error("Torus: Failed to get initial state. Please report this bug.", error);
     } finally {
-      log.info("initialized state");
+      log.info("initialized communication state");
       this._state.initialized = true;
       this.emit("_initialized");
     }

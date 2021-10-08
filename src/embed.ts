@@ -1,6 +1,6 @@
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
-import { getRpcPromiseCallback, JRPCRequest, PostMessageStream } from "@toruslabs/openlogin-jrpc";
+import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
@@ -181,7 +181,7 @@ class Torus {
     return dappStorageKey;
   }
 
-  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE }): Promise<string[]> {
+  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE } = {}): Promise<string[]> {
     if (!this.isInitialized) throw new Error("Call init() first");
     try {
       this.requestedLoginProvider = params.loginProvider || null;
@@ -270,14 +270,14 @@ class Torus {
   private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
     log.info("setupWeb3 running");
     // setup background connection
-    const metamaskStream = new PostMessageStream({
+    const metamaskStream = new BasePostMessageStream({
       name: "embed_torus",
       target: "iframe_torus",
       targetWindow: this.torusIframe.contentWindow,
     });
 
     // We create another LocalMessageDuplexStream for communication between dapp <> iframe
-    const communicationStream = new PostMessageStream({
+    const communicationStream = new BasePostMessageStream({
       name: "embed_communication",
       target: "iframe_communication",
       targetWindow: this.torusIframe.contentWindow,

@@ -1,11 +1,11 @@
-import { PROVIDER_JRPC_METHODS, PROVIDER_NOTIFICATIONS } from "@toruslabs/base-controllers";
+import { InPageWalletProviderState, PROVIDER_JRPC_METHODS, PROVIDER_NOTIFICATIONS } from "@toruslabs/base-controllers";
 import { JRPCRequest, JRPCSuccess } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import dequal from "fast-deep-equal";
 import type { Duplex } from "readable-stream";
 
 import BaseProvider from "./baseProvider";
-import { InPageProviderState, InPageWalletProviderState, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest } from "./interfaces";
+import { InPageProviderState, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest } from "./interfaces";
 import log from "./loglevel";
 import messages from "./messages";
 
@@ -108,7 +108,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
     } catch (error) {
       log.error("Torus: Failed to get initial state. Please report this bug.", error);
     } finally {
-      log.info("initialized state");
+      log.info("initialized provider state");
       this._state.initialized = true;
       this.emit("_initialized");
     }

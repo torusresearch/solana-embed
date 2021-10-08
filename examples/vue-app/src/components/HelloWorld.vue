@@ -1,20 +1,25 @@
 <script lang="ts" setup>
 import { onMounted } from "vue";
 import Torus from "@toruslabs/casper-embed";
-
+let torus: Torus | null = null;
 onMounted(async () => {
-  const torus = new Torus();
+  torus = new Torus();
   await torus.init({
     buildEnv: "development",
     showTorusButton: true,
   });
+  console.log("finished initializing torus", torus);
   // torus.login();
 });
+
+const login = () => {
+  torus?.login({});
+}
 </script>
 
 <template>
   <div class="hello">
-    <button>Login</button>
+    <button @click="login">Login</button>
   </div>
 </template>
 

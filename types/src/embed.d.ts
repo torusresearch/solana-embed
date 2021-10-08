@@ -18,7 +18,7 @@ declare class Torus {
     constructor({ modalZIndex }?: TorusCtorArgs);
     init({ buildEnv, enableLogging, network, showTorusButton, useLocalStorage, buttonPosition, apiKey, }?: TorusParams): Promise<void>;
     private handleDappStorageKey;
-    login(params: {
+    login(params?: {
         loginProvider?: LOGIN_PROVIDER_TYPE;
     }): Promise<string[]>;
     logout(): Promise<void>;

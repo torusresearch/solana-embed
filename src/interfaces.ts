@@ -264,12 +264,6 @@ export interface InPageProviderState extends BaseProviderState {
   isUnlocked: boolean;
 }
 
-export type InPageWalletProviderState = {
-  accounts: string[];
-  chainId: string;
-  isUnlocked: boolean;
-};
-
 export interface CommunicationProviderState extends BaseProviderState {
   buttonPosition: string;
   isLoggedIn: boolean;
@@ -277,11 +271,6 @@ export interface CommunicationProviderState extends BaseProviderState {
   currentLoginProvider: LOGIN_PROVIDER_TYPE;
   isIframeFullScreen: boolean;
 }
-
-export type CommunicationWalletProviderState = {
-  isLoggedIn: boolean;
-  currentLoginProvider: LOGIN_PROVIDER_TYPE;
-};
 
 export type Maybe<T> = Partial<T> | T | null | undefined;
 

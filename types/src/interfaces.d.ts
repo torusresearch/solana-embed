@@ -240,11 +240,6 @@ export interface InPageProviderState extends BaseProviderState {
     accounts: null | string[];
     isUnlocked: boolean;
 }
-export declare type InPageWalletProviderState = {
-    accounts: string[];
-    chainId: string;
-    isUnlocked: boolean;
-};
 export interface CommunicationProviderState extends BaseProviderState {
     buttonPosition: string;
     isLoggedIn: boolean;
@@ -252,10 +247,6 @@ export interface CommunicationProviderState extends BaseProviderState {
     currentLoginProvider: LOGIN_PROVIDER_TYPE;
     isIframeFullScreen: boolean;
 }
-export declare type CommunicationWalletProviderState = {
-    isLoggedIn: boolean;
-    currentLoginProvider: LOGIN_PROVIDER_TYPE;
-};
 export declare type Maybe<T> = Partial<T> | T | null | undefined;
 export interface UnValidatedJsonRpcRequest extends JRPCRequest<unknown> {
     windowId?: string;
