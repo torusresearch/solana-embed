@@ -1,3 +1,4 @@
+import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { getRpcPromiseCallback, JRPCRequest, PostMessageStream } from "@toruslabs/openlogin-jrpc";
 
@@ -41,7 +42,7 @@ const isLocalStorageAvailable = storageAvailable("localStorage");
     if (typeof document === "undefined") return;
     const torusIframeHtml = document.createElement("link");
     const { torusUrl } = await getTorusUrl("production");
-    torusIframeHtml.href = `${torusUrl}/popup`;
+    torusIframeHtml.href = `${torusUrl}/frame`;
     torusIframeHtml.crossOrigin = "anonymous";
     torusIframeHtml.type = "text/html";
     torusIframeHtml.rel = "prefetch";
@@ -192,6 +193,7 @@ class Torus {
         reqParams.requestedLoginProvider = this.requestedLoginProvider;
         reqParams.windowId = getWindowId();
         this.communicationProvider._handleWindow(reqParams.windowId);
+      } else {
         this.communicationProvider._displayIframe(true);
       }
 
@@ -221,7 +223,7 @@ class Torus {
     if (!this.communicationProvider.isLoggedIn) throw new Error("Not logged in");
 
     await this.communicationProvider.request({
-      method: "logout",
+      method: COMMUNICATION_JRPC_METHODS.LOGOUT,
       params: [],
     });
     this.requestedLoginProvider = null;
@@ -358,14 +360,14 @@ class Torus {
       features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW),
     });
     await this.communicationProvider.request({
-      method: "set_provider",
+      method: COMMUNICATION_JRPC_METHODS.SET_PROVIDER,
       params: { ...params, windowId },
     });
   }
 
   async showWallet(path: WALLET_PATH, params: Record<string, string> = {}): Promise<void> {
     const instanceId = await this.communicationProvider.request<string>({
-      method: "wallet_instance_id",
+      method: COMMUNICATION_JRPC_METHODS.WALLET_INSTANCE_ID,
       params: [],
     });
     const finalPath = path ? `/${path}` : "";
@@ -386,7 +388,7 @@ class Torus {
 
   async getUserInfo(): Promise<UserInfo> {
     const userInfoResponse = await this.communicationProvider.request<UserInfo>({
-      method: "user_info",
+      method: COMMUNICATION_JRPC_METHODS.USER_INFO,
       params: [],
     });
     return userInfoResponse as UserInfo;
@@ -397,7 +399,7 @@ class Torus {
     const windowId = getWindowId();
     this.communicationProvider._handleWindow(windowId);
     const topupResponse = await this.communicationProvider.request<boolean>({
-      method: "topup",
+      method: COMMUNICATION_JRPC_METHODS.TOPUP,
       params: { provider, params, windowId },
     });
     return topupResponse;
