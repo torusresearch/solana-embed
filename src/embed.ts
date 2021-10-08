@@ -42,7 +42,7 @@ const isLocalStorageAvailable = storageAvailable("localStorage");
     if (typeof document === "undefined") return;
     const torusIframeHtml = document.createElement("link");
     const { torusUrl } = await getTorusUrl("production");
-    torusIframeHtml.href = `${torusUrl}/popup`;
+    torusIframeHtml.href = `${torusUrl}/frame`;
     torusIframeHtml.crossOrigin = "anonymous";
     torusIframeHtml.type = "text/html";
     torusIframeHtml.rel = "prefetch";
@@ -193,6 +193,7 @@ class Torus {
         reqParams.requestedLoginProvider = this.requestedLoginProvider;
         reqParams.windowId = getWindowId();
         this.communicationProvider._handleWindow(reqParams.windowId);
+      } else {
         this.communicationProvider._displayIframe(true);
       }
 
