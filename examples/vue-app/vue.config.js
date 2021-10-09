@@ -1,3 +1,6 @@
 module.exports = {
-  transpileDependencies: true
-}
+  transpileDependencies: true,
+  configureWebpack: {
+    devtool: "source-map",
+  },
+};
