@@ -8,7 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@toruslabs/solana-embed": "../../toruslabs-solana-embed-v1.0.0.tgz",
+    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-v1.0.0.tgz",
     "bs58": "^4.0.1",
     "core-js": "^3.8.3",
     "vue": "^3.2.6"
