@@ -1,6 +1,8 @@
+import { Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
+import base58 from "bs58";
 
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
@@ -32,7 +34,7 @@ import {
   storageAvailable,
 } from "./utils";
 
-const PROVIDER_UNSAFE_METHODS = ["account_put_deploy"];
+const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transaction", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
 const isLocalStorageAvailable = storageAvailable("localStorage");
@@ -137,8 +139,11 @@ class Torus {
     );
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
-
+    // eslint-disable-next-line no-console
+    console.log(`torusurl : ${torusUrl}`);
     const handleSetup = async () => {
+      // eslint-disable-next-line no-console
+      console.log("setuo");
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
@@ -197,12 +202,11 @@ class Torus {
       } else {
         this.communicationProvider._displayIframe(true);
       }
-
       // If user is already logged in, we assume they have given access to the website
       const res = await new Promise((resolve, reject) => {
         // We use this method because we want to update inPage provider state with account info
         this.provider._rpcRequest(
-          { method: "casper_requestAccounts", params: [this.requestedLoginProvider, params.login_hint] },
+          { method: "solana_requestAccounts", params: [this.requestedLoginProvider, params.login_hint] },
           getRpcPromiseCallback(resolve, reject)
         );
       });
@@ -269,6 +273,8 @@ class Torus {
 
   /** @ignore */
   private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
+    // eslint-disable-next-line no-console
+    console.log("setupWeb3");
     log.info("setupWeb3 running");
     // setup background connection
     const providerStream = new BasePostMessageStream({
@@ -317,13 +323,13 @@ class Torus {
       communicationProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>, cb);
     };
 
-    // detect casper_requestAccounts and pipe to enable for now
+    // detect solana_requestAccounts and pipe to enable for now
     const detectAccountRequestPrototypeModifier = (m) => {
       const originalMethod = inPageProvider[m];
       const self = this;
       inPageProvider[m] = function providerFunc(request, cb) {
         const { method, params = [] } = request;
-        if (method === "casper_requestAccounts") {
+        if (method === "solana_requestAccounts") {
           if (!cb) return self.login({ loginProvider: params[0] });
           self
             .login({ loginProvider: params[0] })
@@ -336,7 +342,7 @@ class Torus {
       };
     };
 
-    // Detects call to casper_requestAccounts in request & sendAsync and passes to login
+    // Detects call to solana_requestAccounts in request & sendAsync and passes to login
     detectAccountRequestPrototypeModifier("request");
     detectAccountRequestPrototypeModifier("sendAsync");
     detectAccountRequestPrototypeModifier("send");
@@ -353,6 +359,8 @@ class Torus {
       deleteProperty: () => true,
     });
 
+    // eslint-disable-next-line no-console
+    console.log("debug : before await");
     this.provider = proxiedInPageProvider;
     this.communicationProvider = proxiedCommunicationProvider;
 
@@ -366,6 +374,8 @@ class Torus {
       }),
     ]);
     log.debug("Torus - injected provider");
+    // eslint-disable-next-line no-console
+    console.log("inject provider ");
   }
 
   async setProvider(params: NetworkInterface): Promise<void> {
@@ -413,6 +423,50 @@ class Torus {
       params: { provider, params, windowId },
     });
     return topupResponse;
+  }
+
+  async sendTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async signTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "sign_transaction",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async signAllTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "sign_all_transaction",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async connect(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "connect",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
   }
 }
 
