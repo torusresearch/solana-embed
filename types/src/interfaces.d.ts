@@ -225,10 +225,6 @@ export interface ProviderOptions {
      * The maximum number of event listeners.
      */
     maxEventListeners?: number;
-    /**
-     * Whether the provider should send page metadata.
-     */
-    shouldSendMetadata?: boolean;
 }
 export interface BaseProviderState {
     isConnected: boolean;
@@ -256,4 +252,8 @@ export interface RequestArguments {
     method: string;
     /** The params of the RPC method, if any. */
     params?: unknown[] | Record<string, unknown>;
+}
+export interface SiteMetadata {
+    name: string;
+    icon: string | null;
 }

@@ -6,11 +6,9 @@ import PopupHandler from "./PopupHandler";
  * @param {Object} connectionStream - A Node.js duplex stream
  * @param {Object} opts - An options bag
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
- * @param {boolean} opts.shouldSendMetadata - Whether the provider should send page metadata
  */
 declare class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState> {
     protected _state: CommunicationProviderState;
-    shouldSendMetadata: boolean;
     embedTranslations: EMBED_TRANSLATION_ITEM;
     torusUrl: string;
     dappStorageKey: string;
@@ -19,7 +17,7 @@ declare class TorusCommunicationProvider extends BaseProvider<CommunicationProvi
     private torusIframe;
     protected static _defaultState: CommunicationProviderState;
     tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
-    constructor(connectionStream: Duplex, { maxEventListeners, jsonRpcStreamName, shouldSendMetadata }: ProviderOptions);
+    constructor(connectionStream: Duplex, { maxEventListeners, jsonRpcStreamName }: ProviderOptions);
     /**
      * Returns whether the inPage provider is connected to Torus.
      */

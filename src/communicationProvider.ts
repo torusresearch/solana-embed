@@ -23,12 +23,9 @@ import { FEATURES_CONFIRM_WINDOW, getPopupFeatures, getUserLanguage } from "./ut
  * @param {Object} connectionStream - A Node.js duplex stream
  * @param {Object} opts - An options bag
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
- * @param {boolean} opts.shouldSendMetadata - Whether the provider should send page metadata
  */
 class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState> {
   protected _state: CommunicationProviderState;
-
-  public shouldSendMetadata: boolean;
 
   public embedTranslations: EMBED_TRANSLATION_ITEM;
 
@@ -57,7 +54,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
   tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
 
-  constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider", shouldSendMetadata = true }: ProviderOptions) {
+  constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider" }: ProviderOptions) {
     super(connectionStream, { maxEventListeners, jsonRpcStreamName });
 
     // private state
@@ -66,7 +63,6 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     };
 
     // public state
-    this.shouldSendMetadata = shouldSendMetadata;
     this.torusUrl = "";
     this.dappStorageKey = "";
     const languageTranslations = configuration.translations[getUserLanguage()];
@@ -204,7 +200,6 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
           errorMessage || messages.errors.permanentlyDisconnected()
         );
         log.error(error);
-        this.shouldSendMetadata = false;
         this._state.currentLoginProvider = null;
         this._state.isLoggedIn = false;
         this._state.torusWidgetVisibility = true;

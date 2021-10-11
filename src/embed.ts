@@ -12,6 +12,7 @@ import {
   NetworkInterface,
   PAYMENT_PROVIDER_TYPE,
   PaymentParams,
+  SiteMetadata,
   TORUS_BUILD_ENV,
   TorusCtorArgs,
   TorusParams,
@@ -21,7 +22,7 @@ import {
 } from "./interfaces";
 import log from "./loglevel";
 import PopupHandler from "./PopupHandler";
-import sendSiteMetadata from "./siteMetadata";
+import { getSiteMetadata } from "./siteMetadata";
 import {
   FEATURES_CONFIRM_WINDOW,
   FEATURES_DEFAULT_WALLET_WINDOW,
@@ -140,7 +141,7 @@ class Torus {
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
 
-    const handleSetup = async () => {
+    const handleSetup = async (siteMetadata: SiteMetadata) => {
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
@@ -152,6 +153,8 @@ class Torus {
             torusWidgetVisibility: showTorusButton,
             apiKey,
             network,
+            siteName: siteMetadata.name,
+            siteIcon: siteMetadata.icon,
           },
           torusIframeUrl.origin
         );
@@ -162,8 +165,8 @@ class Torus {
       this.isInitialized = true;
     };
 
-    await documentReady();
-    await handleSetup();
+    const [siteMetadata] = await Promise.all([getSiteMetadata(), documentReady()]);
+    await handleSetup(siteMetadata);
   }
 
   private handleDappStorageKey(useLocalStorage: boolean) {
@@ -340,7 +343,6 @@ class Torus {
     this.provider = proxiedInPageProvider;
     this.communicationProvider = proxiedCommunicationProvider;
 
-    if (this.communicationProvider.shouldSendMetadata) sendSiteMetadata(this.communicationProvider._rpcEngine);
     await Promise.all([
       inPageProvider._initializeState(),
       communicationProvider._initializeState({

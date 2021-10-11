@@ -1,8 +1,4 @@
-import type { JRPCEngine } from "@toruslabs/openlogin-jrpc";
-
-import log from "./loglevel";
-import messages from "./messages";
-import { getWindowId, NOOP } from "./utils";
+import { SiteMetadata } from "./interfaces";
 
 /**
  * Returns whether the given image URL exists
@@ -25,7 +21,7 @@ function imgExists(url: string): Promise<boolean> {
 /**
  * Extracts a name for the site from the DOM
  */
-const getSiteName = (window: Window) => {
+const getSiteName = (window: Window): string => {
   const { document } = window;
 
   const siteName = document.querySelector<HTMLMetaElement>('head > meta[property="og:site_name"]');
@@ -70,31 +66,7 @@ async function getSiteIcon(window: Window): Promise<string | null> {
  * Gets site metadata and returns it
  *
  */
-const getSiteMetadata = async () => ({
+export const getSiteMetadata = async (): Promise<SiteMetadata> => ({
   name: getSiteName(window),
   icon: await getSiteIcon(window),
 });
-
-/**
- * Sends site metadata over an RPC request.
- */
-export default async function sendSiteMetadata(engine: JRPCEngine): Promise<void> {
-  try {
-    const domainMetadata = await getSiteMetadata();
-    // call engine.handle directly to avoid normal RPC request handling
-    engine.handle(
-      {
-        jsonrpc: "2.0",
-        id: getWindowId(),
-        method: "wallet_sendDomainMetadata",
-        params: domainMetadata,
-      },
-      NOOP
-    );
-  } catch (error) {
-    log.error({
-      message: messages.errors.sendSiteMetadata(),
-      originalError: error,
-    });
-  }
-}
