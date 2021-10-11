@@ -268,6 +268,49 @@ class Torus {
     this.communicationProvider.showTorusButton();
   }
 
+  async sendTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async signTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "sign_transaction",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async signAllTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "sign_all_transaction",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async connect(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "connect",
+      params: { message: base58.encode(transaction.serializeMessage()) },
+    })) as string;
+
+    const buf = base58.decode(response);
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
   /** @ignore */
 
   /** @ignore */
@@ -413,50 +456,6 @@ class Torus {
       params: { provider, params, windowId },
     });
     return topupResponse;
-  }
-
-  async sendTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "send_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async signTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "sign_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async signAllTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "sign_all_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async connect(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "connect",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
   }
 }
 
