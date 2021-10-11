@@ -61,18 +61,18 @@ export const getTorusUrl = async (buildEnv: string): Promise<{ torusUrl: string;
   let torusUrl: string;
   let logLevel: LogLevelDesc;
   const versionUsed = version;
-  log.info("casper embed version used: ", versionUsed);
+  log.info("solana embed version used: ", versionUsed);
   switch (buildEnv) {
     case "testing":
-      torusUrl = "https://casper-testing.tor.us";
+      torusUrl = "https://solana-testing.tor.us";
       logLevel = "debug";
       break;
     case "development":
-      torusUrl = "http://localhost:4050";
+      torusUrl = "http://localhost:8080";
       logLevel = "debug";
       break;
     default:
-      torusUrl = `https://casper.tor.us`;
+      torusUrl = `https://solana.tor.us`;
       logLevel = "error";
       break;
   }

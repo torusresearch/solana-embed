@@ -16,13 +16,13 @@ import messages from "./messages";
  */
 class TorusInPageProvider extends BaseProvider<InPageProviderState> {
   /**
-   * The chain ID of the currently connected Casper chain.
+   * The chain ID of the currently connected Solana chain.
    * See [chainId.network]{@link https://chainid.network} for more information.
    */
   public chainId: string | null;
 
   /**
-   * The user's currently selected Casper address.
+   * The user's currently selected Solana address.
    * If null, Torus is either locked or the user has not permitted any
    * addresses to be viewed.
    */
@@ -106,6 +106,8 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
       this._handleUnlockStateChanged({ accounts, isUnlocked });
       this._handleAccountsChanged(accounts);
     } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log("error : ", error);
       log.error("Torus: Failed to get initial state. Please report this bug.", error);
     } finally {
       log.info("initialized provider state");
@@ -126,10 +128,10 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
         _payload.jsonrpc = "2.0";
       }
 
-      if (_payload.method === "casper_accounts" || _payload.method === "casper_requestAccounts") {
+      if (_payload.method === "solana_accounts" || _payload.method === "solana_requestAccounts") {
         // handle accounts changing
         cb = (err: Error, res: JRPCSuccess<string[]>) => {
-          this._handleAccountsChanged(res.result || [], _payload.method === "casper_accounts", isInternal);
+          this._handleAccountsChanged(res.result || [], _payload.method === "solana_accounts", isInternal);
           callback(err, res);
         };
       } else if (_payload.method === "wallet_getProviderState") {
@@ -215,10 +217,10 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
 
     // emit accountsChanged if anything about the accounts array has changed
     if (!dequal(this._state.accounts, finalAccounts)) {
-      // we should always have the correct accounts even before casper_accounts
+      // we should always have the correct accounts even before solana_accounts
       // returns, except in cases where isInternal is true
       if (isEthAccounts && Array.isArray(this._state.accounts) && this._state.accounts.length > 0 && !isInternal) {
-        log.error('Torus: "casper_accounts" unexpectedly updated accounts. Please report this bug.', finalAccounts);
+        log.error('Torus: "solana_accounts" unexpectedly updated accounts. Please report this bug.', finalAccounts);
       }
 
       this._state.accounts = finalAccounts as string[];
