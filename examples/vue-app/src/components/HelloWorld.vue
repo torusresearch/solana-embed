@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import Torus from "@toruslabs/casper-embed";
 let torus: Torus | null = null;
+const account = ref<string>("");
 onMounted(async () => {
   torus = new Torus();
   await torus.init({
@@ -12,14 +13,18 @@ onMounted(async () => {
   // torus.login();
 });
 
-const login = () => {
-  torus?.login({});
+const login = async () => {
+  const loginaccs = await torus?.login();
+  account.value = (loginaccs || [])[0] || ""
 }
 </script>
 
 <template>
-  <div class="hello">
+  <div class="hello" v-if="!account">
     <button @click="login">Login</button>
+  </div>
+  <div class="hello" v-else>
+    Logged in with {{ account }}
   </div>
 </template>
 
