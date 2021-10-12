@@ -23,12 +23,9 @@ import { FEATURES_CONFIRM_WINDOW, getPopupFeatures, getUserLanguage } from "./ut
  * @param {Object} connectionStream - A Node.js duplex stream
  * @param {Object} opts - An options bag
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
- * @param {boolean} opts.shouldSendMetadata - Whether the provider should send page metadata
  */
 class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState> {
   protected _state: CommunicationProviderState;
-
-  public shouldSendMetadata: boolean;
 
   public embedTranslations: EMBED_TRANSLATION_ITEM;
 
@@ -45,10 +42,10 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   protected static _defaultState: CommunicationProviderState = {
     buttonPosition: "bottom-left",
     currentLoginProvider: null,
-    torusWidgetVisibility: true,
+    isIframeFullScreen: false,
     hasEmittedConnection: false,
 
-    isIframeFullScreen: false,
+    torusWidgetVisibility: true,
     initialized: false,
     isLoggedIn: false,
     isPermanentlyDisconnected: false,
@@ -57,7 +54,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
   tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
 
-  constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider", shouldSendMetadata = true }: ProviderOptions) {
+  constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider" }: ProviderOptions) {
     super(connectionStream, { maxEventListeners, jsonRpcStreamName });
 
     // private state
@@ -66,7 +63,6 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     };
 
     // public state
-    this.shouldSendMetadata = shouldSendMetadata;
     this.torusUrl = "";
     this.dappStorageKey = "";
     const languageTranslations = configuration.translations[getUserLanguage()];
@@ -82,7 +78,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
     const notificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
-      if (method === COMMUNICATION_NOTIFICATIONS.WIDGET_STATUS) this._displayIframe((params as Record<string, boolean>).isFullScreen);
+      if (method === COMMUNICATION_NOTIFICATIONS.IFRAME_STATUS) this._displayIframe((params as Record<string, boolean>).isFullScreen);
       else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
@@ -204,10 +200,10 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
           errorMessage || messages.errors.permanentlyDisconnected()
         );
         log.error(error);
-        this.shouldSendMetadata = false;
         this._state.currentLoginProvider = null;
         this._state.isLoggedIn = false;
         this._state.torusWidgetVisibility = true;
+        this._state.isIframeFullScreen = false;
         this._state.isPermanentlyDisconnected = true;
       }
 
@@ -341,26 +337,20 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     }
     Object.assign(this.torusIframe.style, style);
     this._state.isIframeFullScreen = isFull;
+    this.request<void>({
+      method: COMMUNICATION_JRPC_METHODS.IFRAME_STATUS,
+      params: { isIframeFullScreen: isFull },
+    });
   }
 
   hideTorusButton(): void {
     this._state.torusWidgetVisibility = false;
-    this._sendWidgetVisibilityStatus(false);
     this._displayIframe();
   }
 
   showTorusButton(): void {
     this._state.torusWidgetVisibility = true;
-    this._sendWidgetVisibilityStatus(true);
     this._displayIframe();
-  }
-
-  private _sendWidgetVisibilityStatus(visible: boolean): void {
-    //  TODO: if i need to wait for this
-    this.request<void>({
-      method: COMMUNICATION_JRPC_METHODS.WIDGET_VISIBILITY,
-      params: { visible },
-    });
   }
 }
 

@@ -1,5 +1,9 @@
-import type { JRPCEngine } from "@toruslabs/openlogin-jrpc";
 /**
- * Sends site metadata over an RPC request.
+ * Gets site metadata and returns it
+ *
  */
-export default function sendSiteMetadata(engine: JRPCEngine): Promise<void>;
+declare const getSiteMetadata: () => Promise<{
+    name: string;
+    icon: string;
+}>;
+export default getSiteMetadata;

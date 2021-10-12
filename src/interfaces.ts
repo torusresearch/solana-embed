@@ -246,10 +246,6 @@ export interface ProviderOptions {
    * The maximum number of event listeners.
    */
   maxEventListeners?: number;
-  /**
-   * Whether the provider should send page metadata.
-   */
-  shouldSendMetadata?: boolean;
 }
 
 export interface BaseProviderState {

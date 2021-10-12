@@ -2,10 +2,9 @@ declare const _default: {
     errors: {
         disconnected: () => string;
         permanentlyDisconnected: () => string;
-        sendSiteMetadata: () => string;
         unsupportedSync: (method: string) => string;
         invalidDuplexStream: () => string;
-        invalidOptions: (maxEventListeners: number, shouldSendMetadata: boolean) => string;
+        invalidOptions: (maxEventListeners: number) => string;
         invalidRequestArgs: () => string;
         invalidRequestMethod: () => string;
         invalidRequestParams: () => string;
