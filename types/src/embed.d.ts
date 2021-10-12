@@ -11,7 +11,6 @@ declare class Torus {
     alertZIndex: number;
     private torusAlertContainer;
     requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
-    currentLoginProvider?: LOGIN_PROVIDER_TYPE;
     provider: TorusInPageProvider;
     communicationProvider: TorusCommunicationProvider;
     dappStorageKey: string;
