@@ -181,7 +181,7 @@ class Torus {
     return dappStorageKey;
   }
 
-  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE } = {}): Promise<string[]> {
+  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE; login_hint?: string } = {}): Promise<string[]> {
     if (!this.isInitialized) throw new Error("Call init() first");
     try {
       this.requestedLoginProvider = params.loginProvider || null;
@@ -201,7 +201,7 @@ class Torus {
       const res = await new Promise((resolve, reject) => {
         // We use this method because we want to update inPage provider state with account info
         this.provider._rpcRequest(
-          { method: "casper_requestAccounts", params: [this.requestedLoginProvider] },
+          { method: "casper_requestAccounts", params: [this.requestedLoginProvider, params.login_hint] },
           getRpcPromiseCallback(resolve, reject)
         );
       });
