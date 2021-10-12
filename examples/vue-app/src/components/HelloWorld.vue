@@ -1,9 +1,11 @@
 <script lang="ts" setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import base58 from "bs58";
 import Torus from "@toruslabs/solana-embed";
 let torus: Torus | null = null;
+
+const pubkey = ref("");
 
 onMounted(async () => {
   torus = new Torus();
@@ -20,6 +22,7 @@ const login = async() => {
   console.log('login click');
   pk = await torus?.login({});
   console.log(pk)
+  pubkey.value = pk[0]
 }
 
 const transfer = async () => {
@@ -39,7 +42,7 @@ const transfer = async () => {
     method : "send_transaction",
     params : { message : base58.encode(tf.serializeMessage() )}
   })
-  // torus.sendTrasaction
+  // const res = await torus.sendTransaction(tf);
   // const res = await torus!
   console.log(res)
 }
@@ -47,6 +50,7 @@ const transfer = async () => {
 
 <template>
   <div class="hello">
+    <div v-if="pubkey" >Publickey : {{pubkey}}</div>
     <button @click="login">Login</button>
     <button @click="transfer">Transfer</button>
   </div>
