@@ -21,7 +21,7 @@ import {
 } from "./interfaces";
 import log from "./loglevel";
 import PopupHandler from "./PopupHandler";
-import sendSiteMetadata from "./siteMetadata";
+import getSiteMetadata from "./siteMetadata";
 import {
   FEATURES_CONFIRM_WINDOW,
   FEATURES_DEFAULT_WALLET_WINDOW,
@@ -144,7 +144,8 @@ class Torus {
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
-      this.torusIframe.addEventListener("load", () => {
+      this.torusIframe.addEventListener("load", async () => {
+        const siteMetadata = await getSiteMetadata();
         // send init params here
         this.torusIframe.contentWindow.postMessage(
           {
@@ -152,6 +153,7 @@ class Torus {
             torusWidgetVisibility: showTorusButton,
             apiKey,
             network,
+            siteMetadata,
           },
           torusIframeUrl.origin
         );
@@ -340,7 +342,6 @@ class Torus {
     this.provider = proxiedInPageProvider;
     this.communicationProvider = proxiedCommunicationProvider;
 
-    if (this.communicationProvider.shouldSendMetadata) sendSiteMetadata(this.communicationProvider._rpcEngine);
     await Promise.all([
       inPageProvider._initializeState(),
       communicationProvider._initializeState({
