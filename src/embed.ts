@@ -150,7 +150,6 @@ class Torus {
         this.torusIframe.contentWindow.postMessage(
           {
             buttonPosition,
-            torusWidgetVisibility: showTorusButton,
             apiKey,
             network,
             siteMetadata,
@@ -161,6 +160,8 @@ class Torus {
       await this._setupWeb3({
         torusUrl,
       });
+      if (showTorusButton) this.showTorusButton();
+      else this.hideTorusButton();
       this.isInitialized = true;
     };
 
@@ -289,6 +290,19 @@ class Torus {
     const inPageProvider = new TorusInPageProvider(metamaskStream, {});
     const communicationProvider = new TorusCommunicationProvider(communicationStream, {});
 
+    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
+      const _payload = payload;
+      if (!Array.isArray(_payload) && UNSAFE_METHODS.includes(_payload.method)) {
+        const windowId = getWindowId();
+        communicationProvider._handleWindow(windowId, {
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
+        });
+        _payload.windowId = windowId;
+      }
+      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
+    };
+
     // detect casper_requestAccounts and pipe to enable for now
     const detectAccountRequestPrototypeModifier = (m) => {
       const originalMethod = inPageProvider[m];
@@ -311,19 +325,6 @@ class Torus {
     // Detects call to casper_requestAccounts in request & sendAsync and passes to login
     detectAccountRequestPrototypeModifier("request");
     detectAccountRequestPrototypeModifier("sendAsync");
-
-    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
-      const _payload = payload;
-      if (!Array.isArray(_payload) && UNSAFE_METHODS.includes(_payload.method)) {
-        const windowId = getWindowId();
-        communicationProvider._handleWindow(windowId, {
-          target: "_blank",
-          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
-        });
-        _payload.windowId = windowId;
-      }
-      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
-    };
 
     // Work around for web3@1.0 deleting the bound `sendAsync` but not the unbound
     // `sendAsync` method on the prototype, causing `this` reference issues with drizzle

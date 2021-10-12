@@ -1,4 +1,5 @@
 import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS, CommunicationWalletProviderState } from "@toruslabs/base-controllers";
+import { JRPCRequest } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
@@ -154,7 +155,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
         _payload.jsonrpc = "2.0";
       }
     }
-    this.tryWindowHandle(_payload, cb);
+    this._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
   }
 
   /**

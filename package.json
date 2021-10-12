@@ -33,7 +33,7 @@
     "@toruslabs/openlogin-jrpc": "^0.12.0",
     "loglevel": "^1.7.1",
     "pump": "^3.0.0",
-    "@toruslabs/base-controllers": "^0.7.0"
+    "@toruslabs/base-controllers": "^0.7.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.15.7",
