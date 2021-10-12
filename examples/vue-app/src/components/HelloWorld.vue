@@ -22,6 +22,8 @@ let publicKeys : string[] | undefined;
 const login = async() => {
   console.log('login click');
   publicKeys = await torus?.login({});
+  pubkey.value = pk[0]
+
   console.log("publicKeys", publicKeys)
 }
 
