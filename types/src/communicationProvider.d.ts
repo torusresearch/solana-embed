@@ -34,10 +34,10 @@ declare class TorusCommunicationProvider extends BaseProvider<CommunicationProvi
      * When the provider becomes connected, updates internal state and emits
      * required events. Idempotent.
      *
-     * @param chainId - The ID of the newly connected chain.
+     * @param currentLoginProvider - The login Provider
      * @emits TorusInpageProvider#connect
      */
-    protected _handleConnect(chainId: string): void;
+    protected _handleConnect(currentLoginProvider: string, isLoggedIn: boolean): void;
     /**
      * When the provider becomes disconnected, updates internal state and emits
      * required events. Idempotent with respect to the isRecoverable parameter.
@@ -61,6 +61,5 @@ declare class TorusCommunicationProvider extends BaseProvider<CommunicationProvi
     _displayIframe(isFull?: boolean): void;
     hideTorusButton(): void;
     showTorusButton(): void;
-    private _sendWidgetVisibilityStatus;
 }
 export default TorusCommunicationProvider;

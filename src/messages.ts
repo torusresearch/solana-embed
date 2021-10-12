@@ -2,7 +2,6 @@ export default {
   errors: {
     disconnected: (): string => "Torus: Lost connection to Torus.",
     permanentlyDisconnected: (): string => "Torus: Disconnected from iframe. Page reload required.",
-    sendSiteMetadata: (): string => "Torus: Failed to send site metadata. This is an internal error, please report this bug.",
     unsupportedSync: (method: string): string =>
       `Torus: The Torus Ethereum provider does not support synchronous methods like ${method} without a callback parameter.`,
     invalidDuplexStream: (): string => "Must provide a Node.js-style duplex stream.",

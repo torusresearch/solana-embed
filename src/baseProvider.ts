@@ -1,3 +1,4 @@
+import { createLoggerMiddleware } from "@toruslabs/base-controllers";
 import {
   createIdRemapMiddleware,
   createStreamMiddleware,
@@ -82,6 +83,7 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
     const rpcEngine = new JRPCEngine();
     rpcEngine.push(createIdRemapMiddleware());
     rpcEngine.push(createErrorMiddleware());
+    rpcEngine.push(createLoggerMiddleware({ origin: location.origin }));
     rpcEngine.push(jsonRpcConnection.middleware);
     this._rpcEngine = rpcEngine;
 

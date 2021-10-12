@@ -11,7 +11,6 @@ declare class Torus {
     alertZIndex: number;
     private torusAlertContainer;
     requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
-    currentLoginProvider?: LOGIN_PROVIDER_TYPE;
     provider: TorusInPageProvider;
     communicationProvider: TorusCommunicationProvider;
     dappStorageKey: string;
@@ -20,6 +19,7 @@ declare class Torus {
     private handleDappStorageKey;
     login(params?: {
         loginProvider?: LOGIN_PROVIDER_TYPE;
+        login_hint?: string;
     }): Promise<string[]>;
     logout(): Promise<void>;
     cleanUp(): Promise<void>;

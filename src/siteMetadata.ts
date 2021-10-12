@@ -1,5 +1,3 @@
-import { SiteMetadata } from "./interfaces";
-
 /**
  * Returns whether the given image URL exists
  * @param {string} url - the url of the image
@@ -44,29 +42,35 @@ const getSiteName = (window: Window): string => {
 /**
  * Extracts an icon for the site from the DOM
  */
-async function getSiteIcon(window: Window): Promise<string | null> {
-  const { document } = window;
+async function getSiteIcon(window: Window): Promise<string> {
+  try {
+    const { document } = window;
 
-  // Use the site's favicon if it exists
-  let icon = document.querySelector<HTMLLinkElement>('head > link[rel="shortcut icon"]');
-  if (icon && (await imgExists(icon.href))) {
-    return icon.href;
+    // Use the site's favicon if it exists
+    let icon = document.querySelector<HTMLLinkElement>('head > link[rel="shortcut icon"]');
+    if (icon && (await imgExists(icon.href))) {
+      return icon.href;
+    }
+
+    // Search through available icons in no particular order
+    icon = Array.from(document.querySelectorAll<HTMLLinkElement>('head > link[rel="icon"]')).find((_icon) => Boolean(_icon.href));
+    if (icon && (await imgExists(icon.href))) {
+      return icon.href;
+    }
+
+    return "";
+  } catch (error) {
+    return "";
   }
-
-  // Search through available icons in no particular order
-  icon = Array.from(document.querySelectorAll<HTMLLinkElement>('head > link[rel="icon"]')).find((_icon) => Boolean(_icon.href));
-  if (icon && (await imgExists(icon.href))) {
-    return icon.href;
-  }
-
-  return null;
 }
 
 /**
  * Gets site metadata and returns it
  *
  */
-export const getSiteMetadata = async (): Promise<SiteMetadata> => ({
+const getSiteMetadata = async (): Promise<{ name: string; icon: string }> => ({
   name: getSiteName(window),
   icon: await getSiteIcon(window),
 });
+
+export default getSiteMetadata;

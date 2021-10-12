@@ -1,4 +1,5 @@
 import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS, CommunicationWalletProviderState } from "@toruslabs/base-controllers";
+import { JRPCRequest } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
@@ -42,10 +43,10 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   protected static _defaultState: CommunicationProviderState = {
     buttonPosition: "bottom-left",
     currentLoginProvider: null,
-    torusWidgetVisibility: true,
+    isIframeFullScreen: false,
     hasEmittedConnection: false,
 
-    isIframeFullScreen: false,
+    torusWidgetVisibility: true,
     initialized: false,
     isLoggedIn: false,
     isPermanentlyDisconnected: false,
@@ -78,7 +79,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
     const notificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
-      if (method === COMMUNICATION_NOTIFICATIONS.WIDGET_STATUS) this._displayIframe((params as Record<string, boolean>).isFullScreen);
+      if (method === COMMUNICATION_NOTIFICATIONS.IFRAME_STATUS) this._displayIframe((params as Record<string, boolean>).isFullScreen);
       else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
@@ -130,9 +131,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       })) as CommunicationWalletProviderState;
 
       // indicate that we've connected, for EIP-1193 compliance
-      this.emit("connect", { currentLoginProvider, isLoggedIn });
-
-      // TODO: something with initial state
+      this._handleConnect(currentLoginProvider, isLoggedIn);
     } catch (error) {
       log.error("Torus: Failed to get initial state. Please report this bug.", error);
     } finally {
@@ -154,21 +153,21 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
         _payload.jsonrpc = "2.0";
       }
     }
-    this.tryWindowHandle(_payload, cb);
+    this._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
   }
 
   /**
    * When the provider becomes connected, updates internal state and emits
    * required events. Idempotent.
    *
-   * @param chainId - The ID of the newly connected chain.
+   * @param currentLoginProvider - The login Provider
    * @emits TorusInpageProvider#connect
    */
-  protected _handleConnect(chainId: string): void {
+  protected _handleConnect(currentLoginProvider: string, isLoggedIn: boolean): void {
     if (!this._state.isConnected) {
       this._state.isConnected = true;
-      this.emit("connect", { chainId });
-      log.debug(messages.info.connected(chainId));
+      this.emit("connect", { currentLoginProvider, isLoggedIn });
+      log.debug(messages.info.connected(currentLoginProvider));
     }
   }
 
@@ -203,6 +202,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
         this._state.currentLoginProvider = null;
         this._state.isLoggedIn = false;
         this._state.torusWidgetVisibility = true;
+        this._state.isIframeFullScreen = false;
         this._state.isPermanentlyDisconnected = true;
       }
 
@@ -336,26 +336,20 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     }
     Object.assign(this.torusIframe.style, style);
     this._state.isIframeFullScreen = isFull;
+    this.request<void>({
+      method: COMMUNICATION_JRPC_METHODS.IFRAME_STATUS,
+      params: { isIframeFullScreen: isFull },
+    });
   }
 
   hideTorusButton(): void {
     this._state.torusWidgetVisibility = false;
-    this._sendWidgetVisibilityStatus(false);
     this._displayIframe();
   }
 
   showTorusButton(): void {
     this._state.torusWidgetVisibility = true;
-    this._sendWidgetVisibilityStatus(true);
     this._displayIframe();
-  }
-
-  private _sendWidgetVisibilityStatus(visible: boolean): void {
-    //  TODO: if i need to wait for this
-    this.request<void>({
-      method: COMMUNICATION_JRPC_METHODS.WIDGET_VISIBILITY,
-      params: { visible },
-    });
   }
 }
 

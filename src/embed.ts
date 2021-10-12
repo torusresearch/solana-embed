@@ -12,7 +12,6 @@ import {
   NetworkInterface,
   PAYMENT_PROVIDER_TYPE,
   PaymentParams,
-  SiteMetadata,
   TORUS_BUILD_ENV,
   TorusCtorArgs,
   TorusParams,
@@ -22,7 +21,7 @@ import {
 } from "./interfaces";
 import log from "./loglevel";
 import PopupHandler from "./PopupHandler";
-import { getSiteMetadata } from "./siteMetadata";
+import getSiteMetadata from "./siteMetadata";
 import {
   FEATURES_CONFIRM_WINDOW,
   FEATURES_DEFAULT_WALLET_WINDOW,
@@ -33,7 +32,8 @@ import {
   storageAvailable,
 } from "./utils";
 
-const UNSAFE_METHODS = ["account_put_deploy"];
+const PROVIDER_UNSAFE_METHODS = ["account_put_deploy"];
+const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
 const isLocalStorageAvailable = storageAvailable("localStorage");
 
@@ -76,8 +76,6 @@ class Torus {
 
   public requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
 
-  public currentLoginProvider?: LOGIN_PROVIDER_TYPE;
-
   provider: TorusInPageProvider;
 
   communicationProvider: TorusCommunicationProvider;
@@ -88,7 +86,6 @@ class Torus {
     this.torusUrl = "";
     this.isInitialized = false; // init done
     this.requestedLoginProvider = null;
-    this.currentLoginProvider = null;
     this.modalZIndex = modalZIndex;
     this.alertZIndex = modalZIndex + 1000;
     this.dappStorageKey = "";
@@ -141,20 +138,19 @@ class Torus {
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
 
-    const handleSetup = async (siteMetadata: SiteMetadata) => {
+    const handleSetup = async () => {
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
-      this.torusIframe.addEventListener("load", () => {
+      this.torusIframe.addEventListener("load", async () => {
+        const dappMetadata = await getSiteMetadata();
         // send init params here
         this.torusIframe.contentWindow.postMessage(
           {
             buttonPosition,
-            torusWidgetVisibility: showTorusButton,
             apiKey,
             network,
-            siteName: siteMetadata.name,
-            siteIcon: siteMetadata.icon,
+            dappMetadata,
           },
           torusIframeUrl.origin
         );
@@ -162,11 +158,13 @@ class Torus {
       await this._setupWeb3({
         torusUrl,
       });
+      if (showTorusButton) this.showTorusButton();
+      else this.hideTorusButton();
       this.isInitialized = true;
     };
 
-    const [siteMetadata] = await Promise.all([getSiteMetadata(), documentReady()]);
-    await handleSetup(siteMetadata);
+    await documentReady();
+    await handleSetup();
   }
 
   private handleDappStorageKey(useLocalStorage: boolean) {
@@ -184,7 +182,7 @@ class Torus {
     return dappStorageKey;
   }
 
-  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE } = {}): Promise<string[]> {
+  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE; login_hint?: string } = {}): Promise<string[]> {
     if (!this.isInitialized) throw new Error("Call init() first");
     try {
       this.requestedLoginProvider = params.loginProvider || null;
@@ -204,7 +202,7 @@ class Torus {
       const res = await new Promise((resolve, reject) => {
         // We use this method because we want to update inPage provider state with account info
         this.provider._rpcRequest(
-          { method: "casper_requestAccounts", params: [this.requestedLoginProvider] },
+          { method: "casper_requestAccounts", params: [this.requestedLoginProvider, params.login_hint] },
           getRpcPromiseCallback(resolve, reject)
         );
       });
@@ -290,6 +288,35 @@ class Torus {
     const inPageProvider = new TorusInPageProvider(metamaskStream, {});
     const communicationProvider = new TorusCommunicationProvider(communicationStream, {});
 
+    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
+      const _payload = payload;
+      if (!Array.isArray(_payload) && PROVIDER_UNSAFE_METHODS.includes(_payload.method)) {
+        const windowId = getWindowId();
+        communicationProvider._handleWindow(windowId, {
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
+        });
+        // for inPageProvider methods sending windowId in request instead of params
+        // as params might be positional.
+        _payload.windowId = windowId;
+      }
+      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
+    };
+
+    communicationProvider.tryWindowHandle = (payload: JRPCRequest<unknown>, cb: (...args: any[]) => void) => {
+      const _payload = payload;
+      if (!Array.isArray(_payload) && COMMUNICATION_UNSAFE_METHODS.includes(_payload.method)) {
+        const windowId = getWindowId();
+        communicationProvider._handleWindow(windowId, {
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW), // todo: are these features generic for all
+        });
+        // for communication methods sending window id in jrpc req params
+        (_payload.params as Record<string, unknown>).windowId = windowId;
+      }
+      communicationProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>, cb);
+    };
+
     // detect casper_requestAccounts and pipe to enable for now
     const detectAccountRequestPrototypeModifier = (m) => {
       const originalMethod = inPageProvider[m];
@@ -312,19 +339,6 @@ class Torus {
     // Detects call to casper_requestAccounts in request & sendAsync and passes to login
     detectAccountRequestPrototypeModifier("request");
     detectAccountRequestPrototypeModifier("sendAsync");
-
-    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
-      const _payload = payload;
-      if (!Array.isArray(_payload) && UNSAFE_METHODS.includes(_payload.method)) {
-        const windowId = getWindowId();
-        communicationProvider._handleWindow(windowId, {
-          target: "_blank",
-          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
-        });
-        _payload.windowId = windowId;
-      }
-      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
-    };
 
     // Work around for web3@1.0 deleting the bound `sendAsync` but not the unbound
     // `sendAsync` method on the prototype, causing `this` reference issues with drizzle
@@ -356,14 +370,9 @@ class Torus {
   }
 
   async setProvider(params: NetworkInterface): Promise<void> {
-    const windowId = getWindowId();
-    this.communicationProvider._handleWindow(windowId, {
-      target: "_blank",
-      features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW),
-    });
     await this.communicationProvider.request({
       method: COMMUNICATION_JRPC_METHODS.SET_PROVIDER,
-      params: { ...params, windowId },
+      params: { ...params },
     });
   }
 
