@@ -142,14 +142,14 @@ class Torus {
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
       this.torusIframe.addEventListener("load", async () => {
-        const siteMetadata = await getSiteMetadata();
+        const dappMetadata = await getSiteMetadata();
         // send init params here
         this.torusIframe.contentWindow.postMessage(
           {
             buttonPosition,
             apiKey,
             network,
-            siteMetadata,
+            dappMetadata,
           },
           torusIframeUrl.origin
         );
