@@ -19,6 +19,7 @@ declare class Torus {
     private handleDappStorageKey;
     login(params?: {
         loginProvider?: LOGIN_PROVIDER_TYPE;
+        login_hint?: string;
     }): Promise<string[]>;
     logout(): Promise<void>;
     cleanUp(): Promise<void>;
