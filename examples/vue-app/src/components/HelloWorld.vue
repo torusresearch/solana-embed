@@ -23,6 +23,8 @@ const login = async() => {
   console.log('login click');
 <<<<<<< HEAD
   publicKeys = await torus?.login({});
+  pubkey.value = pk[0]
+
   console.log("publicKeys", publicKeys)
 =======
   pk = await torus?.login({});
