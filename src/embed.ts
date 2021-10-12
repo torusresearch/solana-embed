@@ -75,8 +75,6 @@ class Torus {
 
   public requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
 
-  public currentLoginProvider?: LOGIN_PROVIDER_TYPE;
-
   provider: TorusInPageProvider;
 
   communicationProvider: TorusCommunicationProvider;
@@ -87,7 +85,6 @@ class Torus {
     this.torusUrl = "";
     this.isInitialized = false; // init done
     this.requestedLoginProvider = null;
-    this.currentLoginProvider = null;
     this.modalZIndex = modalZIndex;
     this.alertZIndex = modalZIndex + 1000;
     this.dappStorageKey = "";

@@ -131,9 +131,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       })) as CommunicationWalletProviderState;
 
       // indicate that we've connected, for EIP-1193 compliance
-      this.emit("connect", { currentLoginProvider, isLoggedIn });
-
-      // TODO: something with initial state
+      this._handleConnect(currentLoginProvider, isLoggedIn);
     } catch (error) {
       log.error("Torus: Failed to get initial state. Please report this bug.", error);
     } finally {
@@ -162,14 +160,14 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
    * When the provider becomes connected, updates internal state and emits
    * required events. Idempotent.
    *
-   * @param chainId - The ID of the newly connected chain.
+   * @param currentLoginProvider - The login Provider
    * @emits TorusInpageProvider#connect
    */
-  protected _handleConnect(chainId: string): void {
+  protected _handleConnect(currentLoginProvider: string, isLoggedIn: boolean): void {
     if (!this._state.isConnected) {
       this._state.isConnected = true;
-      this.emit("connect", { chainId });
-      log.debug(messages.info.connected(chainId));
+      this.emit("connect", { currentLoginProvider, isLoggedIn });
+      log.debug(messages.info.connected(currentLoginProvider));
     }
   }
 
