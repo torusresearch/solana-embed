@@ -89,10 +89,6 @@ export interface NetworkInterface {
      * Display name for the network
      */
     displayName: string;
-    /**
-     * Casper Network Key
-     */
-    networkKey: string;
 }
 export interface PaymentParams {
     /**
@@ -187,11 +183,11 @@ export interface TorusParams {
     /**
      * Build Environment of Torus.
      *
-     * production uses https://casper.tor.us,
+     * production uses https://solana.tor.us,
      *
-     * development uses http://localhost:4050 (expects torus-website to be run locally),
+     * development uses http://localhost:8080 (expects torus-website to be run locally),
      *
-     * testing uses https://casper-testing.tor.us (latest internal build)
+     * testing uses https://solana-testing.tor.us (latest internal build)
      * @default production
      */
     buildEnv?: TORUS_BUILD_ENV_TYPE;

@@ -8,12 +8,12 @@ import { InPageProviderState, ProviderOptions, UnValidatedJsonRpcRequest } from 
  */
 declare class TorusInPageProvider extends BaseProvider<InPageProviderState> {
     /**
-     * The chain ID of the currently connected Casper chain.
+     * The chain ID of the currently connected Solana chain.
      * See [chainId.network]{@link https://chainid.network} for more information.
      */
     chainId: string | null;
     /**
-     * The user's currently selected Casper address.
+     * The user's currently selected Solana address.
      * If null, Torus is either locked or the user has not permitted any
      * addresses to be viewed.
      */

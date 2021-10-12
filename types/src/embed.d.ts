@@ -1,3 +1,4 @@
+import { Transaction } from "@solana/web3.js";
 import TorusCommunicationProvider from "./communicationProvider";
 import TorusInPageProvider from "./inPageProvider";
 import { LOGIN_PROVIDER_TYPE, NetworkInterface, PAYMENT_PROVIDER_TYPE, PaymentParams, TorusCtorArgs, TorusParams, UserInfo, WALLET_PATH } from "./interfaces";
@@ -26,6 +27,10 @@ declare class Torus {
     clearInit(): void;
     hideTorusButton(): void;
     showTorusButton(): void;
+    sendTransaction(transaction: Transaction): Promise<Transaction>;
+    signTransaction(transaction: Transaction): Promise<Transaction>;
+    signAllTransaction(transaction: Transaction): Promise<Transaction>;
+    connect(transaction: Transaction): Promise<Transaction>;
     /** @ignore */
     /** @ignore */
     private _setupWeb3;

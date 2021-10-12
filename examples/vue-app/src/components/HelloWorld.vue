@@ -15,11 +15,12 @@ onMounted(async () => {
   console.log("finished initializing torus", torus);
   // torus.login();
 });
-let pk : string[] | undefined;
+
+let publicKeys : string[] | undefined;
 const login = async() => {
   console.log('login click');
-  pk = await torus?.login({});
-  console.log(pk)
+  publicKeys = await torus?.login({});
+  console.log("publicKeys", publicKeys)
 }
 
 const transfer = async () => {
@@ -28,20 +29,20 @@ const transfer = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
 
-  const ti = SystemProgram.transfer({
-      fromPubkey: new PublicKey(pk![0]),
-      toPubkey: new PublicKey(pk![0]),
+  const TransactionInstruction = SystemProgram.transfer({
+      fromPubkey: new PublicKey(publicKeys![0]),
+      toPubkey: new PublicKey(publicKeys![0]),
       lamports: 0.1 * LAMPORTS_PER_SOL,
     });
-  let tf = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(pk![0]) }).add(ti);
-  console.log(tf)
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  console.log(transaction)
   const res = await torus!.provider.request({
     method : "send_transaction",
-    params : { message : base58.encode(tf.serializeMessage() )}
+    params : { message : transaction.serializeMessage().toString("hex")}
   })
   // torus.sendTrasaction
   // const res = await torus!
-  console.log(res)
+  console.log(res)      
 }
 </script>
 

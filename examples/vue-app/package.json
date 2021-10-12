@@ -5,10 +5,11 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "install:local": "npm i ../../*.tgz"
   },
   "dependencies": {
-    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-v1.0.0.tgz",
+    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-1.0.0.tgz",
     "bs58": "^4.0.1",
     "core-js": "^3.8.3",
     "vue": "^3.2.6"
