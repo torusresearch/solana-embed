@@ -1,4 +1,5 @@
-import { JRPCEngine, JRPCRequest, JRPCResponse, SafeEventEmitter } from "@toruslabs/openlogin-jrpc";
+import { SafeEventEmitterProvider, SendCallBack } from "@toruslabs/base-controllers";
+import { JRPCEngine, JRPCRequest, SafeEventEmitter } from "@toruslabs/openlogin-jrpc";
 import type { Duplex } from "readable-stream";
 import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest } from "./interfaces";
 /**
@@ -6,7 +7,7 @@ import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnValidate
  * @param {Object} opts - An options bag
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
  */
-declare abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitter {
+declare abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitter implements SafeEventEmitterProvider {
     protected _state: U;
     _rpcEngine: JRPCEngine;
     jsonRpcConnectionEvents: SafeEventEmitter;
@@ -26,13 +27,8 @@ declare abstract class BaseProvider<U extends BaseProviderState> extends SafeEve
      * or rejects if an error is encountered.
      */
     request<T>(args: RequestArguments): Promise<Maybe<T>>;
-    /**
-     * Submits an RPC request per the given JSON-RPC request object.
-     *
-     * @param {Object} payload - The RPC request object.
-     * @param {Function} cb - The callback function.
-     */
-    sendAsync(payload: JRPCRequest<unknown>, callback: (error: Error | null, result?: JRPCResponse<unknown>) => void): void;
+    send<T, V>(req: JRPCRequest<T>, callback: SendCallBack<V>): void;
+    sendAsync<T, V>(req: JRPCRequest<T>): Promise<V>;
     /**
      * Constructor helper.
      * Populates initial state by calling 'wallet_getProviderState' and emits

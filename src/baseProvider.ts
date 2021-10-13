@@ -1,4 +1,4 @@
-import { createLoggerMiddleware } from "@toruslabs/base-controllers";
+import { createLoggerMiddleware, SafeEventEmitterProvider, SendCallBack } from "@toruslabs/base-controllers";
 import {
   createIdRemapMiddleware,
   createStreamMiddleware,
@@ -24,7 +24,7 @@ import { createErrorMiddleware, logStreamDisconnectWarning } from "./utils";
  * @param {Object} opts - An options bag
  * @param {number} opts.maxEventListeners - The maximum number of event listeners
  */
-abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitter {
+abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitter implements SafeEventEmitterProvider {
   protected _state: U;
 
   _rpcEngine: JRPCEngine;
@@ -44,7 +44,6 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
     this.isTorus = true;
     this.setMaxListeners(maxEventListeners);
 
-    // bind functions (to prevent e.g. web3@1.x from making unbound calls)
     this._handleConnect = this._handleConnect.bind(this);
     this._handleDisconnect = this._handleDisconnect.bind(this);
     this._handleStreamDisconnect = this._handleStreamDisconnect.bind(this);
@@ -129,14 +128,30 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
     });
   }
 
+  send<T, V>(req: JRPCRequest<T>, callback: SendCallBack<V>): void;
+
   /**
    * Submits an RPC request per the given JSON-RPC request object.
    *
    * @param {Object} payload - The RPC request object.
    * @param {Function} cb - The callback function.
    */
-  sendAsync(payload: JRPCRequest<unknown>, callback: (error: Error | null, result?: JRPCResponse<unknown>) => void): void {
+  send(payload: JRPCRequest<unknown>, callback: (error: Error | null, result?: JRPCResponse<unknown>) => void): void {
     this._rpcRequest(payload, callback);
+  }
+
+  sendAsync<T, V>(req: JRPCRequest<T>): Promise<V>;
+
+  /**
+   * Submits an RPC request per the given JSON-RPC request object.
+   *
+   * @param {Object} payload - The RPC request object.
+   * @param {Function} cb - The callback function.
+   */
+  sendAsync(payload: JRPCRequest<unknown>): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      this._rpcRequest(payload, getRpcPromiseCallback(resolve, reject));
+    });
   }
 
   // Private Methods

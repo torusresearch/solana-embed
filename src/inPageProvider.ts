@@ -51,7 +51,6 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
     this.selectedAddress = null;
     this.chainId = null;
 
-    // bind functions (to prevent e.g. web3@1.x from making unbound calls)
     this._handleAccountsChanged = this._handleAccountsChanged.bind(this);
     this._handleChainChanged = this._handleChainChanged.bind(this);
     this._handleUnlockStateChanged = this._handleUnlockStateChanged.bind(this);
