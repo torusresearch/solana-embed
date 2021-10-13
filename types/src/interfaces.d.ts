@@ -253,7 +253,3 @@ export interface RequestArguments {
     /** The params of the RPC method, if any. */
     params?: unknown[] | Record<string, unknown>;
 }
-export interface SiteMetadata {
-    name: string;
-    icon: string | null;
-}
