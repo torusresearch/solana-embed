@@ -153,7 +153,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
         _payload.jsonrpc = "2.0";
       }
     }
-    this._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
+    this.tryWindowHandle(_payload as JRPCRequest<unknown>[], cb);
   }
 
   /**
