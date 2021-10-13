@@ -19,7 +19,7 @@ function imgExists(url: string): Promise<boolean> {
 /**
  * Extracts a name for the site from the DOM
  */
-const getSiteName = (window: Window) => {
+const getSiteName = (window: Window): string => {
   const { document } = window;
 
   const siteName = document.querySelector<HTMLMetaElement>('head > meta[property="og:site_name"]');

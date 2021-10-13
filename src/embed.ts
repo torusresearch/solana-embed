@@ -32,7 +32,8 @@ import {
   storageAvailable,
 } from "./utils";
 
-const UNSAFE_METHODS = ["account_put_deploy"];
+const PROVIDER_UNSAFE_METHODS = ["account_put_deploy"];
+const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
 const isLocalStorageAvailable = storageAvailable("localStorage");
 
@@ -289,15 +290,31 @@ class Torus {
 
     inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
       const _payload = payload;
-      if (!Array.isArray(_payload) && UNSAFE_METHODS.includes(_payload.method)) {
+      if (!Array.isArray(_payload) && PROVIDER_UNSAFE_METHODS.includes(_payload.method)) {
         const windowId = getWindowId();
         communicationProvider._handleWindow(windowId, {
           target: "_blank",
           features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
         });
+        // for inPageProvider methods sending windowId in request instead of params
+        // as params might be positional.
         _payload.windowId = windowId;
       }
       inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
+    };
+
+    communicationProvider.tryWindowHandle = (payload: JRPCRequest<unknown>, cb: (...args: any[]) => void) => {
+      const _payload = payload;
+      if (!Array.isArray(_payload) && COMMUNICATION_UNSAFE_METHODS.includes(_payload.method)) {
+        const windowId = getWindowId();
+        communicationProvider._handleWindow(windowId, {
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW), // todo: are these features generic for all
+        });
+        // for communication methods sending window id in jrpc req params
+        (_payload.params as Record<string, unknown>).windowId = windowId;
+      }
+      communicationProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>, cb);
     };
 
     // detect casper_requestAccounts and pipe to enable for now
@@ -352,14 +369,9 @@ class Torus {
   }
 
   async setProvider(params: NetworkInterface): Promise<void> {
-    const windowId = getWindowId();
-    this.communicationProvider._handleWindow(windowId, {
-      target: "_blank",
-      features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW),
-    });
     await this.communicationProvider.request({
       method: COMMUNICATION_JRPC_METHODS.SET_PROVIDER,
-      params: { ...params, windowId },
+      params: { ...params },
     });
   }
 
