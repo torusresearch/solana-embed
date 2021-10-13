@@ -1,5 +1,6 @@
 {
   "cSpell.words": ["jrpc", "jsdelivr", "loglevel", "openlogin", "proxied", "Topup", "toruslabs"],
+  "editor.formatOnSave": true,
   "eslint.options": {
     "extends": [
       "airbnb-typescript/base",
