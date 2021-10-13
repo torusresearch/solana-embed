@@ -3,52 +3,47 @@ import { onMounted, ref } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import base58 from "bs58";
 import Torus from "@toruslabs/solana-embed";
-let torus: Torus | null = null;
 
+let torus: Torus | null = null;
 const pubkey = ref("");
+let publicKeys: string[] | undefined;
 
 onMounted(async () => {
   torus = new Torus();
-  console.log('onMounted')
+  console.log("onMounted");
   await torus.init({
     buildEnv: "development",
-    showTorusButton: true,
+    showTorusButton: true
   });
   console.log("finished initializing torus", torus);
   // torus.login();
 });
 
-let publicKeys : string[] | undefined;
-const login = async() => {
-  console.log('login click');
-<<<<<<< HEAD
+let publicKeys: string[] | undefined;
+const login = async () => {
+  console.log("login click");
   publicKeys = await torus?.login({});
-  pubkey.value = pk[0]
+  pubkey.value = publicKeys[0];
 
   console.log("publicKeys", publicKeys)
-=======
-  pk = await torus?.login({});
-  console.log(pk)
-  pubkey.value = pk[0]
->>>>>>> 19f1e22 (add example ui to display key)
 }
 
 const transfer = async () => {
-  
   const conn = new Connection(clusterApiUrl("testnet"));
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
 
   const TransactionInstruction = SystemProgram.transfer({
-      fromPubkey: new PublicKey(publicKeys![0]),
-      toPubkey: new PublicKey(publicKeys![0]),
-      lamports: 0.1 * LAMPORTS_PER_SOL,
-    });
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.1 * LAMPORTS_PER_SOL
+  });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
-  console.log(transaction)
+  console.log(transaction);
+
   const res = await torus!.provider.request({
-    method : "send_transaction",
-    params : { message : transaction.serializeMessage().toString("hex")}
+    method: "send_transaction",
+    params: { message: transaction.serializeMessage().toString("hex") }
   })
   // const res = await torus.sendTransaction(tf);
   // const res = await torus!
@@ -56,23 +51,59 @@ const transfer = async () => {
 </script>
 
 <template>
-<<<<<<< HEAD
-  <div class="hello" v-if="!account">
-=======
-  <div class="hello">
-    <div v-if="pubkey" >Publickey : {{pubkey}}</div>
->>>>>>> 19f1e22 (add example ui to display key)
-    <button @click="login">Login</button>
-    <button @click="transfer">Transfer</button>
+  <div id="app">
+    <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
+    <div :style="{ marginTop: '20px' }">
+      <h4>Login and resets</h4>
+      <div v-if="pubkey">Publickey : {{ pubkey }}</div>
+      <button @click="login">Login</button>
+      <button @click="transfer">Transfer</button>
+    </div>
+    <div id="console">
+      <p></p>
+    </div>
   </div>
-  <div class="hello" v-else>
-    Logged in with {{ account }}
-    <button @click="changeProvider">Change Provider</button>
-  </div>
+  <div class="hello"></div>
 </template>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style>
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+}
+#console {
+  border: 1px solid black;
+  height: 80px;
+  left: 10em;
+  padding: 2px;
+  bottom: 10px;
+  position: absolute;
+  text-align: left;
+  width: calc(100% - 20px - 10em);
+  border-radius: 5px;
+}
+#console::before {
+  content: "Console :";
+  position: absolute;
+  top: -20px;
+  font-size: 12px;
+}
+#console > p {
+  margin: 0.5em;
+  word-wrap: break-word;
+}
+#font-italic {
+  font-style: italic;
+}
+button {
+  margin: 0 10px 10px 0;
+}
+
 h3 {
   margin: 40px 0 0;
 }
