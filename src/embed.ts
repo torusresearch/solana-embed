@@ -270,7 +270,7 @@ class Torus {
   private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
     log.info("setupWeb3 running");
     // setup background connection
-    const metamaskStream = new BasePostMessageStream({
+    const providerStream = new BasePostMessageStream({
       name: "embed_torus",
       target: "iframe_torus",
       targetWindow: this.torusIframe.contentWindow,
@@ -284,7 +284,7 @@ class Torus {
     });
 
     // compose the inPage provider
-    const inPageProvider = new TorusInPageProvider(metamaskStream, {});
+    const inPageProvider = new TorusInPageProvider(providerStream, {});
     const communicationProvider = new TorusCommunicationProvider(communicationStream, {});
 
     inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
@@ -322,9 +322,8 @@ class Torus {
     // Detects call to casper_requestAccounts in request & sendAsync and passes to login
     detectAccountRequestPrototypeModifier("request");
     detectAccountRequestPrototypeModifier("sendAsync");
+    detectAccountRequestPrototypeModifier("send");
 
-    // Work around for web3@1.0 deleting the bound `sendAsync` but not the unbound
-    // `sendAsync` method on the prototype, causing `this` reference issues with drizzle
     const proxiedInPageProvider = new Proxy(inPageProvider, {
       // straight up lie that we deleted the property so that it doesn't
       // throw an error in strict mode

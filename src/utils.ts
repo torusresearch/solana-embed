@@ -29,7 +29,7 @@ export function createErrorMiddleware(): JRPCMiddleware<unknown, unknown> {
       if (!error) {
         return done();
       }
-      log.error(`MetaMask - RPC Error: ${error.message}`, error);
+      log.error(`Torus - RPC Error: ${error.message}`, error);
       return done();
     });
   };
