@@ -3,7 +3,6 @@ import { JRPCRequest } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
-import { LOGIN_PROVIDER_TYPE } from "..";
 import BaseProvider from "./baseProvider";
 import configuration from "./config";
 import { documentReady, htmlToElement } from "./embedUtils";
@@ -11,6 +10,7 @@ import {
   BUTTON_POSITION,
   CommunicationProviderState,
   EMBED_TRANSLATION_ITEM,
+  LOGIN_PROVIDER_TYPE,
   ProviderOptions,
   RequestArguments,
   UnValidatedJsonRpcRequest,

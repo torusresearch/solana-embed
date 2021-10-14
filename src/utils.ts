@@ -2,7 +2,6 @@ import { JRPCMiddleware, SafeEventEmitter } from "@toruslabs/openlogin-jrpc";
 import { ethErrors } from "eth-rpc-errors";
 import { LogLevelDesc } from "loglevel";
 
-import { version } from "../package.json";
 import config from "./config";
 import log from "./loglevel";
 
@@ -60,8 +59,8 @@ export const getWindowId = (): string => Math.random().toString(36).slice(2);
 export const getTorusUrl = async (buildEnv: string): Promise<{ torusUrl: string; logLevel: LogLevelDesc }> => {
   let torusUrl: string;
   let logLevel: LogLevelDesc;
-  const versionUsed = version;
-  log.info("casper embed version used: ", versionUsed);
+  // const versionUsed = version;
+  // log.info("casper embed version used: ", versionUsed);
   switch (buildEnv) {
     case "testing":
       torusUrl = "https://casper-testing.tor.us";
