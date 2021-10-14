@@ -45,6 +45,28 @@ const transfer = async () => {
   });
   console.log(res);
 };
+const sign = async () => {
+  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
+
+  const TransactionInstruction = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.1 * LAMPORTS_PER_SOL
+  });
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  console.log(transaction);
+
+  const res = await torus!.provider.request({
+    method: "sign_transaction",
+    params: { message: transaction.serializeMessage().toString("hex") }
+  });
+  console.log(res);
+  const msg = Buffer.from(res, "hex");
+  const tx = Transaction.from(msg);
+  console.log(tx)
+};
+
 const debugConsole = async (text) => {
   document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
@@ -58,6 +80,7 @@ const debugConsole = async (text) => {
       <div v-if="pubkey">Publickey : {{ pubkey }}</div>
       <button @click="login">Login</button>
       <button @click="transfer">Transfer</button>
+      <button @click="sign">Sign</button>
     </div>
     <div id="console">
       <p></p>
