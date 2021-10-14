@@ -34,15 +34,13 @@ const baseConfig = {
   },
 };
 
-const babelLoaderWithPolyfills = {
+const babelLoader = {
   test: /\.(ts|js)x?$/,
   exclude: /(node_modules|bower_components)/,
   use: {
     loader: "babel-loader",
   },
 };
-
-const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
 
 const umdConfig = {
   ...baseConfig,

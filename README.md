@@ -23,9 +23,9 @@ Please refer to docs for API Reference available [here](https://docs.tor.us/wall
 
 This module is distributed in 3 formats
 
+- `esm` build `dist/torus.esm.js` is es6 format
 - `commonjs` build `dist/torus.cjs.js` in es5 format
 - `umd` build `dist/torus.umd.min.js` in es5 format without polyfilling corejs minified
-- `umd` build `dist/torus.polyfill.umd.min.js` in es5 format with polyfilling corejs minified
 
 By default, the appropriate format is used for your specified usecase
 You can use a different format (if you know what you're doing) by referencing the correct file
