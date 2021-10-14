@@ -19,14 +19,13 @@ onMounted(async () => {
   // torus.login();
 });
 
-let publicKeys: string[] | undefined;
 const login = async () => {
   console.log("login click");
   publicKeys = await torus?.login({});
   pubkey.value = publicKeys[0];
 
-  console.log("publicKeys", publicKeys)
-}
+  console.log("publicKeys", publicKeys);
+};
 
 const transfer = async () => {
   const conn = new Connection(clusterApiUrl("testnet"));
@@ -44,10 +43,12 @@ const transfer = async () => {
   const res = await torus!.provider.request({
     method: "send_transaction",
     params: { message: transaction.serializeMessage().toString("hex") }
-  })
-  // const res = await torus.sendTransaction(tf);
-  // const res = await torus!
-}
+  });
+  console.log(res);
+};
+const debugConsole = async (text) => {
+  document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+};
 </script>
 
 <template>
