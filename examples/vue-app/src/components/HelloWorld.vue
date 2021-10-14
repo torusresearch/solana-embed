@@ -5,18 +5,18 @@ import base58 from "bs58";
 import Torus from "@toruslabs/solana-embed";
 
 let torus: Torus | null = null;
-const pubkey = ref("");
+const conn = new Connection(clusterApiUrl("testnet"));
 let publicKeys: string[] | undefined;
+const pubkey = ref("");
 
 onMounted(async () => {
   torus = new Torus();
-  console.log("onMounted");
+  // console.log("onMounted");
   await torus.init({
     buildEnv: "development",
     showTorusButton: true
   });
-  console.log("finished initializing torus", torus);
-  // torus.login();
+  // console.log("finished initializing torus", torus);
 });
 
 const login = async () => {
@@ -28,7 +28,6 @@ const login = async () => {
 };
 
 const transfer = async () => {
-  const conn = new Connection(clusterApiUrl("testnet"));
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
 
@@ -68,7 +67,7 @@ const debugConsole = async (text) => {
 </template>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style>
+<style scoped>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

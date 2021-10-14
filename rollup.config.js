@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import typescript from "@rollup/plugin-typescript";
 import path from "path";
 import sourceMaps from "rollup-plugin-sourcemaps";
