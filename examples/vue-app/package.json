@@ -13,7 +13,7 @@
 >>>>>>> f08684a (feat: compilation issues)
   },
   "dependencies": {
-    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-1.0.0.tgz",
+    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-v1.0.0.tgz",
     "bs58": "^4.0.1",
     "core-js": "^3.8.3",
     "vue": "^3.2.6"
