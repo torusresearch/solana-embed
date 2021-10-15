@@ -3,6 +3,8 @@ import { onMounted, ref } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import base58 from "bs58";
 import Torus from "@toruslabs/solana-embed";
+import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
+
 
 let torus: Torus | null = null;
 const conn = new Connection(clusterApiUrl("testnet"));
@@ -27,10 +29,12 @@ const login = async () => {
   console.log("publicKeys", publicKeys);
 };
 
+const logout = async () => {
+  console.log("logout" );
+};
+
 const transfer = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
-
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
@@ -43,12 +47,10 @@ const transfer = async () => {
     method: "send_transaction",
     params: { message: transaction.serializeMessage().toString("hex") }
   });
-  console.log(res);
+  debugConsole(res);
 };
 const sign = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
-
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
@@ -65,10 +67,16 @@ const sign = async () => {
   const msg = Buffer.from(res, "hex");
   const tx = Transaction.from(msg);
   console.log(tx)
+  debugConsole ( JSON.stringify(tx));
 };
 
-const debugConsole = async (text) => {
-  document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+const changeProvider = async () => {
+  const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[CHAINS.SOLANA_MAINNET]);
+  // uiConsole("provider res", providerRes)
+}
+
+const debugConsole = async (text: string) => {
+  document.querySelector("#console > p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
 </script>
 
@@ -77,10 +85,17 @@ const debugConsole = async (text) => {
     <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
     <div :style="{ marginTop: '20px' }">
       <h4>Login and resets</h4>
+      <button v-if="!pubkey" @click="login">Login</button>
+      <!-- <button v-if="pubkey" @click="login">Logout</button> -->
       <div v-if="pubkey">Publickey : {{ pubkey }}</div>
-      <button @click="login">Login</button>
-      <button @click="transfer">Transfer</button>
-      <button @click="sign">Sign</button>
+      <div v-if="pubkey"> 
+        <!-- <h4>Torus Specific API</h4>
+        <button @click="changeProvider">Change Provider</button> -->
+        <h4>Blockchain Specific API</h4>
+        <button @click="sign">Sign</button>
+        <button @click="transfer">Transfer</button>
+      </div>
+
     </div>
     <div id="console">
       <p></p>
