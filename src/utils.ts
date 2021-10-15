@@ -92,7 +92,7 @@ export const NOOP = (): void => {
 export const FEATURES_PROVIDER_CHANGE_WINDOW = { height: 660, width: 375 };
 export const FEATURES_DEFAULT_WALLET_WINDOW = { height: 740, width: 1315 };
 export const FEATURES_DEFAULT_POPUP_WINDOW = { height: 700, width: 1200 };
-export const FEATURES_CONFIRM_WINDOW = { height: 700, width: 450 };
+export const FEATURES_CONFIRM_WINDOW = { height: 600, width: 400 };
 
 export function storageAvailable(type: "localStorage" | "sessionStorage"): boolean {
   let storage: Storage;

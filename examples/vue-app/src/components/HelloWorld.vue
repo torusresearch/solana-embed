@@ -42,12 +42,15 @@ const transfer = async () => {
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   console.log(transaction);
-
-  const res = await torus!.provider.request({
-    method: "send_transaction",
-    params: { message: transaction.serializeMessage().toString("hex") }
-  });
-  debugConsole(res);
+  try {
+      const res = await torus!.provider.request({
+        method: "send_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") }
+    });
+    debugConsole(res);
+  } catch (e) {
+    debugConsole(e as string );
+  }
 };
 const sign = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
@@ -59,15 +62,19 @@ const sign = async () => {
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   console.log(transaction);
 
-  const res = await torus!.provider.request({
-    method: "sign_transaction",
-    params: { message: transaction.serializeMessage().toString("hex") }
-  });
-  console.log(res);
-  const msg = Buffer.from(res, "hex");
-  const tx = Transaction.from(msg);
-  console.log(tx)
-  debugConsole ( JSON.stringify(tx));
+  try {
+    const res = await torus!.provider.request({
+      method: "sign_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") }
+    });
+    console.log(res);
+    const msg = Buffer.from(res, "hex");
+    const tx = Transaction.from(msg);
+    console.log(tx)
+    debugConsole ( JSON.stringify(tx));
+  } catch (e) {
+    debugConsole(e as string);
+  }
 };
 
 const changeProvider = async () => {
