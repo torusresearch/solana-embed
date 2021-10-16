@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import base58 from "bs58";
 import Torus from "@toruslabs/solana-embed";
+import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 
-let torus: Torus | null = null;
-const conn = new Connection(clusterApiUrl("testnet"));
+let torus: Torus;
+const conn = new Connection("https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/");
 let publicKeys: string[] | undefined;
 const pubkey = ref("");
 
@@ -14,7 +14,16 @@ onMounted(async () => {
   // console.log("onMounted");
   await torus.init({
     buildEnv: "development",
-    showTorusButton: true
+    showTorusButton: true,
+    network: {
+      blockExplorerUrl: "?cluster=testnet",
+      chainId: "0x2",
+      displayName: "Solana Testnet",
+      logo: "solana.svg",
+      rpcTarget: "https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/",
+      ticker: "SOL",
+      tickerName: "Solana Token",
+    }
   });
   // console.log("finished initializing torus", torus);
 });
@@ -22,15 +31,17 @@ onMounted(async () => {
 const login = async () => {
   console.log("login click");
   publicKeys = await torus?.login({});
-  pubkey.value = publicKeys[0];
+  pubkey.value = publicKeys ? publicKeys[0] : "";
 
   console.log("publicKeys", publicKeys);
 };
 
+const logout = async () => {
+  console.log("logout" );
+};
+
 const transfer = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
-
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
@@ -38,17 +49,18 @@ const transfer = async () => {
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   console.log(transaction);
-
-  const res = await torus!.provider.request({
-    method: "send_transaction",
-    params: { message: transaction.serializeMessage().toString("hex") }
-  });
-  console.log(res);
+  try {
+      const res = await torus.provider.request({
+        method: "send_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") }
+    });
+    debugConsole(res);
+  } catch (e) {
+    debugConsole(e as string );
+  }
 };
 const sign = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  // const transactionFee = ((await conn.getFeeCalculatorForBlockhash(blockhash)).value?.lamportsPerSignature || 0) / LAMPORTS;
-
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
@@ -57,18 +69,28 @@ const sign = async () => {
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   console.log(transaction);
 
-  const res = await torus!.provider.request({
-    method: "sign_transaction",
-    params: { message: transaction.serializeMessage().toString("hex") }
-  });
-  console.log(res);
-  const msg = Buffer.from(res, "hex");
-  const tx = Transaction.from(msg);
-  console.log(tx)
+  try {
+    const res = await torus.provider.request({
+      method: "sign_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") }
+    });
+    console.log("response after sign_transaction", res);
+    const msg = Buffer.from(res, "hex");
+    const tx = Transaction.from(msg);
+    // console.log(tx)
+    debugConsole ( JSON.stringify(tx));
+  } catch (e) {
+    debugConsole(e as string);
+  }
 };
 
-const debugConsole = async (text) => {
-  document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+const changeProvider = async () => {
+  const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[CHAINS.SOLANA_MAINNET]);
+  // uiConsole("provider res", providerRes)
+}
+
+const debugConsole = async (text: string) => {
+  document.querySelector("#console > p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
 </script>
 
@@ -77,10 +99,17 @@ const debugConsole = async (text) => {
     <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
     <div :style="{ marginTop: '20px' }">
       <h4>Login and resets</h4>
+      <button v-if="!pubkey" @click="login">Login</button>
+      <!-- <button v-if="pubkey" @click="login">Logout</button> -->
       <div v-if="pubkey">Publickey : {{ pubkey }}</div>
-      <button @click="login">Login</button>
-      <button @click="transfer">Transfer</button>
-      <button @click="sign">Sign</button>
+      <div v-if="pubkey"> 
+        <!-- <h4>Torus Specific API</h4>
+        <button @click="changeProvider">Change Provider</button> -->
+        <h4>Blockchain Specific API</h4>
+        <button @click="sign">Sign</button>
+        <button @click="transfer">Transfer</button>
+      </div>
+
     </div>
     <div id="console">
       <p></p>
@@ -109,6 +138,7 @@ const debugConsole = async (text) => {
   text-align: left;
   width: calc(100% - 20px - 10em);
   border-radius: 5px;
+  overflow: scroll;
 }
 #console::before {
   content: "Console :";
