@@ -47,7 +47,7 @@ jobs:
         run: npm run pack 
       
       - name: Install dependencies in the example
-        run: cd examples/vue-app && npm run install:local && npm 
+        run: cd examples/vue-app && npm run install:local && npm i
 
       # Upload to S3
       - name: sync s3
