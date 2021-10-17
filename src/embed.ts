@@ -1,4 +1,4 @@
-import { Transaction } from "@solana/web3.js";
+import { Message, Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
@@ -139,11 +139,7 @@ class Torus {
     );
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
-    // eslint-disable-next-line no-console
-    console.log(`torusurl : ${torusUrl}`);
     const handleSetup = async () => {
-      // eslint-disable-next-line no-console
-      console.log("setuo");
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
@@ -269,37 +265,48 @@ class Torus {
     this.communicationProvider.showTorusButton();
   }
 
-  async sendTransaction(transaction: Transaction): Promise<Transaction> {
+  async sendTransaction(transaction: Transaction): Promise<string> {
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
+      params: { message: transaction.serializeMessage().toString("hex") },
     })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
+    return response;
   }
 
   async signTransaction(transaction: Transaction): Promise<Transaction> {
     const response = (await this.provider.request({
       method: "sign_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
+      params: { message: transaction.serializeMessage().toString("hex") },
     })) as string;
 
-    const buf = base58.decode(response);
+    const buf = Buffer.from(response, "hex");
     const sendTx = Transaction.from(buf);
     return sendTx;
   }
 
-  async signAllTransaction(transaction: Transaction): Promise<Transaction> {
+  async signAllTransaction(transactions: Transaction[]): Promise<Transaction[]> {
+    transactions.forEach(async (tx) => {
+      const res = await this.signTransaction(tx);
+      return res;
+    });
+    return transactions;
+    // return Promise.all(t_promise);
+  }
+
+  async signMessage(message: Message): Promise<Uint8Array> {
+    const msg = message.serialize().toString("hex");
     const response = (await this.provider.request({
-      method: "sign_all_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
+      method: "sign_transaction",
+      params: {
+        message: msg,
+        dispaly: "hex",
+        // to remove
+        data: message.serialize(),
+      },
     })) as string;
 
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
+    const signature = Buffer.from(response, "hex");
+    return signature;
   }
 
   async connect(transaction: Transaction): Promise<Transaction> {
@@ -316,8 +323,6 @@ class Torus {
 
   /** @ignore */
   private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log("setupWeb3");
     log.info("setupWeb3 running");
     // setup background connection
     const providerStream = new BasePostMessageStream({
@@ -340,6 +345,7 @@ class Torus {
     inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
       const _payload = payload;
       if (!Array.isArray(_payload) && PROVIDER_UNSAFE_METHODS.includes(_payload.method)) {
+        if (!this.communicationProvider.isLoggedIn) throw new Error("User Not Logged In");
         const windowId = getWindowId();
         communicationProvider._handleWindow(windowId, {
           target: "_blank",
@@ -402,8 +408,6 @@ class Torus {
       deleteProperty: () => true,
     });
 
-    // eslint-disable-next-line no-console
-    console.log("debug : before await");
     this.provider = proxiedInPageProvider;
     this.communicationProvider = proxiedCommunicationProvider;
 
@@ -417,8 +421,6 @@ class Torus {
       }),
     ]);
     log.debug("Torus - injected provider");
-    // eslint-disable-next-line no-console
-    console.log("inject provider ");
   }
 
   async setProvider(params: NetworkInterface): Promise<void> {
