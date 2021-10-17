@@ -12,32 +12,36 @@ const pubkey = ref("");
 onMounted(async () => {
   torus = new Torus();
   // console.log("onMounted");
-  await torus.init({
-    buildEnv: "development",
-    showTorusButton: true,
-    network: {
-      blockExplorerUrl: "?cluster=testnet",
-      chainId: "0x2",
-      displayName: "Solana Testnet",
-      logo: "solana.svg",
-      rpcTarget: "https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/",
-      ticker: "SOL",
-      tickerName: "Solana Token",
-    }
-  });
+  try {
+    await torus.init({
+      buildEnv: "testing",
+      showTorusButton: true,
+      network: {
+        blockExplorerUrl: "?cluster=testnet",
+        chainId: "0x2",
+        displayName: "Solana Testnet",
+        logo: "solana.svg",
+        rpcTarget: "https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/",
+        ticker: "SOL",
+        tickerName: "Solana Token"
+      }
+    });
+  } catch (err) {
+    console.error(err);
+  }
   // console.log("finished initializing torus", torus);
 });
 
 const login = async () => {
   console.log("login click");
   publicKeys = await torus?.login({});
-  pubkey.value = publicKeys ? publicKeys[0] : "";
+  pubkey.value = publicKeys[0] || "";
 
   console.log("publicKeys", publicKeys);
 };
 
 const logout = async () => {
-  console.log("logout" );
+  console.log("logout");
 };
 
 const transfer = async () => {
@@ -50,13 +54,13 @@ const transfer = async () => {
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   console.log(transaction);
   try {
-      const res = await torus.provider.request({
-        method: "send_transaction",
+    const res = await torus.provider.request({
+      method: "send_transaction",
       params: { message: transaction.serializeMessage().toString("hex") }
     });
     debugConsole(res);
   } catch (e) {
-    debugConsole(e as string );
+    debugConsole(e as string);
   }
 };
 const sign = async () => {
@@ -78,7 +82,7 @@ const sign = async () => {
     const msg = Buffer.from(res, "hex");
     const tx = Transaction.from(msg);
     // console.log(tx)
-    debugConsole ( JSON.stringify(tx));
+    debugConsole(JSON.stringify(tx));
   } catch (e) {
     debugConsole(e as string);
   }
@@ -87,7 +91,7 @@ const sign = async () => {
 const changeProvider = async () => {
   const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[CHAINS.SOLANA_MAINNET]);
   // uiConsole("provider res", providerRes)
-}
+};
 
 const debugConsole = async (text: string) => {
   document.querySelector("#console > p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
@@ -102,14 +106,16 @@ const debugConsole = async (text: string) => {
       <button v-if="!pubkey" @click="login">Login</button>
       <!-- <button v-if="pubkey" @click="login">Logout</button> -->
       <div v-if="pubkey">Publickey : {{ pubkey }}</div>
-      <div v-if="pubkey"> 
+      <button @click="login">Login</button>
+      <button @click="transfer">Transfer</button>
+      <button @click="sign">Sign</button>
+      <div v-if="pubkey">
         <!-- <h4>Torus Specific API</h4>
         <button @click="changeProvider">Change Provider</button> -->
         <h4>Blockchain Specific API</h4>
         <button @click="sign">Sign</button>
         <button @click="transfer">Transfer</button>
       </div>
-
     </div>
     <div id="console">
       <p></p>

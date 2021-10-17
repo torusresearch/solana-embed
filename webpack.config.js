@@ -12,7 +12,7 @@ const { NODE_ENV = "production" } = process.env;
 const depsList = Object.keys(pkg.dependencies);
 
 const baseConfig = {
-  mode: NODE_ENV,
+  mode: NODE_ENV === 'production' ? NODE_ENV : "development",
   devtool: "source-map",
   entry: "./src/index.ts",
   target: "web",
