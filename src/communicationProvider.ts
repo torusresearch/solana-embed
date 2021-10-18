@@ -79,8 +79,10 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
     const notificationHandler = (payload: RequestArguments) => {
       const { method, params } = payload;
-      if (method === COMMUNICATION_NOTIFICATIONS.IFRAME_STATUS) this._displayIframe((params as Record<string, boolean>).isFullScreen);
-      else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
+      if (method === COMMUNICATION_NOTIFICATIONS.IFRAME_STATUS) {
+        const { isFullScreen, rid } = params as Record<string, unknown>;
+        this._displayIframe({ isFull: isFullScreen as boolean, rid: rid as string });
+      } else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
       } else if (method === COMMUNICATION_NOTIFICATIONS.CLOSE_WINDOW) {
@@ -291,7 +293,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     return logoUrl;
   }
 
-  _displayIframe(isFull = false): void {
+  _displayIframe({ isFull = false, rid = "" }: { isFull?: boolean; rid?: string } = {}): void {
     const style: Partial<CSSStyleDeclaration> = {};
     // set phase
     if (!isFull) {
@@ -338,7 +340,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     this._state.isIframeFullScreen = isFull;
     this.request<void>({
       method: COMMUNICATION_JRPC_METHODS.IFRAME_STATUS,
-      params: { isIframeFullScreen: isFull },
+      params: { isIFrameFullScreen: isFull, rid },
     });
   }
 

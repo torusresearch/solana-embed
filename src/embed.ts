@@ -200,7 +200,7 @@ class Torus {
         reqParams.windowId = getWindowId();
         this.communicationProvider._handleWindow(reqParams.windowId);
       } else {
-        this.communicationProvider._displayIframe(true);
+        this.communicationProvider._displayIframe({ isFull: true });
       }
       // If user is already logged in, we assume they have given access to the website
       const res = await new Promise((resolve, reject) => {
