@@ -9,6 +9,7 @@
     "install:local": "npm i ../../*.tgz"
   },
   "dependencies": {
+    "@solana/wallet-adapter-base": "0.6.0",
     "@solana/web3.js": "^1.29.2",
     "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-1.0.0.tgz",
     "bs58": "^4.0.1",

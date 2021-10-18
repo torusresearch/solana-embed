@@ -1,15 +1,18 @@
 <template>
-  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+  <HelloWorld msg="Welcome to Torus Solana Embed App"/>
+  <WalletTest msg="Solana Wallet Adapter Test"/>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import HelloWorld from './components/HelloWorld.vue';
+import WalletTest from './components/WalletTest.vue';
 
 export default defineComponent({
   name: 'App',
   components: {
-    HelloWorld
+    HelloWorld,
+    WalletTest,
   }
 });
 </script>

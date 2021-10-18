@@ -4,7 +4,7 @@ module.exports = {
   configureWebpack: {
     devtool: "source-map",
   },
-  // lintOnSave: false,
+  lintOnSave: false,
   devServer: {
     port: 3000
   },
