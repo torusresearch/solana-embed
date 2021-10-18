@@ -5,11 +5,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import HelloWorld from './components/HelloWorld.vue';
+import WalletTest from './components/WalletTest.vue';
 
 export default defineComponent({
   name: 'App',
   components: {
-    HelloWorld
+    HelloWorld,
+    WalletTest,
   }
 });
 </script>
