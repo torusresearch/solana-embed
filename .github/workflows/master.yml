@@ -53,7 +53,7 @@ jobs:
       - name: sync s3
         uses: jakejarvis/s3-sync-action@master
         env:
-          SOURCE_DIR: "/examples/vue-app/dist/"
+          SOURCE_DIR: "./examples/vue-app/dist"
           AWS_REGION: "us-east-1"
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_BETA }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
