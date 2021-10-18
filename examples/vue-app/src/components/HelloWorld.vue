@@ -84,7 +84,8 @@ const gaslessTransfer = async () => {
 
     debugConsole(res_tx);
   } catch (e) {
-    debugConsole(e as string);
+    log.error(e);
+    debugConsole(JSON.stringify(e));
   }
 };
 
