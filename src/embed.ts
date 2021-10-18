@@ -2,7 +2,6 @@ import { Message, Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
-import base58 from "bs58";
 
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
@@ -83,6 +82,11 @@ class Torus {
   communicationProvider: TorusCommunicationProvider;
 
   dappStorageKey: string;
+
+  get isLoggedIn(): boolean {
+    if (!this.communicationProvider) return false;
+    return this.communicationProvider.isLoggedIn;
+  }
 
   constructor({ modalZIndex = 99999 }: TorusCtorArgs = {}) {
     this.torusUrl = "";
@@ -265,60 +269,6 @@ class Torus {
     this.communicationProvider.showTorusButton();
   }
 
-  async sendTransaction(transaction: Transaction): Promise<string> {
-    const response = (await this.provider.request({
-      method: "send_transaction",
-      params: { message: transaction.serializeMessage().toString("hex") },
-    })) as string;
-    return response;
-  }
-
-  async signTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "sign_transaction",
-      params: { message: transaction.serializeMessage().toString("hex") },
-    })) as string;
-
-    const buf = Buffer.from(response, "hex");
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async signAllTransaction(transactions: Transaction[]): Promise<Transaction[]> {
-    transactions.forEach(async (tx) => {
-      const res = await this.signTransaction(tx);
-      return res;
-    });
-    return transactions;
-    // return Promise.all(t_promise);
-  }
-
-  async signMessage(message: Message): Promise<Uint8Array> {
-    const msg = message.serialize().toString("hex");
-    const response = (await this.provider.request({
-      method: "sign_transaction",
-      params: {
-        message: msg,
-        dispaly: "hex",
-        // to remove
-        data: message.serialize(),
-      },
-    })) as string;
-
-    const signature = Buffer.from(response, "hex");
-    return signature;
-  }
-
-  async connect(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "connect",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
   /** @ignore */
 
   /** @ignore */
@@ -469,6 +419,59 @@ class Torus {
     });
     return topupResponse;
   }
+
+  // Solana specific API
+  async sendTransaction(transaction: Transaction): Promise<string> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") },
+    })) as string;
+    return response;
+  }
+
+  async signTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "sign_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") },
+    })) as string;
+
+    const buf = Buffer.from(response, "hex");
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+    transactions.forEach(async (tx) => {
+      const res = await this.signTransaction(tx);
+      return res;
+    });
+    return transactions;
+    // return Promise.all(t_promise);
+  }
+
+  async signMessage(message: Message): Promise<Uint8Array> {
+    const msg = message.serialize().toString("hex");
+    const response = (await this.provider.request({
+      method: "sign_transaction",
+      params: {
+        message: msg,
+        dispaly: "hex",
+        // to remove
+        data: message.serialize(),
+      },
+    })) as string;
+
+    const signature = Buffer.from(response, "hex");
+    return signature;
+  }
+
+  // async connect(): Promise<boolean> {
+  //   const response = (await this.provider.request({
+  //     method: "connect",
+  //     params: {},
+  //   })) as boolean;
+  //   return response;
+  // }
 }
 
 export default Torus;

@@ -105,8 +105,6 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
       this._handleUnlockStateChanged({ accounts, isUnlocked });
       this._handleAccountsChanged(accounts);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.log("error : ", error);
       log.error("Torus: Failed to get initial state. Please report this bug.", error);
     } finally {
       log.info("initialized provider state");
