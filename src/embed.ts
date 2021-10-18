@@ -1,4 +1,4 @@
-import { Message, Transaction } from "@solana/web3.js";
+import { Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
@@ -449,20 +449,14 @@ class Torus {
     // return Promise.all(t_promise);
   }
 
-  async signMessage(message: Message): Promise<Uint8Array> {
-    const msg = message.serialize().toString("hex");
+  async signMessage(data: Uint8Array): Promise<Uint8Array> {
     const response = (await this.provider.request({
-      method: "sign_transaction",
+      method: "sign_message",
       params: {
-        message: msg,
-        dispaly: "hex",
-        // to remove
-        data: message.serialize(),
+        data,
       },
-    })) as string;
-
-    const signature = Buffer.from(response, "hex");
-    return signature;
+    })) as Uint8Array;
+    return response;
   }
 
   // async connect(): Promise<boolean> {

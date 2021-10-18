@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
-import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram,Message, Transaction } from "@solana/web3.js";
+import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram,Message, Transaction, Keypair } from "@solana/web3.js";
 import Torus from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
+import nacl from "tweetnacl";
+import log from "loglevel";
+
 
 let torus: Torus;
 const conn = new Connection("https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/");
@@ -63,25 +66,20 @@ const transfer = async () => {
   }
 };
 const signMessage = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  const TransactionInstruction = SystemProgram.transfer({
-    fromPubkey: new PublicKey(publicKeys![0]),
-    toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.1 * LAMPORTS_PER_SOL
-  });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
-  const msg = Message.from(transaction.serializeMessage() )
   try {
     // const res = await torus.provider.request({
     //   method: "sign_message",
-    //   params: { message : transaction.serializeMessage().toString("hex") }
+    //   params: { message : message, display: "utf8" }
     // });
     // const signature = Buffer.from(res, "hex");
     // debugConsole ( JSON.stringify(signature));
-    const res = await torus.signMessage(msg)
-    debugConsole(res);
+    let msg = Buffer.from("test message ", "utf8");
+    const res = await torus.signMessage(msg);
+    nacl.sign.detached.verify( msg, res, new PublicKey( publicKeys![0] ).toBytes() ) ;
+    debugConsole(JSON.stringify(res));
   } catch (e) {
-    debugConsole(e as string);
+    log.error(e);
+    debugConsole(JSON.stringify(e));
   }
 };
 
@@ -96,7 +94,7 @@ const signTransaction = async () => {
 
   try {
     const res = await torus.signTransaction(transaction)
-    debugConsole(res)
+    debugConsole(JSON.stringify(res) )
     // const res = await torus.provider.request({
     //   method: "sign_transaction",
     //   params: { message: transaction.serializeMessage().toString("hex") }
