@@ -104,11 +104,6 @@ const debugConsole = async (text: string) => {
     <div :style="{ marginTop: '20px' }">
       <h4>Login and resets</h4>
       <button v-if="!pubkey" @click="login">Login</button>
-      <!-- <button v-if="pubkey" @click="login">Logout</button> -->
-      <div v-if="pubkey">Publickey : {{ pubkey }}</div>
-      <button @click="login">Login</button>
-      <button @click="transfer">Transfer</button>
-      <button @click="sign">Sign</button>
       <div v-if="pubkey">
         <!-- <h4>Torus Specific API</h4>
         <button @click="changeProvider">Change Provider</button> -->

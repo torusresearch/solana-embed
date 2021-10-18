@@ -44,7 +44,7 @@ jobs:
         run: npm run build -- --mode testing
 
       - name: Pack
-        run: npm run pack 
+        run: npm pack 
       
       - name: Install dependencies in the example
         run: cd examples/vue-app && npm run install:local && npm i
