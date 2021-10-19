@@ -1,20 +1,20 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram,Message, Transaction } from "@solana/web3.js";
-import {TorusWalletAdapter, TorusAdapterConfig} from "../adapter";
-import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
-import { ProviderConfig } from "@toruslabs/base-controllers";
+import {TorusWalletAdapter } from "../adapter";
+import { TorusParams } from "@toruslabs/solana-embed";
+import nacl from "tweetnacl";
 
-const conn = new Connection("https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/");
+const rpcTarget : string ="https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/" ;
+const conn = new Connection(rpcTarget);
 let publicKeys: string[] | undefined;
 const pubkey = ref("");
 let wallet : TorusWalletAdapter;
-const rpcTarget : string ="https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/" ;
 
 onMounted(async () => {
   // console.log("onMounted");
 
-  const config : TorusAdapterConfig = {
+  const config : TorusParams = {
     buildEnv: "development",
     showTorusButton: true,
     network: {
@@ -39,7 +39,7 @@ const login = async () => {
 };
 
 const logout = async () => {
-  wallet.disconnect();
+  await wallet.disconnect();
   pubkey.value = "";
 };
 
@@ -56,21 +56,6 @@ const transfer = async () => {
     debugConsole(res);
   } catch (e) {
     debugConsole(e as string );
-  }
-};
-const signMessage = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  const TransactionInstruction = SystemProgram.transfer({
-    fromPubkey: new PublicKey(publicKeys![0]),
-    toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.1 * LAMPORTS_PER_SOL
-  });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
-  try {
-    const res = await wallet.signMessage(transaction.serializeMessage())
-    debugConsole(JSON.stringify(res));
-  } catch (e) {
-    debugConsole(e as string);
   }
 };
 
@@ -91,14 +76,25 @@ const signTransaction = async () => {
   }
 };
 
+const signMessage = async () => {
+  try {
+    const msg = Buffer.from("Testing Signing Message", "utf8")
+    const res = await wallet.signMessage(msg)
+    nacl.sign.detached.verify( msg, res, new PublicKey( publicKeys![0] ).toBytes() ) ;
+    debugConsole(JSON.stringify(res));
+  } catch (e) {
+    debugConsole(e as string);
+  }
+};
+
 const debugConsole = async (text: string) => {
-  document.querySelector("#console > p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+  document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
 </script>
 
 <template>
   <div id="app">
-    <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
+    <p class="font-italic">Note: This is a testing application for Torus Solana Wallet Adapter. Please open console for debugging.</p>
     <div :style="{ marginTop: '20px' }">
       <h4>Login and resets</h4>
       <button v-if="!pubkey" @click="login">Login</button>
@@ -113,9 +109,9 @@ const debugConsole = async (text: string) => {
         <button @click="signMessage">Sign Message</button>
       </div>
     </div>
-    <div id="console">
+    <!-- <div id="console">
       <p></p>
-    </div>
+    </div> -->
   </div>
   <div class="hello"></div>
 </template>

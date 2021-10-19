@@ -133,7 +133,7 @@ export class TorusWalletAdapter extends BaseMessageSignerWalletAdapter {
             this._torus = null;
             this._publicKey = null;
             try {
-                if (wallet.isConnected)
+                if (wallet.isLoggedIn)
                     await wallet.cleanUp();
             } catch (error: any) {
                 this.emit('error', new WalletDisconnectionError(error?.message, error));
@@ -180,8 +180,7 @@ export class TorusWalletAdapter extends BaseMessageSignerWalletAdapter {
             if (!wallet) throw new WalletNotConnectedError();
 
             try {
-                const msg = Message.from(message)
-                const signature = await wallet.signMessage(msg);
+                const signature = await wallet.signMessage(message);
                 return Uint8Array.from(signature);
             } catch (error: any) {
                 throw new WalletSignTransactionError(error?.message, error);

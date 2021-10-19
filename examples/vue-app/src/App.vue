@@ -1,5 +1,6 @@
 <template>
-  <HelloWorld/>
+  <HelloWorld />
+  <WalletTest />
 </template>
 
 <script lang="ts">
