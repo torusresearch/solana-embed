@@ -1,6 +1,6 @@
 <template>
-  <HelloWorld msg="Welcome to Torus Solana Embed App"/>
-  <WalletTest msg="Solana Wallet Adapter Test"/>
+  <HelloWorld />
+  <WalletTest />
 </template>
 
 <script lang="ts">
