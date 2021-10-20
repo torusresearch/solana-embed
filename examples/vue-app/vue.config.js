@@ -3,6 +3,9 @@ const { ProvidePlugin } = require("webpack");
 
 module.exports = {
   transpileDependencies: true,
+  devServer: {
+    port: 3000
+  },
   configureWebpack: (config) => {
     config.resolve.fallback = {
       crypto: require.resolve("crypto-browserify"),
