@@ -17,7 +17,7 @@ onMounted(async () => {
   torus = new Torus();
   // console.log("onMounted");
   await torus.init({
-    buildEnv: "development",
+    buildEnv: "testing", // do not change this, use dev for local
     showTorusButton: true,
     network: {
       blockExplorerUrl: "?cluster=testnet",
