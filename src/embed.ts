@@ -2,7 +2,6 @@ import { Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
-import base58 from "bs58";
 
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
@@ -84,6 +83,11 @@ class Torus {
 
   dappStorageKey: string;
 
+  get isLoggedIn(): boolean {
+    if (!this.communicationProvider) return false;
+    return this.communicationProvider.isLoggedIn;
+  }
+
   constructor({ modalZIndex = 99999 }: TorusCtorArgs = {}) {
     this.torusUrl = "";
     this.isInitialized = false; // init done
@@ -139,11 +143,7 @@ class Torus {
     );
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
-    // eslint-disable-next-line no-console
-    console.log(`torusurl : ${torusUrl}`);
     const handleSetup = async () => {
-      // eslint-disable-next-line no-console
-      console.log("setuo");
       window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
@@ -200,7 +200,7 @@ class Torus {
         reqParams.windowId = getWindowId();
         this.communicationProvider._handleWindow(reqParams.windowId);
       } else {
-        this.communicationProvider._displayIframe(true);
+        this.communicationProvider._displayIframe({ isFull: true });
       }
       // If user is already logged in, we assume they have given access to the website
       const res = await new Promise((resolve, reject) => {
@@ -269,55 +269,10 @@ class Torus {
     this.communicationProvider.showTorusButton();
   }
 
-  async sendTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "send_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async signTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "sign_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async signAllTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "sign_all_transaction",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
-
-  async connect(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
-      method: "connect",
-      params: { message: base58.encode(transaction.serializeMessage()) },
-    })) as string;
-
-    const buf = base58.decode(response);
-    const sendTx = Transaction.from(buf);
-    return sendTx;
-  }
   /** @ignore */
 
   /** @ignore */
   private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log("setupWeb3");
     log.info("setupWeb3 running");
     // setup background connection
     const providerStream = new BasePostMessageStream({
@@ -340,6 +295,7 @@ class Torus {
     inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
       const _payload = payload;
       if (!Array.isArray(_payload) && PROVIDER_UNSAFE_METHODS.includes(_payload.method)) {
+        if (!this.communicationProvider.isLoggedIn) throw new Error("User Not Logged In");
         const windowId = getWindowId();
         communicationProvider._handleWindow(windowId, {
           target: "_blank",
@@ -402,8 +358,6 @@ class Torus {
       deleteProperty: () => true,
     });
 
-    // eslint-disable-next-line no-console
-    console.log("debug : before await");
     this.provider = proxiedInPageProvider;
     this.communicationProvider = proxiedCommunicationProvider;
 
@@ -417,8 +371,6 @@ class Torus {
       }),
     ]);
     log.debug("Torus - injected provider");
-    // eslint-disable-next-line no-console
-    console.log("inject provider ");
   }
 
   async setProvider(params: NetworkInterface): Promise<void> {
@@ -467,6 +419,53 @@ class Torus {
     });
     return topupResponse;
   }
+
+  // Solana specific API
+  async sendTransaction(transaction: Transaction): Promise<string> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") },
+    })) as string;
+    return response;
+  }
+
+  async signTransaction(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.provider.request({
+      method: "sign_transaction",
+      params: { message: transaction.serializeMessage().toString("hex") },
+    })) as string;
+
+    const buf = Buffer.from(response, "hex");
+    const sendTx = Transaction.from(buf);
+    return sendTx;
+  }
+
+  async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
+    transactions.forEach(async (tx) => {
+      const res = await this.signTransaction(tx);
+      return res;
+    });
+    return transactions;
+    // return Promise.all(t_promise);
+  }
+
+  async signMessage(data: Uint8Array): Promise<Uint8Array> {
+    const response = (await this.provider.request({
+      method: "sign_message",
+      params: {
+        data,
+      },
+    })) as Uint8Array;
+    return response;
+  }
+
+  // async connect(): Promise<boolean> {
+  //   const response = (await this.provider.request({
+  //     method: "connect",
+  //     params: {},
+  //   })) as boolean;
+  //   return response;
+  // }
 }
 
 export default Torus;
