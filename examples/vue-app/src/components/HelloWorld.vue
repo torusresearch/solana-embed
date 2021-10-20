@@ -61,6 +61,23 @@ const transfer = async () => {
   }
 };
 
+const gaslessTransfer = async () => {
+  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  const TransactionInstruction = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.1 * LAMPORTS_PER_SOL
+  });
+  try {
+    const res = await torus?.getGaslessPublicKey("usdc");
+    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res) }).add(TransactionInstruction);
+    const res_tx = await torus.sendTransaction(transaction);
+
+    debugConsole(res_tx);
+  } catch (e) {
+    debugConsole(e as string );
+  }
+};
 const signTransaction = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
@@ -120,6 +137,7 @@ const debugConsole = async (text: string) => {
         <button @click="changeProvider">Change Provider</button> -->
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
+        <button @click="gaslessTransfer">Send Gasless Transaction</button>
         <button @click="signTransaction">Sign Transaction</button>
         <button @click="signMessage">Sign Message</button>
       </div>
