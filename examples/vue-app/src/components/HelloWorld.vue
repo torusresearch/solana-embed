@@ -8,31 +8,27 @@ import log from "loglevel";
 
 
 let torus: Torus;
-const conn = new Connection("https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/");
+const rpcTarget : string ="https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/" ;
+const conn = new Connection(rpcTarget);
 let publicKeys: string[] | undefined;
 const pubkey = ref("");
 
 onMounted(async () => {
   torus = new Torus();
   // console.log("onMounted");
-  try {
-    await torus.init({
-      buildEnv: "testing",
-      showTorusButton: true,
-      network: {
-        blockExplorerUrl: "?cluster=testnet",
-        chainId: "0x2",
-        displayName: "Solana Testnet",
-        logo: "solana.svg",
-        rpcTarget: "https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/",
-        ticker: "SOL",
-        tickerName: "Solana Token"
-      }
-    });
-  } catch (err) {
-    console.error(err);
-  }
-  // console.log("finished initializing torus", torus);
+  await torus.init({
+    buildEnv: "development",
+    showTorusButton: true,
+    network: {
+      blockExplorerUrl: "?cluster=testnet",
+      chainId: "0x2",
+      displayName: "Solana Testnet",
+      logo: "solana.svg",
+      rpcTarget: rpcTarget,
+      ticker: "SOL",
+      tickerName: "Solana Token",
+    }
+  });
 });
 
 const login = async () => {
@@ -54,32 +50,14 @@ const transfer = async () => {
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   try {
-      // const res = await torus.provider.request({
-      //   method: "send_transaction",
-      //   params: { message: transaction.serializeMessage().toString("hex") }
-      // });
-      const res = await torus?.sendTransaction(transaction)
-
+    const res = await torus?.sendTransaction(transaction)
     debugConsole(res);
-  } catch (e) {
-    debugConsole(e as string);
-  }
-};
-const signMessage = async () => {
-  try {
     // const res = await torus.provider.request({
-    //   method: "sign_message",
-    //   params: { message : message, display: "utf8" }
+    //   method: "send_transaction",
+    //   params: { message: transaction.serializeMessage().toString("hex") }
     // });
-    // const signature = Buffer.from(res, "hex");
-    // debugConsole ( JSON.stringify(signature));
-    let msg = Buffer.from("test message ", "utf8");
-    const res = await torus.signMessage(msg);
-    nacl.sign.detached.verify( msg, res, new PublicKey( publicKeys![0] ).toBytes() ) ;
-    debugConsole(JSON.stringify(res));
   } catch (e) {
-    log.error(e);
-    debugConsole(JSON.stringify(e));
+    debugConsole(e as string );
   }
 };
 
@@ -106,13 +84,26 @@ const signTransaction = async () => {
     debugConsole(e as string);
   }
 };
+
+const signMessage = async () => {
+  try {
+    let msg = Buffer.from("Test Signing Message ", "utf8");
+    const res = await torus.signMessage(msg);
+    nacl.sign.detached.verify( msg, res, new PublicKey( publicKeys![0] ).toBytes() ) ;
+    debugConsole(JSON.stringify(res));
+  } catch (e) {
+    log.error(e);
+    debugConsole(JSON.stringify(e));
+  }
+};
+
 const changeProvider = async () => {
   const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[CHAINS.SOLANA_MAINNET]);
   // uiConsole("provider res", providerRes)
 };
 
 const debugConsole = async (text: string) => {
-  document.querySelector("#console > p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+  document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
 </script>
 
