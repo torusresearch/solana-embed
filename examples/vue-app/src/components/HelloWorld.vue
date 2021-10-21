@@ -78,6 +78,7 @@ const gaslessTransfer = async () => {
     debugConsole(e as string );
   }
 };
+
 const signTransaction = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
@@ -97,6 +98,26 @@ const signTransaction = async () => {
     // const msg = Buffer.from(res, "hex");
     // const tx = Transaction.from(msg);
     // debugConsole ( JSON.stringify(tx));
+  } catch (e) {
+    debugConsole(e as string);
+  }
+};
+
+// MAKE SURE browser allow pop up from this site
+const signAllTransaction = async () => {
+  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  const TransactionInstruction = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.1 * LAMPORTS_PER_SOL
+  });
+  try {    
+    const gasless_pk = await torus?.getGaslessPublicKey("usdc");
+    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+    let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk) }).add(TransactionInstruction);
+
+    const res = await torus.signAllTransactions([transaction2, transaction])
+    debugConsole(JSON.stringify(res) )
   } catch (e) {
     debugConsole(e as string);
   }
@@ -139,6 +160,7 @@ const debugConsole = async (text: string) => {
         <button @click="transfer">Send Transaction</button>
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
         <button @click="signTransaction">Sign Transaction</button>
+        <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="signMessage">Sign Message</button>
       </div>
     </div>
