@@ -220,7 +220,7 @@ class Torus {
       log.error("login failed", error);
       throw error;
     } finally {
-      if (this.communicationProvider.isIframeFullScreen) this.communicationProvider._displayIframe();
+      if (this.communicationProvider.isIFrameFullScreen) this.communicationProvider._displayIframe();
     }
   }
 
