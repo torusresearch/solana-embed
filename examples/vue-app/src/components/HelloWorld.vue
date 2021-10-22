@@ -68,7 +68,7 @@ const gaslessTransfer = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
-    toPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey("D2LtZtYTj6Aep84DGmFiUiNCgcz2J8HvhV4qortTx3mM"),
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
   try {
