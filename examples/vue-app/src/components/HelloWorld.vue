@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
-import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
@@ -8,9 +8,9 @@ import log from "loglevel";
 
 
 let torus: Torus;
-let conn :Connection; 
+let conn: Connection;
 let publicKeys: string[] | undefined;
-const network= ref("");
+const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
 
@@ -22,14 +22,22 @@ const login = async () => {
 
   // console.log("onMounted");
   await torus.init({
-    buildEnv: buildEnv.value, 
+    buildEnv: buildEnv.value,
     showTorusButton: true,
-
+    network: {
+      blockExplorerUrl: "?cluster=testnet",
+      chainId: "0x2",
+      displayName: "Solana Testnet",
+      logo: "solana.svg",
+      rpcTarget: clusterApiUrl("testnet"),
+      ticker: "SOL",
+      tickerName: "Solana Token"
+    }
   });
   const target_network = await torus.provider.request({
-    method : "solana_provider_config",
-    params :[]
-  }) as { rpcTarget:string, displayName: string}
+    method: "solana_provider_config",
+    params: []
+  }) as { rpcTarget: string, displayName: string }
   console.log(target_network)
   network.value = target_network.displayName
   conn = new Connection(target_network?.rpcTarget)
@@ -60,7 +68,7 @@ const transfer = async () => {
     //   params: { message: transaction.serializeMessage().toString("hex") }
     // });
   } catch (e) {
-    debugConsole(e as string );
+    debugConsole(e as string);
   }
 };
 
@@ -78,7 +86,7 @@ const gaslessTransfer = async () => {
 
     debugConsole(res_tx);
   } catch (e) {
-    debugConsole(e as string );
+    debugConsole(e as string);
   }
 };
 
@@ -93,7 +101,7 @@ const signTransaction = async () => {
 
   try {
     const res = await torus.signTransaction(transaction)
-    debugConsole(JSON.stringify(res) )
+    debugConsole(JSON.stringify(res))
     // const res = await torus.provider.request({
     //   method: "sign_transaction",
     //   params: { message: transaction.serializeMessage().toString("hex") }
@@ -114,13 +122,13 @@ const signAllTransaction = async () => {
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
-  try {    
+  try {
     const gasless_pk = await torus?.getGaslessPublicKey("usdc");
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
     let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk) }).add(TransactionInstruction);
 
     const res = await torus.signAllTransactions([transaction2, transaction])
-    debugConsole(JSON.stringify(res) )
+    debugConsole(JSON.stringify(res))
   } catch (e) {
     debugConsole(e as string);
   }
@@ -130,7 +138,7 @@ const signMessage = async () => {
   try {
     let msg = Buffer.from("Test Signing Message ", "utf8");
     const res = await torus.signMessage(msg);
-    nacl.sign.detached.verify( msg, res, new PublicKey( publicKeys![0] ).toBytes() ) ;
+    nacl.sign.detached.verify(msg, res, new PublicKey(publicKeys![0]).toBytes());
     debugConsole(JSON.stringify(res));
   } catch (e) {
     log.error(e);
@@ -157,7 +165,7 @@ const debugConsole = async (text: string) => {
         Build Environment :
         <i>{{ buildEnv }}</i>
       </p>
-      <p v-if="network">Solana Network : {{network}}</p>
+      <p v-if="network">Solana Network : {{ network }}</p>
       <div v-if="pubkey === ''">
         <select name="buildEnv" v-model="buildEnv">
           <option value="production">Production</option>
@@ -169,9 +177,9 @@ const debugConsole = async (text: string) => {
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
       <div v-if="pubkey">Publickey : {{ pubkey }}</div>
-      <div v-if="pubkey"> 
+      <div v-if="pubkey">
         <!-- <h4>Torus Specific API</h4>
-        <button @click="changeProvider">Change Provider</button> -->
+        <button @click="changeProvider">Change Provider</button>-->
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
