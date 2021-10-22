@@ -38,4 +38,4 @@ server.js
 .prettierignore
 .prettierrc.yaml
 .github
-toruslabs-casper-embed*
+toruslabs-solana-embed*
