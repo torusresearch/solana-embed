@@ -265,7 +265,7 @@ export interface CommunicationProviderState extends BaseProviderState {
   isLoggedIn: boolean;
   torusWidgetVisibility: boolean;
   currentLoginProvider: LOGIN_PROVIDER_TYPE;
-  isIframeFullScreen: boolean;
+  isIFrameFullScreen: boolean;
 }
 
 export type Maybe<T> = Partial<T> | T | null | undefined;

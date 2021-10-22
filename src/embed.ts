@@ -220,7 +220,7 @@ class Torus {
       log.error("login failed", error);
       throw error;
     } finally {
-      if (this.communicationProvider.isIframeFullScreen) this.communicationProvider._displayIframe();
+      if (this.communicationProvider.isIFrameFullScreen) this.communicationProvider._displayIframe();
     }
   }
 
@@ -441,12 +441,12 @@ class Torus {
   }
 
   async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    transactions.forEach(async (tx) => {
-      const res = await this.signTransaction(tx);
-      return res;
-    });
-    return transactions;
-    // return Promise.all(t_promise);
+    const signed_transactions: Transaction[] = [];
+    for (const transaction of transactions) {
+      const res = await this.signTransaction(transaction);
+      signed_transactions.push(res);
+    }
+    return signed_transactions;
   }
 
   async signMessage(data: Uint8Array): Promise<Uint8Array> {
@@ -456,6 +456,16 @@ class Torus {
         data,
       },
     })) as Uint8Array;
+    return response;
+  }
+
+  async getGaslessPublicKey(relay: string): Promise<string> {
+    const response = (await this.provider.request({
+      method: "get_gasless_public_key",
+      params: {
+        relay,
+      },
+    })) as string;
     return response;
   }
 
