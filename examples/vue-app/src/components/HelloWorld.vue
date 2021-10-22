@@ -1,37 +1,40 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
 import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import Torus from "@toruslabs/solana-embed";
+import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
 
 
 let torus: Torus;
-const rpcTarget = "https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/";
-const conn = new Connection(rpcTarget);
+let conn :Connection; 
 let publicKeys: string[] | undefined;
+const network= ref("");
 const pubkey = ref("");
+const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
 
-onMounted(async () => {
-  torus = new Torus();
-  // console.log("onMounted");
-  await torus.init({
-    buildEnv: "testing", // do not change this, use dev for local
-    showTorusButton: true,
-    network: {
-      blockExplorerUrl: "?cluster=testnet",
-      chainId: "0x2",
-      displayName: "Solana Testnet",
-      logo: "solana.svg",
-      rpcTarget: rpcTarget,
-      ticker: "SOL",
-      tickerName: "Solana Token",
-    }
-  });
-});
 
 const login = async () => {
+  torus = new Torus();
+  (window as any).torus = torus;
+  // torus.cleanUp();
+
+  // console.log("onMounted");
+  await torus.init({
+    buildEnv: buildEnv.value, 
+    showTorusButton: true,
+
+  });
+  const target_network = await torus.provider.request({
+    method : "solana_provider_config",
+    params :[]
+  }) as { rpcTarget:string, displayName: string}
+  console.log(target_network)
+  network.value = target_network.displayName
+  conn = new Connection(target_network?.rpcTarget)
+
+  console.log(target_network)
   publicKeys = await torus?.login({});
   pubkey.value = publicKeys ? publicKeys[0] : "";
 };
@@ -150,7 +153,20 @@ const debugConsole = async (text: string) => {
     <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
     <div :style="{ marginTop: '20px' }">
       <h4>Login and resets</h4>
-      <button v-if="!pubkey" @click="login">Login</button>
+      <p>
+        Build Environment :
+        <i>{{ buildEnv }}</i>
+      </p>
+      <p v-if="network">Solana Network : {{network}}</p>
+      <div v-if="pubkey === ''">
+        <select name="buildEnv" v-model="buildEnv">
+          <option value="production">Production</option>
+          <option selected value="testing">Testing</option>
+          <option value="development">Development</option>
+        </select>
+        <button @click="login">Login</button>
+      </div>
+      <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
       <div v-if="pubkey">Publickey : {{ pubkey }}</div>
       <div v-if="pubkey"> 
