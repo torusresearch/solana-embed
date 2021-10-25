@@ -78,7 +78,7 @@ const gaslessTransfer = async () => {
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
   try {
-    const res = await torus?.getGaslessPublicKey("usdc");
+    const res = await torus?.getGaslessPublicKey("torus");
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res) }).add(TransactionInstruction);
     const res_tx = await torus.sendTransaction(transaction);
 
@@ -121,7 +121,7 @@ const signAllTransaction = async () => {
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
   try {
-    const gasless_pk = await torus?.getGaslessPublicKey("usdc");
+    const gasless_pk = await torus?.getGaslessPublicKey("torus");
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
     let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk) }).add(TransactionInstruction);
 
