@@ -20,7 +20,6 @@ const login = async () => {
   (window as any).torus = torus;
   // torus.cleanUp();
 
-  // console.log("onMounted");
   await torus.init({
     buildEnv: buildEnv.value,
     showTorusButton: true,
@@ -42,7 +41,6 @@ const login = async () => {
   network.value = target_network.displayName
   conn = new Connection(target_network?.rpcTarget)
 
-  console.log(target_network)
   publicKeys = await torus?.login({});
   pubkey.value = publicKeys ? publicKeys[0] : "";
 };
@@ -147,8 +145,10 @@ const signMessage = async () => {
 };
 
 const changeProvider = async () => {
-  const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[CHAINS.SOLANA_MAINNET]);
-  // uiConsole("provider res", providerRes)
+  const toNetwork = network.value === SUPPORTED_NETWORKS["mainnet"].displayName ? "testnet" : "mainnet"
+  const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[toNetwork]);
+  network.value = SUPPORTED_NETWORKS[toNetwork].displayName 
+  conn = new Connection(SUPPORTED_NETWORKS[toNetwork].rpcTarget);
 };
 
 const debugConsole = async (text: string) => {
@@ -166,6 +166,7 @@ const debugConsole = async (text: string) => {
         <i>{{ buildEnv }}</i>
       </p>
       <p v-if="network">Solana Network : {{ network }}</p>
+      <p v-if="pubkey">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
         <select name="buildEnv" v-model="buildEnv">
           <option value="production">Production</option>
@@ -176,10 +177,9 @@ const debugConsole = async (text: string) => {
       </div>
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
-      <div v-if="pubkey">Publickey : {{ pubkey }}</div>
-      <div v-if="pubkey">
-        <!-- <h4>Torus Specific API</h4>
-        <button @click="changeProvider">Change Provider</button>-->
+      <div v-if="pubkey"> 
+        <h4>Torus Specific API</h4>
+        <button @click="changeProvider">Change Provider</button>
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
