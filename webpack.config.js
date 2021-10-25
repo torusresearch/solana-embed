@@ -13,7 +13,7 @@ const depsList = Object.keys(pkg.dependencies);
 
 const baseConfig = {
   mode: NODE_ENV === 'production' ? NODE_ENV : "development",
-  devtool: "source-map",
+  devtool:  NODE_ENV === 'production' ? "none" : "source-map",
   entry: "./src/index.ts",
   target: "web",
   output: {
