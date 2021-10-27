@@ -459,12 +459,10 @@ class Torus {
     return response;
   }
 
-  async getGaslessPublicKey(relay: string): Promise<string> {
+  async getGaslessPublicKey(): Promise<string> {
     const response = (await this.provider.request({
       method: "get_gasless_public_key",
-      params: {
-        relay,
-      },
+      params: [],
     })) as string;
     return response;
   }
