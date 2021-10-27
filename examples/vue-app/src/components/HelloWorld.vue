@@ -13,7 +13,7 @@ let publicKeys: string[] | undefined;
 const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
-
+const showButton = ref(false);
 
 const login = async () => {
   torus = new Torus();
@@ -22,7 +22,7 @@ const login = async () => {
 
   await torus.init({
     buildEnv: buildEnv.value,
-    showTorusButton: true,
+    showTorusButton: showButton.value,
     network: {
       blockExplorerUrl: "?cluster=testnet",
       chainId: "0x2",
@@ -78,7 +78,7 @@ const gaslessTransfer = async () => {
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
   try {
-    const res = await torus?.getGaslessPublicKey("torus");
+    const res = await torus?.getGaslessPublicKey();
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res) }).add(TransactionInstruction);
     const res_tx = await torus.sendTransaction(transaction);
 
@@ -121,7 +121,7 @@ const signAllTransaction = async () => {
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
   try {
-    const gasless_pk = await torus?.getGaslessPublicKey("torus");
+    const gasless_pk = await torus?.getGaslessPublicKey();
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
     let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk) }).add(TransactionInstruction);
 
@@ -151,6 +151,22 @@ const changeProvider = async () => {
   conn = new Connection(SUPPORTED_NETWORKS[toNetwork].rpcTarget);
 };
 
+const getUserInfo = async () =>{
+  const info = await torus.getUserInfo();
+  debugConsole(JSON.stringify(info));
+}
+
+const toggleButton= async () =>{
+  if (showButton.value) {
+    await torus.hideTorusButton();
+    showButton.value = false;
+  }else {
+    await torus.showTorusButton();
+    showButton.value = true
+  }
+  debugConsole(`${showButton.value?"show button" : "hide button"}`)
+}
+
 const debugConsole = async (text: string) => {
   document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
@@ -179,7 +195,9 @@ const debugConsole = async (text: string) => {
       <button v-if="pubkey" @click="logout">Logout</button>
       <div v-if="pubkey"> 
         <h4>Torus Specific API</h4>
+        <button @click="getUserInfo">Get UserInfo</button>
         <button @click="changeProvider">Change Provider</button>
+        <button @click="toggleButton">Toggle Show</button>
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
