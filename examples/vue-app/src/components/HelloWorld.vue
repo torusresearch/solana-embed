@@ -50,7 +50,7 @@ const logout = async () => {
   pubkey.value = "";
 };
 
-const transfer = async () => {
+const sendTransaction = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
@@ -100,7 +100,7 @@ const signTransaction = async () => {
     newAuthorizedPubkey :new PublicKey(publicKeys![0]),
     noncePubkey : new PublicKey(publicKeys![0]),
   })
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction).add(ti2);
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction)
 
   try {
     const res = await torus.signTransaction(transaction)
@@ -149,7 +149,7 @@ const signMessage = async () => {
   }
 };
 
-const token_tx = async() => {
+const tokenTransaction = async() => {
   try {
     // let tkn = new Token(conn, new PublicKey(publicKeys![0]), TOKEN_PROGRAM_ID, );
     const blockhash = await conn.getRecentBlockhash("finalized")
@@ -165,6 +165,7 @@ const token_tx = async() => {
     debugConsole(JSON.stringify(e))
   }
 }
+
 const changeProvider = async () => {
   const toNetwork = network.value === SUPPORTED_NETWORKS["mainnet"].displayName ? "testnet" : "mainnet"
   const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[toNetwork]);
@@ -220,12 +221,12 @@ const debugConsole = async (text: string) => {
         <button @click="changeProvider">Change Provider</button>
         <button @click="toggleButton">Toggle Show</button>
         <h4>Blockchain Specific API</h4>
-        <button @click="transfer">Send Transaction</button>
+        <button @click="sendTransaction">Send Transaction</button>
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
         <button @click="signTransaction">Sign Transaction</button>
         <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="signMessage">Sign Message</button>
-        <button @click="token_tx">Token Transaction</button>
+        <button @click="tokenTransaction">Token Transaction</button>
       </div>
     </div>
     <div id="console">
