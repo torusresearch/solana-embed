@@ -9,6 +9,8 @@
     "install:local": "npm i ../../*.tgz"
   },
   "dependencies": {
+    "@solana/spl-token": "^0.1.8",
+    "@solana/spl-token-registry": "^0.2.287",
     "@solana/web3.js": "^1.29.2",
     "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-1.0.0.tgz",
     "bs58": "^4.0.1",

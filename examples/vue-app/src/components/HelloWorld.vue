@@ -5,7 +5,7 @@ import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
-
+import spl, { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 
 let torus: Torus;
 let conn: Connection;
@@ -95,7 +95,12 @@ const signTransaction = async () => {
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.1 * LAMPORTS_PER_SOL
   });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  const ti2 = SystemProgram.nonceAuthorize({
+    authorizedPubkey :new PublicKey(publicKeys![0]), 
+    newAuthorizedPubkey :new PublicKey(publicKeys![0]),
+    noncePubkey : new PublicKey(publicKeys![0]),
+  })
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction).add(ti2);
 
   try {
     const res = await torus.signTransaction(transaction)
@@ -144,6 +149,22 @@ const signMessage = async () => {
   }
 };
 
+const token_tx = async() => {
+  try {
+    // let tkn = new Token(conn, new PublicKey(publicKeys![0]), TOKEN_PROGRAM_ID, );
+    const blockhash = await conn.getRecentBlockhash("finalized")
+    let approve = Token.createApproveInstruction( TOKEN_PROGRAM_ID, new PublicKey(publicKeys![0]),new PublicKey(publicKeys![0]),new PublicKey(publicKeys![0]), [], 1);
+    let cmint = Token.createMintToInstruction(TOKEN_PROGRAM_ID, new PublicKey(publicKeys![0]),new PublicKey(publicKeys![0]),new PublicKey(publicKeys![0]), [], 1)
+    let initAcc = Token.createInitAccountInstruction(new PublicKey(publicKeys![0]), new PublicKey(publicKeys![0]),new PublicKey(publicKeys![0]),new PublicKey(publicKeys![0]))
+    let tx = new Transaction({recentBlockhash:blockhash.blockhash, feePayer: new PublicKey(publicKeys![0])}).add(approve).add(cmint).add(initAcc)
+
+    const res = await torus.signTransaction(tx);
+    debugConsole(JSON.stringify(res));
+  }catch (e) {
+    log.error(e)
+    debugConsole(JSON.stringify(e))
+  }
+}
 const changeProvider = async () => {
   const toNetwork = network.value === SUPPORTED_NETWORKS["mainnet"].displayName ? "testnet" : "mainnet"
   const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[toNetwork]);
@@ -204,6 +225,7 @@ const debugConsole = async (text: string) => {
         <button @click="signTransaction">Sign Transaction</button>
         <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="signMessage">Sign Message</button>
+        <button @click="token_tx">Token Transaction</button>
       </div>
     </div>
     <div id="console">
