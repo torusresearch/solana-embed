@@ -167,6 +167,12 @@ const toggleButton= async () =>{
   debugConsole(`${showButton.value?"show button" : "hide button"}`)
 }
 
+const topup= async() => {
+  await torus.initiateTopup( "rampnetwork", { 
+    selectedCryptoCurrency:"SOLANA_SOL",
+  })
+}
+
 const debugConsole = async (text: string) => {
   document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
@@ -198,6 +204,7 @@ const debugConsole = async (text: string) => {
         <button @click="getUserInfo">Get UserInfo</button>
         <button @click="changeProvider">Change Provider</button>
         <button @click="toggleButton">Toggle Show</button>
+        <button @click="topup">Top Up</button>
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
