@@ -168,10 +168,12 @@ const toggleButton= async () =>{
 }
 
 const topup= async() => {
-  await torus.initiateTopup( "rampnetwork", { 
+  const result = await torus.initiateTopup( "rampnetwork", { 
     selectedCryptoCurrency:"SOLANA_SOL",
     cryptoAmount : 0.03 * LAMPORTS_PER_SOL,  
   })
+  if ( result ) debugConsole("Top Up Successful")
+  else debugConsole("Top Up Failed")
 }
 
 const debugConsole = async (text: string) => {
