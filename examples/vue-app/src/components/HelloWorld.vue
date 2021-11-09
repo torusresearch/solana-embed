@@ -147,33 +147,36 @@ const signMessage = async () => {
 const changeProvider = async () => {
   const toNetwork = network.value === SUPPORTED_NETWORKS["mainnet"].displayName ? "testnet" : "mainnet"
   const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[toNetwork]);
-  network.value = SUPPORTED_NETWORKS[toNetwork].displayName 
+  network.value = SUPPORTED_NETWORKS[toNetwork].displayName
   conn = new Connection(SUPPORTED_NETWORKS[toNetwork].rpcTarget);
 };
 
-const getUserInfo = async () =>{
+const getUserInfo = async () => {
   const info = await torus.getUserInfo();
   debugConsole(JSON.stringify(info));
 }
 
-const toggleButton= async () =>{
+const toggleButton = async () => {
   if (showButton.value) {
     await torus.hideTorusButton();
     showButton.value = false;
-  }else {
+  } else {
     await torus.showTorusButton();
     showButton.value = true
   }
-  debugConsole(`${showButton.value?"show button" : "hide button"}`)
+  debugConsole(`${showButton.value ? "show button" : "hide button"}`)
 }
 
-const topup= async() => {
-  const result = await torus.initiateTopup( "rampnetwork", { 
-    selectedCryptoCurrency:"SOLANA_SOL",
-    cryptoAmount : 0.03 * LAMPORTS_PER_SOL,  
-  })
-  if ( result ) debugConsole("Top Up Successful")
-  else debugConsole("Top Up Failed")
+const topup = async () => {
+  try {
+    const result = await torus.initiateTopup("rampnetwork", {
+      selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9"
+    })
+    if (result) debugConsole("Top Up Successful")
+  } catch {
+    debugConsole("Top Up Failed")
+  }
+
 }
 
 const debugConsole = async (text: string) => {
@@ -194,15 +197,15 @@ const debugConsole = async (text: string) => {
       <p v-if="pubkey">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
         <select name="buildEnv" v-model="buildEnv">
-          <option value="production">Production</option>
-          <option selected value="testing">Testing</option>
+          <option selected value="production">Production</option>
+          <option value="testing">Testing</option>
           <option value="development">Development</option>
         </select>
         <button @click="login">Login</button>
       </div>
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
-      <div v-if="pubkey"> 
+      <div v-if="pubkey">
         <h4>Torus Specific API</h4>
         <button @click="getUserInfo">Get UserInfo</button>
         <button @click="changeProvider">Change Provider</button>
