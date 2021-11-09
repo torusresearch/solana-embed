@@ -170,6 +170,7 @@ const toggleButton= async () =>{
 const topup= async() => {
   await torus.initiateTopup( "rampnetwork", { 
     selectedCryptoCurrency:"SOLANA_SOL",
+    cryptoAmount : 0.03 * LAMPORTS_PER_SOL,  
   })
 }
 

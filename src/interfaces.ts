@@ -125,6 +125,10 @@ export interface PaymentParams {
    * Cryptocurrency to buy
    */
   selectedCryptoCurrency?: string;
+  /**
+   * Amount Cryptocurrency to buy
+   */
+  cryptoAmount?: number;
 }
 
 export interface LoginParams {
