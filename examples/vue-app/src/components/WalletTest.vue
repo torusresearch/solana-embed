@@ -5,7 +5,7 @@ import {TorusWalletAdapter } from "../adapter";
 import { TorusParams } from "@toruslabs/solana-embed";
 import nacl from "tweetnacl";
 
-const rpcTarget : string ="https://spring-frosty-sky.solana-testnet.quiknode.pro/060ad86235dea9b678fc3e189e9d4026ac876ad4/" ;
+const rpcTarget =clusterApiUrl("testnet") ;
 const conn = new Connection(rpcTarget);
 let publicKeys: string[] | undefined;
 const pubkey = ref("");
@@ -16,7 +16,7 @@ onMounted(async () => {
 
   const config : TorusParams = {
     buildEnv: "development",
-    showTorusButton: true,
+    showTorusButton: false,
     network: {
       blockExplorerUrl: "?cluster=testnet",
       chainId: "0x2",

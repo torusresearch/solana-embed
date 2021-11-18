@@ -14,55 +14,29 @@ import {
     WalletSignTransactionError,
     WalletWindowClosedError,
 } from '@solana/wallet-adapter-base';
-import { PublicKey, Transaction, Message , Cluster} from '@solana/web3.js';
-import Torus, { TorusParams } from "@toruslabs/solana-embed";
+import { PublicKey, Transaction, Message, Cluster } from '@solana/web3.js';
+import Torus, { TorusParams } from '@toruslabs/solana-embed';
 
-interface PhantomWalletEvents {
-    connect(...args: unknown[]): unknown;
-    disconnect(...args: unknown[]): unknown;
-}
+export type { TorusParams } from '@toruslabs/solana-embed';
 
 interface TorusWindow extends Window {
-    torus : Torus
+    torus: Torus;
 }
 
 declare const window: TorusWindow;
 
-export interface TorusAdapterConfig {
-    buildEnv : string;
-    enableLogging? : boolean; 
-    network? : {
-        blockExplorerUrl: string; 
-        chainId: string; 
-        displayName: string; 
-        logo: string;
-        rpcTarget: string; 
-        ticker: string;
-        tickerName: string;
-    } | {cluster : Cluster};
-    showTorusButton? :boolean; 
-    useLocalStorage? :boolean;
-    // buttonPosition : BUTTON_POSITION,
-    apiKey? :string; 
-}
-
 export class TorusWalletAdapter extends BaseMessageSignerWalletAdapter {
-// export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
     private _connecting: boolean;
     private _torus: Torus | null;
     private _publicKey: PublicKey | null;
-    private _config : TorusParams;
+    private _config: TorusParams;
 
-    constructor(config: TorusParams ) {
+    constructor(config: TorusParams) {
         super();
         this._connecting = false;
         this._torus = null;
         this._publicKey = null;
         this._config = config;
-
-       
-
-        console.log(this._torus)
         // if (!this.ready) pollUntilReady(this, config.pollInterval || 1000, config.pollCount || 3);
     }
 
@@ -86,24 +60,21 @@ export class TorusWalletAdapter extends BaseMessageSignerWalletAdapter {
         try {
             if (this.connected || this.connecting) return;
             this._connecting = true;
-            let torus = typeof window !== 'undefined' && window.torus; 
-            if(!torus) torus = new Torus ()
-    
-            this._torus = torus;
-            if (!this._torus?.isInitialized)
-                await this._torus?.init(this._config);
+            let torus = typeof window !== 'undefined' && window.torus;
 
-            // if (!torus) throw new WalletNotFoundError();
-            // if (!wallet.isPhantom) throw new WalletNotInstalledError();
             // check if torus is init, torus.init({config})
+            if (!torus) torus = new Torus();
+            this._torus = torus;
+            if (!this._torus.isInitialized) await this._torus.init(this._config);
+
             let login_result;
-            if (!torus?.isLoggedIn) {
+            if (!torus.isLoggedIn) {
                 try {
-                    login_result  = await torus?.login();
+                    login_result = await torus?.login();
                 } catch (error: any) {
                     if (error instanceof WalletError) throw error;
                     throw new WalletConnectionError(error?.message, error);
-                } 
+                }
             }
             if (!login_result) throw new WalletConnectionError();
 
@@ -133,8 +104,7 @@ export class TorusWalletAdapter extends BaseMessageSignerWalletAdapter {
             this._torus = null;
             this._publicKey = null;
             try {
-                if (wallet.isLoggedIn)
-                    await wallet.cleanUp();
+                if (wallet.isLoggedIn) await wallet.cleanUp();
             } catch (error: any) {
                 this.emit('error', new WalletDisconnectionError(error?.message, error));
             }
