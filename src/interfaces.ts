@@ -238,6 +238,13 @@ export interface TorusParams {
    * @default false
    */
   useLocalStorage?: boolean;
+  /**
+   * Allows passing external data for initialize
+   *
+   * Defaults to empty object
+   * @default {}
+   */
+  extraParams?: { [keyof: string]: string };
 }
 
 export interface ProviderOptions {
