@@ -105,7 +105,7 @@ class Torus {
     useLocalStorage = false,
     buttonPosition = BUTTON_POSITION.BOTTOM_LEFT,
     apiKey = "torus-default",
-    extInitData = {},
+    extraParams = {},
   }: TorusParams = {}): Promise<void> {
     if (this.isInitialized) throw new Error("Already initialized");
     setAPIKey(apiKey);
@@ -157,7 +157,7 @@ class Torus {
             apiKey,
             network,
             dappMetadata,
-            extInitData,
+            extraParams,
           },
           torusIframeUrl.origin
         );

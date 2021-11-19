@@ -244,7 +244,7 @@ export interface TorusParams {
    * Defaults to empty object
    * @default {}
    */
-  extInitData?: { [keyof: string]: string };
+  extraParams?: { [keyof: string]: string };
 }
 
 export interface ProviderOptions {
