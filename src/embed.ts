@@ -107,6 +107,7 @@ class Torus {
     apiKey = "torus-default",
     extraParams = {},
   }: TorusParams = {}): Promise<void> {
+    this.removeFrames();
     if (this.isInitialized) throw new Error("Already initialized");
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
@@ -145,7 +146,8 @@ class Torus {
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
     const handleSetup = async () => {
-      window.document.head.appendChild(this.styleLink);
+      // if css not already loaded
+      if (!window.document.head.querySelector(`link[href="${torusUrl}/css/widget.css"]`)) window.document.head.appendChild(this.styleLink);
       window.document.body.appendChild(this.torusIframe);
       window.document.body.appendChild(this.torusAlertContainer);
       this.torusIframe.addEventListener("load", async () => {
@@ -234,6 +236,16 @@ class Torus {
       params: [],
     });
     this.requestedLoginProvider = null;
+  }
+
+  removeFrames(): void {
+    function isElement(element: unknown) {
+      return element instanceof Element || element instanceof Document;
+    }
+    const frame = window.document.querySelector("#torusIframe");
+    const alertContainer = window.document.querySelector("#torusAlertContainer");
+    if (isElement(frame)) frame.parentElement.removeChild(frame);
+    if (isElement(alertContainer)) alertContainer.parentElement.removeChild(alertContainer);
   }
 
   async cleanUp(): Promise<void> {
