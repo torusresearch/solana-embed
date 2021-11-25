@@ -12,7 +12,7 @@ let conn: Connection;
 let publicKeys: string[] | undefined;
 const network = ref("");
 const pubkey = ref("");
-const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
+const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
 watch( buildEnv, ( buildEnv, prevBuildEnv) => {
   if (buildEnv !== prevBuildEnv ) {
@@ -24,37 +24,39 @@ watch( buildEnv, ( buildEnv, prevBuildEnv) => {
 })
 
 const login = async () => {
+  try {
+    if ( !torus )   {
+      torus = new Torus();
+      (window as any).torus = torus;
+    }
 
-  if ( !torus )   {
-    torus = new Torus();
-    (window as any).torus = torus;
-  }// torus.cleanUp();
-
-  if ( !torus.isInitialized ) {
-    await torus.init({
-      buildEnv: buildEnv.value,
-      showTorusButton: showButton.value,
-      network: {
-        blockExplorerUrl: "?cluster=testnet",
-        chainId: "0x2",
-        displayName: "Solana Testnet",
-        logo: "solana.svg",
-        rpcTarget: clusterApiUrl("testnet"),
-        ticker: "SOL",
-        tickerName: "Solana Token"
-      }
-    });
+    if ( !torus.isInitialized ) {
+      await torus.init({
+        buildEnv: buildEnv.value,
+        showTorusButton: showButton.value,
+        network: {
+          blockExplorerUrl: "?cluster=testnet",
+          chainId: "0x2",
+          displayName: "Solana Testnet",
+          logo: "solana.svg",
+          rpcTarget: clusterApiUrl("testnet"),
+          ticker: "SOL",
+          tickerName: "Solana Token"
+        }
+      });
+    }
+    publicKeys = await torus?.login({});
+    pubkey.value = publicKeys ? publicKeys[0] : "";
+    const target_network = await torus.provider.request({
+      method: "solana_provider_config",
+      params: []
+    }) as { rpcTarget: string, displayName: string }
+    console.log(target_network)
+    network.value = target_network.displayName
+    conn = new Connection(target_network?.rpcTarget)
+  } catch (err) {
+    console.error(err)
   }
-  publicKeys = await torus?.login({});
-  pubkey.value = publicKeys ? publicKeys[0] : "";
-  const target_network = await torus.provider.request({
-    method: "solana_provider_config",
-    params: []
-  }) as { rpcTarget: string, displayName: string }
-  console.log(target_network)
-  network.value = target_network.displayName
-  conn = new Connection(target_network?.rpcTarget)
-
 };
 
 const logout = async () => {
