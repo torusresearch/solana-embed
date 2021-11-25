@@ -12,37 +12,43 @@ let conn: Connection;
 let publicKeys: string[] | undefined;
 const network = ref("");
 const pubkey = ref("");
-const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
+const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
 
 const login = async () => {
   torus = new Torus();
   (window as any).torus = torus;
-  // torus.cleanUp();
+  try {
 
-  await torus.init({
-    buildEnv: buildEnv.value,
-    showTorusButton: showButton.value,
-    network: {
-      blockExplorerUrl: "?cluster=testnet",
-      chainId: "0x2",
-      displayName: "Solana Testnet",
-      logo: "solana.svg",
-      rpcTarget: clusterApiUrl("testnet"),
-      ticker: "SOL",
-      tickerName: "Solana Token"
-    }
-  });
-  const target_network = await torus.provider.request({
-    method: "solana_provider_config",
-    params: []
-  }) as { rpcTarget: string, displayName: string }
-  console.log(target_network)
-  network.value = target_network.displayName
-  conn = new Connection(target_network?.rpcTarget)
+    await torus.init({
+      buildEnv: buildEnv.value,
+      showTorusButton: showButton.value,
+      network: {
+        blockExplorerUrl: "?cluster=testnet",
+        chainId: "0x2",
+        displayName: "Solana Testnet",
+        logo: "solana.svg",
+        rpcTarget: clusterApiUrl("testnet"),
+        ticker: "SOL",
+        tickerName: "Solana Token"
+      }
+    });
+    publicKeys = await torus?.login({});
 
-  publicKeys = await torus?.login({});
-  pubkey.value = publicKeys ? publicKeys[0] : "";
+    const target_network = await torus.provider.request({
+      method: "solana_provider_config",
+      params: []
+    }) as { rpcTarget: string, displayName: string }
+  
+    console.log(target_network)
+    network.value = target_network.displayName
+    conn = new Connection(target_network?.rpcTarget)
+
+    pubkey.value = publicKeys ? publicKeys[0] : "";
+  } catch (err) {
+    debugger
+    console.error(err)
+  }
 };
 
 const logout = async () => {

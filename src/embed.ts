@@ -281,6 +281,7 @@ class Torus {
       name: "embed_torus",
       target: "iframe_torus",
       targetWindow: this.torusIframe.contentWindow,
+      targetOrigin: providerParams.torusUrl,
     });
 
     // We create another LocalMessageDuplexStream for communication between dapp <> iframe
@@ -288,6 +289,7 @@ class Torus {
       name: "embed_communication",
       target: "iframe_communication",
       targetWindow: this.torusIframe.contentWindow,
+      targetOrigin: providerParams.torusUrl,
     });
 
     // compose the inPage provider
