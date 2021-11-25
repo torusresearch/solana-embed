@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref , watch } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
@@ -14,25 +14,40 @@ const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
 const showButton = ref(false);
+watch( buildEnv, ( buildEnv, prevBuildEnv) => {
+  if (buildEnv !== prevBuildEnv ) {
+    if (torus) {
+      torus.cleanUp();
+      torus = null;
+      window.torus = null;
+    }
+  }
+})
 
 const login = async () => {
-  torus = new Torus();
-  (window as any).torus = torus;
-  // torus.cleanUp();
 
-  await torus.init({
-    buildEnv: buildEnv.value,
-    showTorusButton: showButton.value,
-    network: {
-      blockExplorerUrl: "?cluster=testnet",
-      chainId: "0x2",
-      displayName: "Solana Testnet",
-      logo: "solana.svg",
-      rpcTarget: clusterApiUrl("testnet"),
-      ticker: "SOL",
-      tickerName: "Solana Token"
-    }
-  });
+  if ( window.torus ) torus = window.torus
+  else {
+    torus = new Torus();
+    (window as any).torus = torus;
+  }// torus.cleanUp();
+  if ( !torus.isInitialized ) {
+    await torus.init({
+      buildEnv: buildEnv.value,
+      showTorusButton: showButton.value,
+      network: {
+        blockExplorerUrl: "?cluster=testnet",
+        chainId: "0x2",
+        displayName: "Solana Testnet",
+        logo: "solana.svg",
+        rpcTarget: clusterApiUrl("testnet"),
+        ticker: "SOL",
+        tickerName: "Solana Token"
+      }
+    });
+  }
+  publicKeys = await torus?.login({});
+  pubkey.value = publicKeys ? publicKeys[0] : "";
   const target_network = await torus.provider.request({
     method: "solana_provider_config",
     params: []
@@ -41,8 +56,6 @@ const login = async () => {
   network.value = target_network.displayName
   conn = new Connection(target_network?.rpcTarget)
 
-  publicKeys = await torus?.login({});
-  pubkey.value = publicKeys ? publicKeys[0] : "";
 };
 
 const logout = async () => {
@@ -196,8 +209,8 @@ const debugConsole = async (text: string) => {
       <p v-if="network">Solana Network : {{ network }}</p>
       <p v-if="pubkey">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
-        <select name="buildEnv" v-model="buildEnv">
-          <option selected value="production">Production</option>
+        <select name="buildEnv" v-model="buildEnv" >
+          <option value="production">Production</option>
           <option value="testing">Testing</option>
           <option value="development">Development</option>
         </select>
