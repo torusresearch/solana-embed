@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref , watch } from "vue";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
@@ -7,46 +7,67 @@ import nacl from "tweetnacl";
 import log from "loglevel";
 
 
-let torus: Torus;
+declare global {
+  interface Window {
+    torus: any;
+  }
+}
+
+
+let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
 const network = ref("");
 const pubkey = ref("");
-const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
+const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
+watch( buildEnv, ( buildEnv, prevBuildEnv) => {
+  if (buildEnv !== prevBuildEnv ) {
+    if (torus) {
+      torus.cleanUp();
+      torus = null;
+    }
+  }
+})
 
 const login = async () => {
-  torus = new Torus();
-  (window as any).torus = torus;
-  // torus.cleanUp();
-
-  await torus.init({
-    buildEnv: buildEnv.value,
-    showTorusButton: showButton.value,
-    network: {
-      blockExplorerUrl: "?cluster=testnet",
-      chainId: "0x2",
-      displayName: "Solana Testnet",
-      logo: "solana.svg",
-      rpcTarget: clusterApiUrl("testnet"),
-      ticker: "SOL",
-      tickerName: "Solana Token"
+  try {
+    torus = window.torus
+    if ( !torus )   {
+      torus = new Torus();
     }
-  });
-  const target_network = await torus.provider.request({
-    method: "solana_provider_config",
-    params: []
-  }) as { rpcTarget: string, displayName: string }
-  console.log(target_network)
-  network.value = target_network.displayName
-  conn = new Connection(target_network?.rpcTarget)
 
-  publicKeys = await torus?.login({});
-  pubkey.value = publicKeys ? publicKeys[0] : "";
+    if ( !torus.isInitialized && !window.torus ) {
+      await torus.init({
+        buildEnv: buildEnv.value,
+        showTorusButton: showButton.value,
+        network: {
+          blockExplorerUrl: "?cluster=testnet",
+          chainId: "0x2",
+          displayName: "Solana Testnet",
+          logo: "solana.svg",
+          rpcTarget: clusterApiUrl("testnet"),
+          ticker: "SOL",
+          tickerName: "Solana Token"
+        }
+      });
+    }
+    publicKeys = await torus?.login({});
+    pubkey.value = publicKeys ? publicKeys[0] : "";
+    const target_network = await torus.provider.request({
+      method: "solana_provider_config",
+      params: []
+    }) as { rpcTarget: string, displayName: string }
+    console.log(target_network)
+    network.value = target_network.displayName
+    conn = new Connection(target_network?.rpcTarget)
+  } catch (err) {
+    console.error(err)
+  }
 };
 
 const logout = async () => {
-  torus.logout();
+  torus?.logout();
   pubkey.value = "";
 };
 
@@ -60,7 +81,7 @@ const transfer = async () => {
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   try {
     const res = await torus?.sendTransaction(transaction)
-    debugConsole(res);
+    debugConsole(res as string);
     // const res = await torus.provider.request({
     //   method: "send_transaction",
     //   params: { message: transaction.serializeMessage().toString("hex") }
@@ -79,10 +100,10 @@ const gaslessTransfer = async () => {
   });
   try {
     const res = await torus?.getGaslessPublicKey();
-    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res) }).add(TransactionInstruction);
-    const res_tx = await torus.sendTransaction(transaction);
+    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res || "") }).add(TransactionInstruction);
+    const res_tx = await torus?.sendTransaction(transaction);
 
-    debugConsole(res_tx);
+    debugConsole(res_tx as string);
   } catch (e) {
     debugConsole(e as string);
   }
@@ -98,7 +119,7 @@ const signTransaction = async () => {
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
 
   try {
-    const res = await torus.signTransaction(transaction)
+    const res = await torus?.signTransaction(transaction)
     debugConsole(JSON.stringify(res))
     // const res = await torus.provider.request({
     //   method: "sign_transaction",
@@ -123,9 +144,9 @@ const signAllTransaction = async () => {
   try {
     const gasless_pk = await torus?.getGaslessPublicKey();
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
-    let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk) }).add(TransactionInstruction);
+    let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk || "") }).add(TransactionInstruction);
 
-    const res = await torus.signAllTransactions([transaction2, transaction])
+    const res = await torus?.signAllTransactions([transaction2, transaction])
     debugConsole(JSON.stringify(res))
   } catch (e) {
     debugConsole(e as string);
@@ -135,8 +156,8 @@ const signAllTransaction = async () => {
 const signMessage = async () => {
   try {
     let msg = Buffer.from("Test Signing Message ", "utf8");
-    const res = await torus.signMessage(msg);
-    nacl.sign.detached.verify(msg, res, new PublicKey(publicKeys![0]).toBytes());
+    const res = await torus?.signMessage(msg);
+    nacl.sign.detached.verify(msg, res as Uint8Array, new PublicKey(publicKeys![0]).toBytes());
     debugConsole(JSON.stringify(res));
   } catch (e) {
     log.error(e);
@@ -152,16 +173,16 @@ const changeProvider = async () => {
 };
 
 const getUserInfo = async () => {
-  const info = await torus.getUserInfo();
+  const info = await torus?.getUserInfo();
   debugConsole(JSON.stringify(info));
 }
 
 const toggleButton = async () => {
   if (showButton.value) {
-    await torus.hideTorusButton();
+    await torus?.hideTorusButton();
     showButton.value = false;
   } else {
-    await torus.showTorusButton();
+    await torus?.showTorusButton();
     showButton.value = true
   }
   debugConsole(`${showButton.value ? "show button" : "hide button"}`)
@@ -169,7 +190,7 @@ const toggleButton = async () => {
 
 const topup = async () => {
   try {
-    const result = await torus.initiateTopup("rampnetwork", {
+    const result = await torus?.initiateTopup("rampnetwork", {
       selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9"
     })
     if (result) debugConsole("Top Up Successful")
@@ -196,8 +217,8 @@ const debugConsole = async (text: string) => {
       <p v-if="network">Solana Network : {{ network }}</p>
       <p v-if="pubkey">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
-        <select name="buildEnv" v-model="buildEnv">
-          <option selected value="production">Production</option>
+        <select name="buildEnv" v-model="buildEnv" >
+          <option value="production">Production</option>
           <option value="testing">Testing</option>
           <option value="development">Development</option>
         </select>

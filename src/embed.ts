@@ -111,6 +111,7 @@ class Torus {
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
     log.info(torusUrl, "url loaded");
+
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
@@ -168,6 +169,7 @@ class Torus {
       if (showTorusButton) this.showTorusButton();
       else this.hideTorusButton();
       this.isInitialized = true;
+      (window as any).torus = this;
     };
 
     await documentReady();
@@ -281,6 +283,7 @@ class Torus {
       name: "embed_torus",
       target: "iframe_torus",
       targetWindow: this.torusIframe.contentWindow,
+      targetOrigin: providerParams.torusUrl,
     });
 
     // We create another LocalMessageDuplexStream for communication between dapp <> iframe
@@ -288,6 +291,7 @@ class Torus {
       name: "embed_communication",
       target: "iframe_communication",
       targetWindow: this.torusIframe.contentWindow,
+      targetOrigin: providerParams.torusUrl,
     });
 
     // compose the inPage provider
