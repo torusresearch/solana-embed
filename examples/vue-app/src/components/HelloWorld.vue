@@ -32,6 +32,7 @@ watch( buildEnv, ( buildEnv, prevBuildEnv) => {
 
 const login = async () => {
   try {
+    torus = window.torus
     if ( !torus )   {
       torus = new Torus();
     }
