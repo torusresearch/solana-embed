@@ -111,6 +111,7 @@ class Torus {
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
     log.info(torusUrl, "url loaded");
+
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
@@ -172,6 +173,8 @@ class Torus {
 
     await documentReady();
     await handleSetup();
+
+    (window as any).torus = this;
   }
 
   private handleDappStorageKey(useLocalStorage: boolean) {
