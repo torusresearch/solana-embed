@@ -111,6 +111,7 @@ class Torus {
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
     log.info(torusUrl, "url loaded");
+
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
@@ -168,6 +169,7 @@ class Torus {
       if (showTorusButton) this.showTorusButton();
       else this.hideTorusButton();
       this.isInitialized = true;
+      (window as any).torus = this;
     };
 
     await documentReady();

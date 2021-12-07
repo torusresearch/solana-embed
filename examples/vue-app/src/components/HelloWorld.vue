@@ -7,6 +7,13 @@ import nacl from "tweetnacl";
 import log from "loglevel";
 
 
+declare global {
+  interface Window {
+    torus: any;
+  }
+}
+
+
 let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
@@ -25,12 +32,12 @@ watch( buildEnv, ( buildEnv, prevBuildEnv) => {
 
 const login = async () => {
   try {
+    torus = window.torus
     if ( !torus )   {
       torus = new Torus();
-      (window as any).torus = torus;
     }
 
-    if ( !torus.isInitialized ) {
+    if ( !torus.isInitialized && !window.torus ) {
       await torus.init({
         buildEnv: buildEnv.value,
         showTorusButton: showButton.value,
