@@ -169,12 +169,11 @@ class Torus {
       if (showTorusButton) this.showTorusButton();
       else this.hideTorusButton();
       this.isInitialized = true;
+      (window as any).torus = this;
     };
 
     await documentReady();
     await handleSetup();
-
-    (window as any).torus = this;
   }
 
   private handleDappStorageKey(useLocalStorage: boolean) {
