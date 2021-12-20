@@ -430,7 +430,8 @@ class Torus {
   async sendTransaction(transaction: Transaction): Promise<string> {
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: transaction.serializeMessage().toString("hex") },
+      // params: { message: transaction.serializeMessage().toString("hex") },
+      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
     })) as string;
     return response;
   }
@@ -438,7 +439,8 @@ class Torus {
   async signTransaction(transaction: Transaction): Promise<Transaction> {
     const response = (await this.provider.request({
       method: "sign_transaction",
-      params: { message: transaction.serializeMessage().toString("hex") },
+      // params: { message: transaction.serializeMessage().toString("hex") },
+      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
     })) as string;
 
     const buf = Buffer.from(response, "hex");
