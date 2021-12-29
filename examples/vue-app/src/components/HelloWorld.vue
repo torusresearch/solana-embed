@@ -1,18 +1,28 @@
 <script lang="ts" setup>
-import { onMounted, ref , watch } from "vue";
-import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { onMounted, ref, watch } from "vue";
+import {
+  clusterApiUrl,
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Secp256k1Program,
+  Transaction,
+  StakeProgram,
+  Keypair,
+  Authorized,
+  Lockup,
+} from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
-
 
 declare global {
   interface Window {
     torus: any;
   }
 }
-
 
 let torus: Torus | null;
 let conn: Connection;
@@ -21,23 +31,23 @@ const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
-watch( buildEnv, ( buildEnv, prevBuildEnv) => {
-  if (buildEnv !== prevBuildEnv ) {
+watch(buildEnv, (buildEnv, prevBuildEnv) => {
+  if (buildEnv !== prevBuildEnv) {
     if (torus) {
       torus.cleanUp();
       torus = null;
     }
   }
-})
+});
 
 const login = async () => {
   try {
-    torus = window.torus
-    if ( !torus )   {
+    torus = window.torus;
+    if (!torus) {
       torus = new Torus();
     }
 
-    if ( !torus.isInitialized && !window.torus ) {
+    if (!torus.isInitialized && !window.torus) {
       await torus.init({
         buildEnv: buildEnv.value,
         showTorusButton: showButton.value,
@@ -48,21 +58,21 @@ const login = async () => {
           logo: "solana.svg",
           rpcTarget: clusterApiUrl("testnet"),
           ticker: "SOL",
-          tickerName: "Solana Token"
-        }
+          tickerName: "Solana Token",
+        },
       });
     }
     publicKeys = await torus?.login({});
     pubkey.value = publicKeys ? publicKeys[0] : "";
-    const target_network = await torus.provider.request({
+    const target_network = (await torus.provider.request({
       method: "solana_provider_config",
-      params: []
-    }) as { rpcTarget: string, displayName: string }
-    console.log(target_network)
-    network.value = target_network.displayName
-    conn = new Connection(target_network?.rpcTarget)
+      params: [],
+    })) as { rpcTarget: string; displayName: string };
+    console.log(target_network);
+    network.value = target_network.displayName;
+    conn = new Connection(target_network?.rpcTarget);
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
 };
 
@@ -76,11 +86,55 @@ const transfer = async () => {
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.01 * LAMPORTS_PER_SOL
+    lamports: 0.01 * LAMPORTS_PER_SOL,
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   try {
-    const res = await torus?.sendTransaction(transaction)
+    const res = await torus?.sendTransaction(transaction);
+    debugConsole(res as string);
+    // const res = await torus.provider.request({
+    //   method: "send_transaction",
+    //   params: { message: transaction.serializeMessage().toString("hex") }
+    // });
+  } catch (e) {
+    debugConsole(e as string);
+  }
+};
+
+const sendMultipleInstructionTransaction = async () => {
+  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+
+  const pubkey = new Uint8Array([
+    81, 176, 126, 129, 139, 165, 11, 146, 225, 138, 101, 191, 188, 243, 174, 70, 93, 52, 206, 152, 74, 55, 152, 76, 232, 40, 61, 17, 126, 237, 151,
+    71, 96, 58, 71, 182, 68, 5, 211, 15, 221, 192, 126, 159, 98, 194, 44, 50, 10, 114, 47, 130, 1, 176, 42, 196, 90, 16, 245, 93, 126, 52, 170, 32,
+  ]);
+
+  const fromPubkey = Keypair.generate().publicKey;
+  const newAccountPubkey = Keypair.generate().publicKey;
+  const authorizedPubkey = Keypair.generate().publicKey;
+  const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
+  const lockup = new Lockup(0, 0, fromPubkey);
+  const lamports = 123;
+  const transactionStaking = StakeProgram.createAccount({
+    fromPubkey,
+    stakePubkey: newAccountPubkey,
+    authorized,
+    lockup,
+    lamports,
+  });
+  const [systemInstruction, stakeInstruction] = transactionStaking.instructions;
+
+  const TransactionInstruction2 = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.01 * LAMPORTS_PER_SOL,
+  });
+
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) })
+    .add(stakeInstruction)
+    .add(TransactionInstruction2);
+  try {
+    const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
     // const res = await torus.provider.request({
     //   method: "send_transaction",
@@ -96,7 +150,7 @@ const gaslessTransfer = async () => {
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.01 * LAMPORTS_PER_SOL
+    lamports: 0.01 * LAMPORTS_PER_SOL,
   });
   try {
     const res = await torus?.getGaslessPublicKey();
@@ -114,13 +168,13 @@ const signTransaction = async () => {
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.01 * LAMPORTS_PER_SOL
+    lamports: 0.01 * LAMPORTS_PER_SOL,
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
 
   try {
-    const res = await torus?.signTransaction(transaction)
-    debugConsole(JSON.stringify(res))
+    const res = await torus?.signTransaction(transaction);
+    debugConsole(JSON.stringify(res));
     // const res = await torus.provider.request({
     //   method: "sign_transaction",
     //   params: { message: transaction.serializeMessage().toString("hex") }
@@ -139,15 +193,15 @@ const signAllTransaction = async () => {
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.1 * LAMPORTS_PER_SOL
+    lamports: 0.1 * LAMPORTS_PER_SOL,
   });
   try {
     const gasless_pk = await torus?.getGaslessPublicKey();
     let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
     let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk || "") }).add(TransactionInstruction);
 
-    const res = await torus?.signAllTransactions([transaction2, transaction])
-    debugConsole(JSON.stringify(res))
+    const res = await torus?.signAllTransactions([transaction2, transaction]);
+    debugConsole(JSON.stringify(res));
   } catch (e) {
     debugConsole(e as string);
   }
@@ -166,16 +220,16 @@ const signMessage = async () => {
 };
 
 const changeProvider = async () => {
-  const toNetwork = network.value === SUPPORTED_NETWORKS["mainnet"].displayName ? "testnet" : "mainnet"
+  const toNetwork = network.value === SUPPORTED_NETWORKS["mainnet"].displayName ? "testnet" : "mainnet";
   const providerRes = await torus?.setProvider(SUPPORTED_NETWORKS[toNetwork]);
-  network.value = SUPPORTED_NETWORKS[toNetwork].displayName
+  network.value = SUPPORTED_NETWORKS[toNetwork].displayName;
   conn = new Connection(SUPPORTED_NETWORKS[toNetwork].rpcTarget);
 };
 
 const getUserInfo = async () => {
   const info = await torus?.getUserInfo();
   debugConsole(JSON.stringify(info));
-}
+};
 
 const toggleButton = async () => {
   if (showButton.value) {
@@ -183,22 +237,21 @@ const toggleButton = async () => {
     showButton.value = false;
   } else {
     await torus?.showTorusButton();
-    showButton.value = true
+    showButton.value = true;
   }
-  debugConsole(`${showButton.value ? "show button" : "hide button"}`)
-}
+  debugConsole(`${showButton.value ? "show button" : "hide button"}`);
+};
 
 const topup = async () => {
   try {
     const result = await torus?.initiateTopup("rampnetwork", {
-      selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9"
-    })
-    if (result) debugConsole("Top Up Successful")
+      selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9",
+    });
+    if (result) debugConsole("Top Up Successful");
   } catch {
-    debugConsole("Top Up Failed")
+    debugConsole("Top Up Failed");
   }
-
-}
+};
 
 const debugConsole = async (text: string) => {
   document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
@@ -217,7 +270,7 @@ const debugConsole = async (text: string) => {
       <p v-if="network">Solana Network : {{ network }}</p>
       <p v-if="pubkey">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
-        <select name="buildEnv" v-model="buildEnv" >
+        <select name="buildEnv" v-model="buildEnv">
           <option value="production">Production</option>
           <option value="testing">Testing</option>
           <option value="development">Development</option>
@@ -237,6 +290,7 @@ const debugConsole = async (text: string) => {
         <button @click="gaslessTransfer">Send Gasless Transaction</button>
         <button @click="signTransaction">Sign Transaction</button>
         <button @click="signAllTransaction">Sign All Transactions</button>
+        <button @click="sendMultipleInstructionTransaction">Multiple Instruction tx</button>
         <button @click="signMessage">Sign Message</button>
       </div>
     </div>
