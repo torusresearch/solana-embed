@@ -69,7 +69,7 @@ export interface TorusCtorArgs {
 export interface NetworkInterface {
   /**
    * Block explorer url for the chain
-   * @example https://ropsten.etherscan.io
+   * @example https://explorer.solana.com/
    */
   blockExplorerUrl: string;
   /**
@@ -78,22 +78,22 @@ export interface NetworkInterface {
   logo: string;
   /**
    * Name for ticker
-   * @example 'Binance Token', 'Ethereum', 'Matic Network Token'
+   * @example 'Solana'
    */
   tickerName: string;
   /**
    * Symbol for ticker
-   * @example BNB, ETH
+   * @example SOL
    */
   ticker: string;
   /**
    * RPC target Url for the chain
-   * @example https://ropsten.infura.io/v3/YOUR_API_KEY
+   * @example https://api.devnet.solana.com/
    */
   rpcTarget: string;
   /**
    * Chain Id parameter(hex with 0x prefix) for the network. Mandatory for all networks. (assign one with a map to network identifier for platforms)
-   * @example 0x1 for mainnet, 'loading' if not connected to anything yet or connection fails
+   * @example 0x1 for mainnet, 0x2 for testnet, 0x3 for devnet,  'loading' if not connected to anything yet or connection fails
    * @defaultValue 'loading'
    */
   chainId: string;
@@ -101,11 +101,6 @@ export interface NetworkInterface {
    * Display name for the network
    */
   displayName: string;
-
-  /**
-   * Network Key
-   */
-  // networkKey: string;
 }
 
 export interface PaymentParams {
