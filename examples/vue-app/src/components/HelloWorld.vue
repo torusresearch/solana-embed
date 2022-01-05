@@ -42,12 +42,11 @@ watch(buildEnv, (buildEnv, prevBuildEnv) => {
 
 const login = async () => {
   try {
-    torus = window.torus;
     if (!torus) {
       torus = new Torus();
     }
 
-    if (!torus.isInitialized && !window.torus) {
+    if (!torus.isInitialized ) {
       await torus.init({
         buildEnv: buildEnv.value,
         showTorusButton: showButton.value,
@@ -62,6 +61,7 @@ const login = async () => {
         },
       });
     }
+    console.log(torus)
     publicKeys = await torus?.login({});
     pubkey.value = publicKeys ? publicKeys[0] : "";
     const target_network = (await torus.provider.request({
