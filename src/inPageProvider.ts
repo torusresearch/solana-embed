@@ -9,12 +9,16 @@ import { InPageProviderState, ProviderOptions, RequestArguments, UnValidatedJson
 import log from "./loglevel";
 import messages from "./messages";
 
-/**
- * @param {Object} connectionStream - A Node.js duplex stream
- * @param {Object} opts - An options bag
- * @param {number} opts.maxEventListeners - The maximum number of event listeners
- */
 class TorusInPageProvider extends BaseProvider<InPageProviderState> {
+  protected static _defaultState: InPageProviderState = {
+    accounts: null,
+    isConnected: false,
+    isUnlocked: false,
+    initialized: false,
+    isPermanentlyDisconnected: false,
+    hasEmittedConnection: false,
+  };
+
   /**
    * The chain ID of the currently connected Solana chain.
    * See [chainId.network]{@link https://chainid.network} for more information.
@@ -28,16 +32,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    */
   public selectedAddress: string | null;
 
-  protected static _defaultState: InPageProviderState = {
-    accounts: null,
-    isConnected: false,
-    isUnlocked: false,
-    initialized: false,
-    isPermanentlyDisconnected: false,
-    hasEmittedConnection: false,
-  };
-
-  tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
+  tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: unknown[]) => void) => void;
 
   constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider" }: ProviderOptions) {
     super(connectionStream, { maxEventListeners, jsonRpcStreamName });
@@ -117,7 +112,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    * Internal RPC method. Forwards requests to background via the RPC engine.
    * Also remap ids inbound and outbound
    */
-  _rpcRequest(payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], callback: (...args: any[]) => void, isInternal = false): void {
+  _rpcRequest(payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], callback: (...args: unknown[]) => void, isInternal = false): void {
     let cb = callback;
     const _payload = payload;
     if (!Array.isArray(_payload)) {
@@ -144,7 +139,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    * required events. Idempotent.
    *
    * @param chainId - The ID of the newly connected chain.
-   * @emits TorusInpageProvider#connect
+   * emits TorusInpageProvider#connect
    */
   protected _handleConnect(chainId: string): void {
     if (!this._state.isConnected) {
@@ -163,7 +158,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    *
    * @param isRecoverable - Whether the disconnection is recoverable.
    * @param errorMessage - A custom error message.
-   * @emits TorusInpageProvider#disconnect
+   * emits TorusInpageProvider#disconnect
    */
   protected _handleDisconnect(isRecoverable: boolean, errorMessage?: string): void {
     if (this._state.isConnected || (!this._state.isPermanentlyDisconnected && !isRecoverable)) {
@@ -236,10 +231,8 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    * Does nothing if neither the chainId nor the networkVersion are different
    * from existing values.
    *
-   * @emits TorusInpageProvider#chainChanged
+   * emits TorusInpageProvider#chainChanged
    * @param networkInfo - An object with network info.
-   * @param networkInfo.chainId - The latest chain ID.
-   * @param networkInfo.networkVersion - The latest network ID.
    */
   protected _handleChainChanged({ chainId }: { chainId?: string } = {}): void {
     if (!chainId) {
@@ -270,8 +263,6 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
    * There are no lock/unlock events.
    *
    * @param opts - Options bag.
-   * @param opts.accounts - The exposed accounts, if any.
-   * @param opts.isUnlocked - The latest isUnlocked value.
    */
   protected _handleUnlockStateChanged({ accounts, isUnlocked }: { accounts?: string[]; isUnlocked?: boolean } = {}): void {
     if (typeof isUnlocked !== "boolean") {

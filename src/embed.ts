@@ -60,12 +60,6 @@ const isLocalStorageAvailable = storageAvailable("localStorage");
 })();
 
 class Torus {
-  private torusUrl: string;
-
-  private torusIframe: HTMLIFrameElement;
-
-  private styleLink: HTMLLinkElement;
-
   isInitialized: boolean;
 
   torusAlert: HTMLDivElement;
@@ -73,8 +67,6 @@ class Torus {
   modalZIndex: number;
 
   alertZIndex: number;
-
-  private torusAlertContainer: HTMLDivElement;
 
   public requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
 
@@ -84,10 +76,13 @@ class Torus {
 
   dappStorageKey: string;
 
-  get isLoggedIn(): boolean {
-    if (!this.communicationProvider) return false;
-    return this.communicationProvider.isLoggedIn;
-  }
+  private torusAlertContainer: HTMLDivElement;
+
+  private torusUrl: string;
+
+  private torusIframe: HTMLIFrameElement;
+
+  private styleLink: HTMLLinkElement;
 
   constructor({ modalZIndex = 99999 }: TorusCtorArgs = {}) {
     this.torusUrl = "";
@@ -98,11 +93,16 @@ class Torus {
     this.dappStorageKey = "";
   }
 
+  get isLoggedIn(): boolean {
+    if (!this.communicationProvider) return false;
+    return this.communicationProvider.isLoggedIn;
+  }
+
   async init({
     buildEnv = TORUS_BUILD_ENV.PRODUCTION,
     enableLogging = false,
     network,
-    showTorusButton = true,
+    showTorusButton = false,
     useLocalStorage = false,
     buttonPosition = BUTTON_POSITION.BOTTOM_LEFT,
     apiKey = "torus-default",
@@ -142,69 +142,53 @@ class Torus {
     );
 
     this.torusAlertContainer = htmlToElement<HTMLDivElement>(
-      `<div id="torusAlertContainer style="display:none; z-index: ${this.alertZIndex.toString()}"></div>`
+      `<div id="torusAlertContainer" style="display:none; z-index: ${this.alertZIndex.toString()}"></div>`
     );
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
     const handleSetup = async () => {
-      window.document.head.appendChild(this.styleLink);
-      window.document.body.appendChild(this.torusIframe);
-      window.document.body.appendChild(this.torusAlertContainer);
-      this.torusIframe.addEventListener("load", async () => {
-        const dappMetadata = await getSiteMetadata();
-        // send init params here
-        this.torusIframe.contentWindow.postMessage(
-          {
-            buttonPosition,
-            apiKey,
-            network,
-            dappMetadata,
-            extraParams,
-          },
-          torusIframeUrl.origin
-        );
+      return new Promise<void>((resolve, reject) => {
+        try {
+          window.document.head.appendChild(this.styleLink);
+          window.document.body.appendChild(this.torusIframe);
+          window.document.body.appendChild(this.torusAlertContainer);
+          this.torusIframe.addEventListener("load", async () => {
+            const dappMetadata = await getSiteMetadata();
+            // send init params here
+            this.torusIframe.contentWindow.postMessage(
+              {
+                buttonPosition,
+                apiKey,
+                network,
+                dappMetadata,
+                extraParams,
+              },
+              torusIframeUrl.origin
+            );
+            await this._setupWeb3({
+              torusUrl,
+            });
+            if (showTorusButton) this.showTorusButton();
+            else this.hideTorusButton();
+            this.isInitialized = true;
+            (window as any).torus = this;
+            resolve();
+          });
+        } catch (error) {
+          reject(error);
+        }
       });
-      await this._setupWeb3({
-        torusUrl,
-      });
-      if (showTorusButton) this.showTorusButton();
-      else this.hideTorusButton();
-      this.isInitialized = true;
-      (window as any).torus = this;
     };
 
     await documentReady();
     await handleSetup();
   }
 
-  private handleDappStorageKey(useLocalStorage: boolean) {
-    let dappStorageKey = "";
-    if (isLocalStorageAvailable && useLocalStorage) {
-      const storedKey = window.localStorage.getItem(configuration.localStorageKey);
-      if (storedKey) dappStorageKey = storedKey;
-      else {
-        const generatedKey = `torus-app-${getWindowId()}`;
-        window.localStorage.setItem(configuration.localStorageKey, generatedKey);
-        dappStorageKey = generatedKey;
-      }
-    }
-    this.dappStorageKey = dappStorageKey;
-    return dappStorageKey;
-  }
-
   async login(params: TorusLoginParams = {}): Promise<string[]> {
     if (!this.isInitialized) throw new Error("Call init() first");
     try {
       this.requestedLoginProvider = params.loginProvider || null;
-      const reqParams: {
-        requestedLoginProvider?: LOGIN_PROVIDER_TYPE;
-        windowId?: string;
-      } = {};
-      if (this.requestedLoginProvider) {
-        reqParams.requestedLoginProvider = this.requestedLoginProvider;
-        reqParams.windowId = getWindowId();
-        this.communicationProvider._handleWindow(reqParams.windowId);
-      } else {
+      if (!this.requestedLoginProvider) {
         this.communicationProvider._displayIframe({ isFull: true });
       }
       // If user is already logged in, we assume they have given access to the website
@@ -272,110 +256,6 @@ class Torus {
 
   showTorusButton(): void {
     this.communicationProvider.showTorusButton();
-  }
-
-  /** @ignore */
-
-  /** @ignore */
-  private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
-    log.info("setupWeb3 running");
-    // setup background connection
-    const providerStream = new BasePostMessageStream({
-      name: "embed_torus",
-      target: "iframe_torus",
-      targetWindow: this.torusIframe.contentWindow,
-    });
-
-    // We create another LocalMessageDuplexStream for communication between dapp <> iframe
-    const communicationStream = new BasePostMessageStream({
-      name: "embed_communication",
-      target: "iframe_communication",
-      targetWindow: this.torusIframe.contentWindow,
-    });
-
-    // compose the inPage provider
-    const inPageProvider = new TorusInPageProvider(providerStream, {});
-    const communicationProvider = new TorusCommunicationProvider(communicationStream, {});
-
-    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => {
-      const _payload = payload;
-      if (!Array.isArray(_payload) && PROVIDER_UNSAFE_METHODS.includes(_payload.method)) {
-        if (!this.communicationProvider.isLoggedIn) throw new Error("User Not Logged In");
-        const windowId = getWindowId();
-        communicationProvider._handleWindow(windowId, {
-          target: "_blank",
-          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
-        });
-        // for inPageProvider methods sending windowId in request instead of params
-        // as params might be positional.
-        _payload.windowId = windowId;
-      }
-      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
-    };
-
-    communicationProvider.tryWindowHandle = (payload: JRPCRequest<unknown>, cb: (...args: any[]) => void) => {
-      const _payload = payload;
-      if (!Array.isArray(_payload) && COMMUNICATION_UNSAFE_METHODS.includes(_payload.method)) {
-        const windowId = getWindowId();
-        communicationProvider._handleWindow(windowId, {
-          target: "_blank",
-          features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW), // todo: are these features generic for all
-        });
-        // for communication methods sending window id in jrpc req params
-        (_payload.params as Record<string, unknown>).windowId = windowId;
-      }
-      communicationProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>, cb);
-    };
-
-    // detect solana_requestAccounts and pipe to enable for now
-    const detectAccountRequestPrototypeModifier = (m) => {
-      const originalMethod = inPageProvider[m];
-      const self = this;
-      inPageProvider[m] = function providerFunc(request, cb) {
-        const { method, params = [] } = request;
-        if (method === "solana_requestAccounts") {
-          if (!cb) return self.login({ loginProvider: params[0] });
-          self
-            .login({ loginProvider: params[0] })
-            // eslint-disable-next-line promise/no-callback-in-promise
-            .then((res) => cb(null, res))
-            // eslint-disable-next-line promise/no-callback-in-promise
-            .catch((err) => cb(err));
-        }
-        return originalMethod.apply(this, [request, cb]);
-      };
-    };
-
-    // Detects call to solana_requestAccounts in request & sendAsync and passes to login
-    detectAccountRequestPrototypeModifier("request");
-    detectAccountRequestPrototypeModifier("sendAsync");
-    detectAccountRequestPrototypeModifier("send");
-
-    const proxiedInPageProvider = new Proxy(inPageProvider, {
-      // straight up lie that we deleted the property so that it doesn't
-      // throw an error in strict mode
-      deleteProperty: () => true,
-    });
-
-    const proxiedCommunicationProvider = new Proxy(communicationProvider, {
-      // straight up lie that we deleted the property so that it doesn't
-      // throw an error in strict mode
-      deleteProperty: () => true,
-    });
-
-    this.provider = proxiedInPageProvider;
-    this.communicationProvider = proxiedCommunicationProvider;
-
-    await Promise.all([
-      inPageProvider._initializeState(),
-      communicationProvider._initializeState({
-        ...providerParams,
-        dappStorageKey: this.dappStorageKey,
-        torusAlertContainer: this.torusAlertContainer,
-        torusIframe: this.torusIframe,
-      }),
-    ]);
-    log.debug("Torus - injected provider");
   }
 
   async setProvider(params: NetworkInterface): Promise<void> {
@@ -448,12 +328,12 @@ class Torus {
   }
 
   async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    const signed_transactions: Transaction[] = [];
+    const signedTransactions: Transaction[] = [];
     for (const transaction of transactions) {
       const res = await this.signTransaction(transaction);
-      signed_transactions.push(res);
+      signedTransactions.push(res);
     }
-    return signed_transactions;
+    return signedTransactions;
   }
 
   async signMessage(data: Uint8Array): Promise<Uint8Array> {
@@ -481,6 +361,123 @@ class Torus {
   //   })) as boolean;
   //   return response;
   // }
+
+  private handleDappStorageKey(useLocalStorage: boolean) {
+    let dappStorageKey = "";
+    if (isLocalStorageAvailable && useLocalStorage) {
+      const storedKey = window.localStorage.getItem(configuration.localStorageKey);
+      if (storedKey) dappStorageKey = storedKey;
+      else {
+        const generatedKey = `torus-app-${getWindowId()}`;
+        window.localStorage.setItem(configuration.localStorageKey, generatedKey);
+        dappStorageKey = generatedKey;
+      }
+    }
+    this.dappStorageKey = dappStorageKey;
+    return dappStorageKey;
+  }
+
+  private async _setupWeb3(providerParams: { torusUrl: string }): Promise<void> {
+    log.info("setupWeb3 running");
+    // setup background connection
+    const providerStream = new BasePostMessageStream({
+      name: "embed_torus",
+      target: "iframe_torus",
+      targetWindow: this.torusIframe.contentWindow,
+    });
+
+    // We create another LocalMessageDuplexStream for communication between dapp <> iframe
+    const communicationStream = new BasePostMessageStream({
+      name: "embed_communication",
+      target: "iframe_communication",
+      targetWindow: this.torusIframe.contentWindow,
+    });
+
+    // compose the inPage provider
+    const inPageProvider = new TorusInPageProvider(providerStream, {});
+    const communicationProvider = new TorusCommunicationProvider(communicationStream, {});
+
+    inPageProvider.tryWindowHandle = (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: unknown[]) => void) => {
+      const _payload = payload;
+      if (!Array.isArray(_payload) && PROVIDER_UNSAFE_METHODS.includes(_payload.method)) {
+        if (!this.communicationProvider.isLoggedIn) throw new Error("User Not Logged In");
+        const windowId = getWindowId();
+        communicationProvider._handleWindow(windowId, {
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
+        });
+        // for inPageProvider methods sending windowId in request instead of params
+        // as params might be positional.
+        _payload.windowId = windowId;
+      }
+      inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
+    };
+
+    communicationProvider.tryWindowHandle = (payload: JRPCRequest<unknown>, cb: (...args: unknown[]) => void) => {
+      const _payload = payload;
+      if (!Array.isArray(_payload) && COMMUNICATION_UNSAFE_METHODS.includes(_payload.method)) {
+        const windowId = getWindowId();
+        communicationProvider._handleWindow(windowId, {
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_PROVIDER_CHANGE_WINDOW), // todo: are these features generic for all
+        });
+        // for communication methods sending window id in jrpc req params
+        (_payload.params as Record<string, unknown>).windowId = windowId;
+      }
+      communicationProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>, cb);
+    };
+
+    // detect solana_requestAccounts and pipe to enable for now
+    const detectAccountRequestPrototypeModifier = (m) => {
+      const originalMethod = inPageProvider[m];
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const self = this;
+      inPageProvider[m] = function providerFunc(request, cb) {
+        const { method, params = [] } = request;
+        if (method === "solana_requestAccounts") {
+          if (!cb) return self.login({ loginProvider: params[0] });
+          self
+            .login({ loginProvider: params[0] })
+            // eslint-disable-next-line promise/no-callback-in-promise
+            .then((res) => cb(null, res))
+            // eslint-disable-next-line promise/no-callback-in-promise
+            .catch((err) => cb(err));
+        }
+        return originalMethod.apply(this, [request, cb]);
+      };
+    };
+
+    // Detects call to solana_requestAccounts in request & sendAsync and passes to login
+    detectAccountRequestPrototypeModifier("request");
+    detectAccountRequestPrototypeModifier("sendAsync");
+    detectAccountRequestPrototypeModifier("send");
+
+    const proxiedInPageProvider = new Proxy(inPageProvider, {
+      // straight up lie that we deleted the property so that it doesn't
+      // throw an error in strict mode
+      deleteProperty: () => true,
+    });
+
+    const proxiedCommunicationProvider = new Proxy(communicationProvider, {
+      // straight up lie that we deleted the property so that it doesn't
+      // throw an error in strict mode
+      deleteProperty: () => true,
+    });
+
+    this.provider = proxiedInPageProvider;
+    this.communicationProvider = proxiedCommunicationProvider;
+
+    await Promise.all([
+      inPageProvider._initializeState(),
+      communicationProvider._initializeState({
+        ...providerParams,
+        dappStorageKey: this.dappStorageKey,
+        torusAlertContainer: this.torusAlertContainer,
+        torusIframe: this.torusIframe,
+      }),
+    ]);
+    log.debug("Torus - injected provider");
+  }
 }
 
 export default Torus;

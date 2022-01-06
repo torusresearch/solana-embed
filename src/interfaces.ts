@@ -61,7 +61,7 @@ export type LOGIN_PROVIDER_TYPE = typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVI
 export interface TorusCtorArgs {
   /**
    * Z-index of the modal and iframe
-   * @default 99999
+   * @defaultValue 99999
    */
   modalZIndex?: number;
 }
@@ -194,7 +194,7 @@ export interface LocaleLinks<T> {
 export interface TorusParams {
   /**
    * Determines where the torus widget is visible on the page.
-   * @default bottom-left
+   * @defaultValue bottom-left
    */
   buttonPosition?: BUTTON_POSITION_TYPE;
   /**
@@ -215,7 +215,7 @@ export interface TorusParams {
    * development uses http://localhost:8080 (expects torus-website to be run locally),
    *
    * testing uses https://solana-testing.tor.us (latest internal build)
-   * @default production
+   * @defaultValue production
    */
   buildEnv?: TORUS_BUILD_ENV_TYPE;
   /**
@@ -228,21 +228,20 @@ export interface TorusParams {
    * whether to show/hide torus widget.
    *
    * Defaults to true
-   * @default true
+   * @defaultValue true
    */
   showTorusButton?: boolean;
   /**
    * Prefers to use localStorage instead of sessionStorage for torus iframe. Allows longer lived sessions
    *
    * Defaults to false
-   * @default false
+   * @defaultValue false
    */
   useLocalStorage?: boolean;
   /**
    * Allows passing external data for initialize
    *
    * Defaults to empty object
-   * @default {}
    */
   extraParams?: { [keyof: string]: string };
 }

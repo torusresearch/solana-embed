@@ -1,7 +1,5 @@
 /**
  * Returns whether the given image URL exists
- * @param {string} url - the url of the image
- * @return {Promise<boolean>} whether the image exists
  */
 function imgExists(url: string): Promise<boolean> {
   return new Promise((resolve, reject) => {

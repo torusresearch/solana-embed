@@ -20,13 +20,19 @@ import messages from "./messages";
 import PopupHandler from "./PopupHandler";
 import { FEATURES_CONFIRM_WINDOW, getPopupFeatures, getUserLanguage } from "./utils";
 
-/**
- * @param {Object} connectionStream - A Node.js duplex stream
- * @param {Object} opts - An options bag
- * @param {number} opts.maxEventListeners - The maximum number of event listeners
- */
 class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState> {
-  protected _state: CommunicationProviderState;
+  protected static _defaultState: CommunicationProviderState = {
+    buttonPosition: "bottom-left",
+    currentLoginProvider: null,
+    isIFrameFullScreen: false,
+    hasEmittedConnection: false,
+
+    torusWidgetVisibility: false,
+    initialized: false,
+    isLoggedIn: false,
+    isPermanentlyDisconnected: false,
+    isConnected: false,
+  };
 
   public embedTranslations: EMBED_TRANSLATION_ITEM;
 
@@ -36,24 +42,11 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
 
   public windowRefs: Record<string, PopupHandler>;
 
+  tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: unknown[]) => void) => void;
+
   private torusAlertContainer: HTMLDivElement;
 
   private torusIframe: HTMLIFrameElement;
-
-  protected static _defaultState: CommunicationProviderState = {
-    buttonPosition: "bottom-left",
-    currentLoginProvider: null,
-    isIFrameFullScreen: false,
-    hasEmittedConnection: false,
-
-    torusWidgetVisibility: true,
-    initialized: false,
-    isLoggedIn: false,
-    isPermanentlyDisconnected: false,
-    isConnected: false,
-  };
-
-  tryWindowHandle: (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: any[]) => void) => void;
 
   constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider" }: ProviderOptions) {
     super(connectionStream, { maxEventListeners, jsonRpcStreamName });
@@ -101,19 +94,19 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     this.jsonRpcConnectionEvents.on("notification", notificationHandler);
   }
 
-  /**
-   * Returns whether the inPage provider is connected to Torus.
-   */
-  isConnected(): boolean {
-    return this._state.isConnected;
-  }
-
   get isLoggedIn(): boolean {
     return this._state.isLoggedIn;
   }
 
   get isIFrameFullScreen(): boolean {
     return this._state.isIFrameFullScreen;
+  }
+
+  /**
+   * Returns whether the inPage provider is connected to Torus.
+   */
+  isConnected(): boolean {
+    return this._state.isConnected;
   }
 
   async _initializeState(params: Record<string, unknown>): Promise<void> {
@@ -140,75 +133,6 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       log.info("initialized communication state");
       this._state.initialized = true;
       this.emit("_initialized");
-    }
-  }
-
-  /**
-   * Internal RPC method. Forwards requests to background via the RPC engine.
-   * Also remap ids inbound and outbound
-   */
-  protected _rpcRequest(payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], callback: (...args: any[]) => void): void {
-    const cb = callback;
-    const _payload = payload;
-    if (!Array.isArray(_payload)) {
-      if (!_payload.jsonrpc) {
-        _payload.jsonrpc = "2.0";
-      }
-    }
-    this.tryWindowHandle(_payload as JRPCRequest<unknown>[], cb);
-  }
-
-  /**
-   * When the provider becomes connected, updates internal state and emits
-   * required events. Idempotent.
-   *
-   * @param currentLoginProvider - The login Provider
-   * @emits TorusInpageProvider#connect
-   */
-  protected _handleConnect(currentLoginProvider: string, isLoggedIn: boolean): void {
-    if (!this._state.isConnected) {
-      this._state.isConnected = true;
-      this.emit("connect", { currentLoginProvider, isLoggedIn });
-      log.debug(messages.info.connected(currentLoginProvider));
-    }
-  }
-
-  /**
-   * When the provider becomes disconnected, updates internal state and emits
-   * required events. Idempotent with respect to the isRecoverable parameter.
-   *
-   * Error codes per the CloseEvent status codes as required by EIP-1193:
-   * https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent#Status_codes
-   *
-   * @param isRecoverable - Whether the disconnection is recoverable.
-   * @param errorMessage - A custom error message.
-   * @emits TorusInpageProvider#disconnect
-   */
-  protected _handleDisconnect(isRecoverable: boolean, errorMessage?: string): void {
-    if (this._state.isConnected || (!this._state.isPermanentlyDisconnected && !isRecoverable)) {
-      this._state.isConnected = false;
-
-      let error: Error;
-      if (isRecoverable) {
-        error = new EthereumRpcError(
-          1013, // Try again later
-          errorMessage || messages.errors.disconnected()
-        );
-        log.debug(error);
-      } else {
-        error = new EthereumRpcError(
-          1011, // Internal error
-          errorMessage || messages.errors.permanentlyDisconnected()
-        );
-        log.error(error);
-        this._state.currentLoginProvider = null;
-        this._state.isLoggedIn = false;
-        this._state.torusWidgetVisibility = true;
-        this._state.isIFrameFullScreen = false;
-        this._state.isPermanentlyDisconnected = true;
-      }
-
-      this.emit("disconnect", error);
     }
   }
 
@@ -240,57 +164,6 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
         params: { windowId },
       });
     });
-  }
-
-  // Called if the iframe wants to close the window cause it is done processing the request
-  private _handleCloseWindow(params: { windowId?: string }): void {
-    const { windowId } = params;
-    if (this.windowRefs[windowId]) {
-      this.windowRefs[windowId].close();
-      delete this.windowRefs[windowId];
-    }
-  }
-
-  private async _createPopupBlockAlert(windowId: string, url: string): Promise<void> {
-    const logoUrl = this.getLogoUrl();
-    const torusAlert = htmlToElement<HTMLDivElement>(
-      '<div id="torusAlert" class="torus-alert--v2" style="display:block;">' +
-        `<div id="torusAlert__logo"><img src="${logoUrl}" /></div>` +
-        "<div>" +
-        `<h1 id="torusAlert__title">${this.embedTranslations.actionRequired}</h1>` +
-        `<p id="torusAlert__desc">${this.embedTranslations.pendingAction}</p>` +
-        "</div>" +
-        "</div>"
-    );
-
-    const successAlert = htmlToElement(`<div><a id="torusAlert__btn">${this.embedTranslations.continue}</a></div>`);
-    const btnContainer = htmlToElement('<div id="torusAlert__btn-container"></div>');
-    btnContainer.appendChild(successAlert);
-    torusAlert.appendChild(btnContainer);
-    const bindOnLoad = () => {
-      successAlert.addEventListener("click", () => {
-        this._handleWindow(windowId, {
-          url,
-          target: "_blank",
-          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
-        });
-        torusAlert.remove();
-        if (this.torusAlertContainer.children.length === 0) this.torusAlertContainer.style.display = "none";
-      });
-    };
-
-    const attachOnLoad = () => {
-      this.torusAlertContainer.appendChild(torusAlert);
-    };
-
-    await documentReady();
-    attachOnLoad();
-    bindOnLoad();
-  }
-
-  private getLogoUrl(): string {
-    const logoUrl = `${this.torusUrl}/images/torus_icon-blue.svg`;
-    return logoUrl;
   }
 
   _displayIframe({ isFull = false, rid = "" }: { isFull?: boolean; rid?: string } = {}): void {
@@ -352,6 +225,127 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
   showTorusButton(): void {
     this._state.torusWidgetVisibility = true;
     this._displayIframe();
+  }
+
+  /**
+   * Internal RPC method. Forwards requests to background via the RPC engine.
+   * Also remap ids inbound and outbound
+   */
+  protected _rpcRequest(payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], callback: (...args: unknown[]) => void): void {
+    const cb = callback;
+    const _payload = payload;
+    if (!Array.isArray(_payload)) {
+      if (!_payload.jsonrpc) {
+        _payload.jsonrpc = "2.0";
+      }
+    }
+    this.tryWindowHandle(_payload as JRPCRequest<unknown>[], cb);
+  }
+
+  /**
+   * When the provider becomes connected, updates internal state and emits
+   * required events. Idempotent.
+   *
+   * @param currentLoginProvider - The login Provider
+   * emits TorusInpageProvider#connect
+   */
+  protected _handleConnect(currentLoginProvider: string, isLoggedIn: boolean): void {
+    if (!this._state.isConnected) {
+      this._state.isConnected = true;
+      this.emit("connect", { currentLoginProvider, isLoggedIn });
+      log.debug(messages.info.connected(currentLoginProvider));
+    }
+  }
+
+  /**
+   * When the provider becomes disconnected, updates internal state and emits
+   * required events. Idempotent with respect to the isRecoverable parameter.
+   *
+   * Error codes per the CloseEvent status codes as required by EIP-1193:
+   * https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent#Status_codes
+   *
+   * @param isRecoverable - Whether the disconnection is recoverable.
+   * @param errorMessage - A custom error message.
+   * emits TorusInpageProvider#disconnect
+   */
+  protected _handleDisconnect(isRecoverable: boolean, errorMessage?: string): void {
+    if (this._state.isConnected || (!this._state.isPermanentlyDisconnected && !isRecoverable)) {
+      this._state.isConnected = false;
+
+      let error: Error;
+      if (isRecoverable) {
+        error = new EthereumRpcError(
+          1013, // Try again later
+          errorMessage || messages.errors.disconnected()
+        );
+        log.debug(error);
+      } else {
+        error = new EthereumRpcError(
+          1011, // Internal error
+          errorMessage || messages.errors.permanentlyDisconnected()
+        );
+        log.error(error);
+        this._state.currentLoginProvider = null;
+        this._state.isLoggedIn = false;
+        this._state.torusWidgetVisibility = false;
+        this._state.isIFrameFullScreen = false;
+        this._state.isPermanentlyDisconnected = true;
+      }
+
+      this.emit("disconnect", error);
+    }
+  }
+
+  // Called if the iframe wants to close the window cause it is done processing the request
+  private _handleCloseWindow(params: { windowId?: string }): void {
+    const { windowId } = params;
+    if (this.windowRefs[windowId]) {
+      this.windowRefs[windowId].close();
+      delete this.windowRefs[windowId];
+    }
+  }
+
+  private async _createPopupBlockAlert(windowId: string, url: string): Promise<void> {
+    const logoUrl = this.getLogoUrl();
+    const torusAlert = htmlToElement<HTMLDivElement>(
+      '<div id="torusAlert" class="torus-alert--v2">' +
+        `<div id="torusAlert__logo"><img src="${logoUrl}" /></div>` +
+        "<div>" +
+        `<h1 id="torusAlert__title">${this.embedTranslations.actionRequired}</h1>` +
+        `<p id="torusAlert__desc">${this.embedTranslations.pendingAction}</p>` +
+        "</div>" +
+        "</div>"
+    );
+
+    const successAlert = htmlToElement(`<div><a id="torusAlert__btn">${this.embedTranslations.continue}</a></div>`);
+    const btnContainer = htmlToElement('<div id="torusAlert__btn-container"></div>');
+    btnContainer.appendChild(successAlert);
+    torusAlert.appendChild(btnContainer);
+    const bindOnLoad = () => {
+      successAlert.addEventListener("click", () => {
+        this._handleWindow(windowId, {
+          url,
+          target: "_blank",
+          features: getPopupFeatures(FEATURES_CONFIRM_WINDOW),
+        });
+        torusAlert.remove();
+        if (this.torusAlertContainer.children.length === 0) this.torusAlertContainer.style.display = "none";
+      });
+    };
+
+    const attachOnLoad = () => {
+      this.torusAlertContainer.appendChild(torusAlert);
+    };
+
+    await documentReady();
+    attachOnLoad();
+    bindOnLoad();
+    this.torusAlertContainer.style.display = "block";
+  }
+
+  private getLogoUrl(): string {
+    const logoUrl = `${this.torusUrl}/images/torus_icon-blue.svg`;
+    return logoUrl;
   }
 }
 
