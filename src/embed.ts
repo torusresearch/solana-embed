@@ -15,6 +15,7 @@ import {
   PaymentParams,
   TORUS_BUILD_ENV,
   TorusCtorArgs,
+  TorusLoginParams,
   TorusParams,
   UnValidatedJsonRpcRequest,
   UserInfo,
@@ -191,7 +192,7 @@ class Torus {
     return dappStorageKey;
   }
 
-  async login(params: { loginProvider?: LOGIN_PROVIDER_TYPE; login_hint?: string } = {}): Promise<string[]> {
+  async login(params: TorusLoginParams = {}): Promise<string[]> {
     if (!this.isInitialized) throw new Error("Call init() first");
     try {
       this.requestedLoginProvider = params.loginProvider || null;

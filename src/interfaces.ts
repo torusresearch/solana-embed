@@ -247,6 +247,11 @@ export interface TorusParams {
   extraParams?: { [keyof: string]: string };
 }
 
+export interface TorusLoginParams {
+  loginProvider?: LOGIN_PROVIDER_TYPE;
+  login_hint?: string;
+}
+
 export interface ProviderOptions {
   /**
    * The name of the stream used to connect to the wallet.
