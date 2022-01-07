@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@solana/spl-token": "^0.1.8",
+    "@metaplex-foundation/mpl-core": "0.0.2",
+    "@solana/wallet-adapter-wallets": "^0.14.0",
     "@solana/web3.js": "^1.31.0",
     "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-0.0.10.tgz",
     "bs58": "^4.0.1",

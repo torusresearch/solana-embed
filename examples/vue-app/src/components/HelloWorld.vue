@@ -19,6 +19,7 @@ import nacl from "tweetnacl";
 import log from "loglevel";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
+import { PhantomWalletAdapter} from "@solana/wallet-adapter-wallets";
 declare global {
   interface Window {
     torus: any;
@@ -32,6 +33,9 @@ const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
+
+let phantom = new PhantomWalletAdapter()
+
 watch(buildEnv, (buildEnv, prevBuildEnv) => {
   if (buildEnv !== prevBuildEnv) {
     if (torus) {
@@ -41,6 +45,88 @@ watch(buildEnv, (buildEnv, prevBuildEnv) => {
   }
 });
 
+const plogin = async ()=>{
+  const pkey = await phantom.connect();
+  
+}
+const transferSPL = async ( transaction: Transaction, source: string, dest : string, tokenMintAddress : string) => {
+  const receiverAccount = new PublicKey(dest);
+  const soruceAccount = new PublicKey(source )
+
+    let associatedTokenAccount =  receiverAccount;
+    let sourceAssociatedTokenAccount = soruceAccount
+    try {
+      associatedTokenAccount = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        new PublicKey(tokenMintAddress),
+        receiverAccount 
+      );
+      sourceAssociatedTokenAccount = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        new PublicKey(tokenMintAddress),
+        soruceAccount
+      );
+    } catch (e) {
+      log.warn("error getting associatedTokenAccount, account passed is possibly a token account");
+    }
+
+      const newAccount = await Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        new PublicKey(tokenMintAddress),
+        associatedTokenAccount,
+        receiverAccount,
+        soruceAccount
+        
+      );
+      transaction.add(newAccount);
+    // const transferInstructions = Token.createTransferCheckedInstruction(
+    //   TOKEN_PROGRAM_ID,
+    //   sourceTokenAccount,
+    //   mintAccount,
+    //   associatedTokenAccount,
+    //   signer,
+    //   [],
+    //   amount,
+    //   decimals
+    // );
+    const transferInstructions = Token.createTransferInstruction ( TOKEN_PROGRAM_ID, sourceAssociatedTokenAccount, associatedTokenAccount, soruceAccount, [], 1000000000 )
+    transaction.add(transferInstructions);
+    return transaction
+}
+
+const pSPLTransfer = async () => {
+  const source = phantom.publicKey
+  if (!source) throw Error("no key")
+  console.log(source)
+  new PublicKey(source.toBase58() )
+  const transaction = new Transaction({})
+  await transferSPL( transaction, source?.toBase58(), "4wuycuiEHNp4crsoRHh4KbEaUGjgPJS4dhUhn2he1yDs", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
+  await transferSPL( transaction, source?.toBase58(), "4bwBtipFFLhBy5NxPiwUKMyeAik4kxoa8heTwmNhFaao", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
+  await transferSPL( transaction, source?.toBase58(), "EyP2sutr9TEEC7csLnxkBKBnbT88isb3zpLmH2YLcLjJ", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
+
+  transaction.recentBlockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+
+  phantom.sendTransaction( transaction , conn)
+}
+const splTransfer = async () => {
+  let source = pubkey.value
+  console.log(pubkey.value)
+  if (!source) throw Error("no key")
+  console.log(source)
+  const transaction = new Transaction({})
+
+  await transferSPL( transaction, source, "4wuycuiEHNp4crsoRHh4KbEaUGjgPJS4dhUhn2he1yDs", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
+  await transferSPL( transaction, source, "4bwBtipFFLhBy5NxPiwUKMyeAik4kxoa8heTwmNhFaao", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
+  await transferSPL( transaction, source, "EyP2sutr9TEEC7csLnxkBKBnbT88isb3zpLmH2YLcLjJ", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
+
+  transaction.recentBlockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  transaction.feePayer = new PublicKey(source)
+    const res = await torus?.sendTransaction(transaction);
+    debugConsole(res as string);
+}
 const login = async () => {
   try {
     if (!torus) {
@@ -90,7 +176,8 @@ const transfer = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
-    toPubkey: new PublicKey(publicKeys![0]),
+    // toPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey("BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH"),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
@@ -189,8 +276,8 @@ const sendMultipleInstructionTransaction = async () => {
     .add(stakeInstruction)
     .add(TransactionInstruction2);
   try {
-    const res = await torus?.sendTransaction(transaction);
-    debugConsole(res as string);
+    const res = await torus?.signTransaction(transaction);
+    // debugConsole(res as string);
     // const res = await torus.provider.request({
     //   method: "send_transaction",
     //   params: { message: transaction.serializeMessage().toString("hex") }
@@ -341,6 +428,8 @@ const debugConsole = async (text: string) => {
         </select>
         <button @click="login">Login</button>
       </div>
+      <button @click="plogin">phantom connect</button>
+      <button @click="pSPLTransfer">phantom send</button>
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
       <div v-if="pubkey">
@@ -357,6 +446,7 @@ const debugConsole = async (text: string) => {
         <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="sendMultipleInstructionTransaction">Multiple Instruction tx</button>
         <button @click="signMessage">Sign Message</button>
+        <button @click="splTransfer">dev spltransfer</button>
       </div>
     </div>
     <div id="console-wrapper">
