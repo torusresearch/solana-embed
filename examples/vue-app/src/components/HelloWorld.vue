@@ -271,13 +271,13 @@ const debugConsole = async (text: string) => {
   <div id="app">
     <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
     <div :style="{ marginTop: '20px' }">
-      <h4>Login and resets</h4>
-      <p>
+      <h4 class="break-word">Login and resets</h4>
+      <p class="break-word">
         Build Environment :
         <i>{{ buildEnv }}</i>
       </p>
-      <p v-if="network">Solana Network : {{ network }}</p>
-      <p v-if="pubkey">Publickey : {{ pubkey }}</p>
+      <p v-if="network" class="break-word">Solana Network : {{ network }}</p>
+      <p v-if="pubkey" class="break-word">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
         <select name="buildEnv" v-model="buildEnv">
           <option value="production">Production</option>
@@ -303,11 +303,13 @@ const debugConsole = async (text: string) => {
         <button @click="signMessage">Sign Message</button>
       </div>
     </div>
-    <div id="console">
-      <p></p>
+    <div id="console-wrapper">
+      <div>Console :</div>
+      <div id="console">
+        <p></p>
+      </div>
     </div>
   </div>
-  <div class="hello"></div>
 </template>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -318,26 +320,26 @@ const debugConsole = async (text: string) => {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 2rem;
 }
+#console-wrapper {
+  margin-top: auto;
+}
+
 #console {
   border: 1px solid black;
   height: 80px;
-  left: 10em;
   padding: 2px;
-  bottom: 10px;
-  position: absolute;
+  position: relative;
   text-align: left;
-  width: calc(100% - 20px - 10em);
+  width: 100%;
   border-radius: 5px;
   overflow: scroll;
 }
-#console::before {
-  content: "Console :";
-  position: absolute;
-  top: -20px;
-  font-size: 12px;
-}
+
 #console > p {
   margin: 0.5em;
   word-wrap: break-word;
@@ -362,5 +364,8 @@ li {
 }
 a {
   color: #42b983;
+}
+.break-word {
+  overflow-wrap: break-word;
 }
 </style>
