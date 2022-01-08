@@ -28,13 +28,14 @@ import {
   FEATURES_CONFIRM_WINDOW,
   FEATURES_DEFAULT_WALLET_WINDOW,
   FEATURES_PROVIDER_CHANGE_WINDOW,
+  getNetworkConfig,
   getPopupFeatures,
   getTorusUrl,
   getWindowId,
   storageAvailable,
 } from "./utils";
 
-const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transaction", "sign_message", "connect"];
+const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
 const isLocalStorageAvailable = storageAvailable("localStorage");
@@ -328,12 +329,13 @@ class Torus {
   }
 
   async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    const signedTransactions: Transaction[] = [];
-    for (const transaction of transactions) {
-      const res = await this.signTransaction(transaction);
-      signedTransactions.push(res);
-    }
-    return signedTransactions;
+    const encodedTransactions: string[] = transactions.map((x) => x.serialize({ requireAllSignatures: false }).toString("hex"));
+    const response: string[] = await this.provider.request({
+      method: "sign_all_transactions",
+      params: { message: encodedTransactions },
+    });
+    const allSignedTransaction = response.map((msg) => Transaction.from(Buffer.from(msg, "hex")));
+    return allSignedTransaction;
   }
 
   async signMessage(data: Uint8Array): Promise<Uint8Array> {

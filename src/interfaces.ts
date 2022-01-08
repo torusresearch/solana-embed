@@ -191,6 +191,8 @@ export interface LocaleLinks<T> {
   es?: T;
 }
 
+export type NetworkLabel = "mainnet-beta" | "testnet" | "devnet";
+
 export interface TorusParams {
   /**
    * Determines where the torus widget is visible on the page.
@@ -206,7 +208,7 @@ export interface TorusParams {
   /**
    * Torus Network Object
    */
-  network?: NetworkInterface;
+  network?: NetworkInterface | NetworkLabel;
   /**
    * Build Environment of Torus.
    *

@@ -189,19 +189,28 @@ const signTransaction = async () => {
 
 // MAKE SURE browser allow pop up from this site
 const signAllTransaction = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  const TransactionInstruction = SystemProgram.transfer({
-    fromPubkey: new PublicKey(publicKeys![0]),
-    toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.1 * LAMPORTS_PER_SOL,
-  });
-  try {
-    const gasless_pk = await torus?.getGaslessPublicKey();
-    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
-    let transaction2 = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(gasless_pk || "") }).add(TransactionInstruction);
+  function getNewTx() {
+    let inst = SystemProgram.transfer({
+      fromPubkey: new PublicKey(publicKeys![0]),
+      toPubkey: new PublicKey(publicKeys![0]),
+      lamports: 0.1 * Math.random() * LAMPORTS_PER_SOL,
+    });
+    return new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
+  }
 
-    const res = await torus?.signAllTransactions([transaction2, transaction]);
-    debugConsole(JSON.stringify(res));
+  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  try {
+    const res = await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
+    const serializedTxns = res?.map((x) => x.serialize());
+
+    let promises: Promise<string>[] = [];
+    serializedTxns?.forEach((buffer) => {
+      promises.push(conn.sendRawTransaction(buffer));
+    });
+    let data = await Promise.all(promises);
+    console.log(data);
+
+    // debugConsole(JSON.stringify(res));
   } catch (e) {
     debugConsole(e as string);
   }
@@ -262,13 +271,13 @@ const debugConsole = async (text: string) => {
   <div id="app">
     <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
     <div :style="{ marginTop: '20px' }">
-      <h4>Login and resets</h4>
-      <p>
+      <h4 class="break-word">Login and resets</h4>
+      <p class="break-word">
         Build Environment :
         <i>{{ buildEnv }}</i>
       </p>
-      <p v-if="network">Solana Network : {{ network }}</p>
-      <p v-if="pubkey">Publickey : {{ pubkey }}</p>
+      <p v-if="network" class="break-word">Solana Network : {{ network }}</p>
+      <p v-if="pubkey" class="break-word">Publickey : {{ pubkey }}</p>
       <div v-if="pubkey === ''">
         <select name="buildEnv" v-model="buildEnv">
           <option value="production">Production</option>
@@ -287,18 +296,20 @@ const debugConsole = async (text: string) => {
         <button @click="topup">Top Up</button>
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
-        <button @click="gaslessTransfer">Send Gasless Transaction</button>
+        <!-- <button @click="gaslessTransfer">Send Gasless Transaction</button> -->
         <button @click="signTransaction">Sign Transaction</button>
         <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="sendMultipleInstructionTransaction">Multiple Instruction tx</button>
         <button @click="signMessage">Sign Message</button>
       </div>
     </div>
-    <div id="console">
-      <p></p>
+    <div id="console-wrapper">
+      <div>Console :</div>
+      <div id="console">
+        <p></p>
+      </div>
     </div>
   </div>
-  <div class="hello"></div>
 </template>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -309,26 +320,26 @@ const debugConsole = async (text: string) => {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 2rem;
 }
+#console-wrapper {
+  margin-top: auto;
+}
+
 #console {
   border: 1px solid black;
   height: 80px;
-  left: 10em;
   padding: 2px;
-  bottom: 10px;
-  position: absolute;
+  position: relative;
   text-align: left;
-  width: calc(100% - 20px - 10em);
+  width: 100%;
   border-radius: 5px;
   overflow: scroll;
 }
-#console::before {
-  content: "Console :";
-  position: absolute;
-  top: -20px;
-  font-size: 12px;
-}
+
 #console > p {
   margin: 0.5em;
   word-wrap: break-word;
@@ -353,5 +364,8 @@ li {
 }
 a {
   color: #42b983;
+}
+.break-word {
+  overflow-wrap: break-word;
 }
 </style>
