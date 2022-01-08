@@ -447,13 +447,10 @@ class Torus {
   }
 
   async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    const encoded_transactions: string[] = [];
-    for (const transaction of transactions) {
-      encoded_transactions.push(transaction.serialize({ requireAllSignatures: false }).toString("hex"));
-    }
+    const encodedTransactions: string[] = transactions.map((x) => x.serialize({ requireAllSignatures: false }).toString("hex"));
     const response: string[] = await this.provider.request({
       method: "sign_all_transactions",
-      params: { message: encoded_transactions },
+      params: { message: encodedTransactions },
     });
     const allSignedTransaction = response.map((msg) => Transaction.from(Buffer.from(msg, "hex")));
     return allSignedTransaction;
