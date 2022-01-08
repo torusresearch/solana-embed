@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/solana-embed",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Embed script for solana blockchain",
   "main": "dist/torus.cjs.js",
   "module": "dist/torus.esm.js",
