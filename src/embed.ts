@@ -160,7 +160,7 @@ class Torus {
               {
                 buttonPosition,
                 apiKey,
-                network,
+                network: typeof network === "string" ? getNetworkConfig(network) : network,
                 dappMetadata,
                 extraParams,
               },
