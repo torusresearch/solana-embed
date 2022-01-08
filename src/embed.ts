@@ -33,7 +33,7 @@ import {
   storageAvailable,
 } from "./utils";
 
-const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transaction", "sign_message", "connect"];
+const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
 const isLocalStorageAvailable = storageAvailable("localStorage");
@@ -447,12 +447,16 @@ class Torus {
   }
 
   async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    const signed_transactions: Transaction[] = [];
+    const encoded_transactions: string[] = [];
     for (const transaction of transactions) {
-      const res = await this.signTransaction(transaction);
-      signed_transactions.push(res);
+      encoded_transactions.push(transaction.serialize({ requireAllSignatures: false }).toString("hex"));
     }
-    return signed_transactions;
+    const response: string[] = await this.provider.request({
+      method: "sign_all_transactions",
+      params: { message: encoded_transactions },
+    });
+    const allSignedTransaction = response.map((msg) => Transaction.from(Buffer.from(msg, "hex")));
+    return allSignedTransaction;
   }
 
   async signMessage(data: Uint8Array): Promise<Uint8Array> {
