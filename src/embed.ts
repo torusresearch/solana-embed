@@ -102,7 +102,7 @@ class Torus {
     buildEnv = TORUS_BUILD_ENV.PRODUCTION,
     enableLogging = false,
     network,
-    showTorusButton = true,
+    showTorusButton = false,
     useLocalStorage = false,
     buttonPosition = BUTTON_POSITION.BOTTOM_LEFT,
     apiKey = "torus-default",
