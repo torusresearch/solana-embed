@@ -19,22 +19,17 @@ import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnValidate
 import messages from "./messages";
 import { createErrorMiddleware, logStreamDisconnectWarning } from "./utils";
 
-/**
- * @param {Object} connectionStream - A Node.js duplex stream
- * @param {Object} opts - An options bag
- * @param {number} opts.maxEventListeners - The maximum number of event listeners
- */
 abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitter implements SafeEventEmitterProvider {
-  protected _state: U;
+  /**
+   * Indicating that this provider is a Torus provider.
+   */
+  public readonly isTorus: true;
 
   _rpcEngine: JRPCEngine;
 
   jsonRpcConnectionEvents: SafeEventEmitter;
 
-  /**
-   * Indicating that this provider is a Torus provider.
-   */
-  public readonly isTorus: true;
+  protected _state: U;
 
   constructor(connectionStream: Duplex, { maxEventListeners = 100, jsonRpcStreamName = "provider" }: ProviderOptions) {
     super();
@@ -92,12 +87,6 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
   /**
    * Submits an RPC request for the given method, with the given params.
    * Resolves with the result of the method call, or rejects on error.
-   *
-   * @param {Object} args - The RPC request arguments.
-   * @param {string} args.method - The RPC method name.
-   * @param {unknown[] | Object} [args.params] - The parameters for the RPC method.
-   * @returns {Promise<unknown>} A Promise that resolves with the result of the RPC method,
-   * or rejects if an error is encountered.
    */
   async request<T>(args: RequestArguments): Promise<Maybe<T>> {
     if (!args || typeof args !== "object" || Array.isArray(args)) {
@@ -132,9 +121,6 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
 
   /**
    * Submits an RPC request per the given JSON-RPC request object.
-   *
-   * @param {Object} payload - The RPC request object.
-   * @param {Function} cb - The callback function.
    */
   send(payload: JRPCRequest<unknown>, callback: (error: Error | null, result?: JRPCResponse<unknown>) => void): void {
     this._rpcRequest(payload, callback);
@@ -144,14 +130,21 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
 
   /**
    * Submits an RPC request per the given JSON-RPC request object.
-   *
-   * @param {Object} payload - The RPC request object.
-   * @param {Function} cb - The callback function.
    */
   sendAsync(payload: JRPCRequest<unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
       this._rpcRequest(payload, getRpcPromiseCallback(resolve, reject));
     });
+  }
+
+  /**
+   * Called when connection is lost to critical streams.
+   *
+   * emits TorusInpageProvider#disconnect
+   */
+  protected _handleStreamDisconnect(streamName: string, error: Error): void {
+    logStreamDisconnectWarning(streamName, error, this);
+    this._handleDisconnect(false, error ? error.message : undefined);
   }
 
   // Private Methods
@@ -161,7 +154,7 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
    * Populates initial state by calling 'wallet_getProviderState' and emits
    * necessary events.
    */
-  abstract _initializeState(...args: any[]): Promise<void>;
+  abstract _initializeState(...args: unknown[]): Promise<void>;
 
   /**
    * Internal RPC method. Forwards requests to background via the RPC engine.
@@ -169,7 +162,7 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
    */
   protected abstract _rpcRequest(
     payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[],
-    callback: (...args: any[]) => void,
+    callback: (...args: unknown[]) => void,
     isInternal?: boolean
   ): void;
 
@@ -178,9 +171,9 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
    * required events. Idempotent.
    *
    * @param chainId - The ID of the newly connected chain.
-   * @emits TorusInPageProvider#connect
+   * emits TorusInPageProvider#connect
    */
-  protected abstract _handleConnect(...args: any[]): void;
+  protected abstract _handleConnect(...args: unknown[]): void;
 
   /**
    * When the provider becomes disconnected, updates internal state and emits
@@ -191,19 +184,9 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
    *
    * @param isRecoverable - Whether the disconnection is recoverable.
    * @param errorMessage - A custom error message.
-   * @emits TorusInpageProvider#disconnect
+   * emits TorusInpageProvider#disconnect
    */
   protected abstract _handleDisconnect(isRecoverable: boolean, errorMessage?: string): void;
-
-  /**
-   * Called when connection is lost to critical streams.
-   *
-   * @emits TorusInpageProvider#disconnect
-   */
-  protected _handleStreamDisconnect(streamName: string, error: Error): void {
-    logStreamDisconnectWarning(streamName, error, this);
-    this._handleDisconnect(false, error ? error.message : undefined);
-  }
 }
 
 export default BaseProvider;
