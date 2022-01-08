@@ -27,6 +27,7 @@ import {
   FEATURES_CONFIRM_WINDOW,
   FEATURES_DEFAULT_WALLET_WINDOW,
   FEATURES_PROVIDER_CHANGE_WINDOW,
+  getNetworkConfig,
   getPopupFeatures,
   getTorusUrl,
   getWindowId,
@@ -156,7 +157,7 @@ class Torus {
           {
             buttonPosition,
             apiKey,
-            network,
+            network: typeof network === "string" ? getNetworkConfig(network) : network,
             dappMetadata,
             extraParams,
           },

@@ -3,6 +3,7 @@ import { ethErrors } from "eth-rpc-errors";
 import { LogLevelDesc } from "loglevel";
 
 import config from "./config";
+import { NetworkInterface, NetworkLabel } from "./interfaces";
 import log from "./loglevel";
 
 // utility functions
@@ -148,3 +149,43 @@ export function getPopupFeatures({ width: w, height: h }: { width: number; heigh
   const features = `titlebar=0,toolbar=0,status=0,location=0,menubar=0,height=${h / systemZoom},width=${w / systemZoom},top=${top},left=${left}`;
   return features;
 }
+
+export const getNetworkConfig = (label: NetworkLabel): NetworkInterface | undefined => {
+  switch (label) {
+    case "mainnet-beta":
+      return {
+        blockExplorerUrl: "https://explorer.solana.com",
+        chainId: "0x1",
+        displayName: "Solana Mainnet",
+        logo: "solana.svg",
+        rpcTarget: "https://api.mainnet-beta.solana.com",
+        ticker: "SOL",
+        tickerName: "Solana Token",
+      } as NetworkInterface;
+
+    case "testnet":
+      return {
+        blockExplorerUrl: "https://explorer.solana.com",
+        chainId: "0x2",
+        displayName: "Solana Testnet",
+        logo: "solana.svg",
+        rpcTarget: "https://api.testnet.solana.com",
+        ticker: "SOL",
+        tickerName: "Solana Token",
+      } as NetworkInterface;
+
+    case "devnet":
+      return {
+        blockExplorerUrl: "https://explorer.solana.com",
+        chainId: "0x3",
+        displayName: "Solana Devnet",
+        logo: "solana.svg",
+        rpcTarget: "https://api.devnet.solana.com",
+        ticker: "SOL",
+        tickerName: "Solana Token",
+      } as NetworkInterface;
+
+    default:
+      return undefined;
+  }
+};
