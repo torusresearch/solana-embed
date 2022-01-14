@@ -17,6 +17,7 @@ import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 declare global {
   interface Window {
@@ -50,17 +51,21 @@ const login = async () => {
     if (!torus.isInitialized && !window.torus) {
       await torus.init({
         buildEnv: buildEnv.value,
-        showTorusButton: showButton.value,
-        network: {
-          blockExplorerUrl: "?cluster=testnet",
-          chainId: "0x2",
-          displayName: "Solana Testnet",
-          logo: "solana.svg",
-          rpcTarget: clusterApiUrl("testnet"),
-          ticker: "SOL",
-          tickerName: "Solana Token",
-        },
-      });
+        network: "mainnet-beta"
+      })
+      // await torus.init({
+      //   buildEnv: buildEnv.value,
+      //   showTorusButton: showButton.value,
+      //   network: {
+      //     blockExplorerUrl: "?cluster=testnet",
+      //     chainId: "0x2",
+      //     displayName: "Solana Testnet",
+      //     logo: "solana.svg",
+      //     rpcTarget: clusterApiUrl("testnet"),
+      //     ticker: "SOL",
+      //     tickerName: "Solana Token",
+      //   },
+      // });
     }
     publicKeys = await torus?.login({});
     pubkey.value = publicKeys ? publicKeys[0] : "";
@@ -89,6 +94,56 @@ const transfer = async () => {
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  try {
+    const res = await torus?.sendTransaction(transaction);
+    debugConsole(res as string);
+    // const res = await torus.provider.request({
+    //   method: "send_transaction",
+    //   params: { message: transaction.serializeMessage().toString("hex") }
+    // });
+  } catch (e) {
+    debugConsole(e as string);
+  }
+};
+
+const transferSPL = async () => {
+  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+
+  // usdc mint account on mainnet
+  const destinationTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), new PublicKey("GLV6NbHHV31CMQX2zn67V5Bihfcsdi1V5uGhmyLNASK9")); // Phantom account for testing, it already has a associated account
+
+  const transferInstructions = Token.createTransferCheckedInstruction(
+    TOKEN_PROGRAM_ID,
+    new PublicKey("4s6Fn4vZebRRgP4mMhZk5BJnX5FJ3KzBrehzKHf5PN8j"),
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+    destinationTokenAccount,
+    new PublicKey(publicKeys![0]),
+    [],
+    1000000,
+    6
+  );
+
+  // fida mint account on mainet
+  const sourceTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"), new PublicKey(publicKeys![0]));
+
+  const destinationTokenAccount2 = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"), new PublicKey("D2LtZtYTj6Aep84DGmFiUiNCgcz2J8HvhV4qortTx3mM"));
+
+  const transferInstructions2 = Token.createTransferCheckedInstruction(
+    TOKEN_PROGRAM_ID,
+    sourceTokenAccount,
+    new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"),
+    destinationTokenAccount2,
+    new PublicKey(publicKeys![0]),
+    [],
+    100000,
+    6
+  );
+
+
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(transferInstructions).add(transferInstructions2);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -296,6 +351,7 @@ const debugConsole = async (text: string) => {
         <button @click="topup">Top Up</button>
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
+        <button @click="transferSPL">Send SPL Transaction</button>
         <!-- <button @click="gaslessTransfer">Send Gasless Transaction</button> -->
         <button @click="signTransaction">Sign Transaction</button>
         <button @click="signAllTransaction">Sign All Transactions</button>
