@@ -20,11 +20,23 @@ import log from "loglevel";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import { PhantomWalletAdapter} from "@solana/wallet-adapter-wallets";
+import bs58 from "bs58";
+
 declare global {
   interface Window {
     torus: any;
   }
 }
+
+const getProvider = () => {
+  if ("solana" in window) {
+    const provider = (window as any).solana;
+    if (provider.isPhantom) {
+      return provider;
+    }
+  }
+  window.open("https://phantom.app/", "_blank");
+};
 
 let torus: Torus | null;
 let conn: Connection;
@@ -96,21 +108,88 @@ const transferSPL = async ( transaction: Transaction, source: string, dest : str
     transaction.add(transferInstructions);
     return transaction
 }
+const phantomSendGasless = async ()=>{
+  await phantom.connect()
+  const phantomPublicKey = phantom.publicKey! 
+
+  // const phantomPublicKey = resp.publicKey as PublicKey
+  const transaction = new Transaction()
+  const transferInst = SystemProgram.transfer( {
+    // fromPubkey: new PublicKey( publicKeys![0]),
+    // toPubkey : phantomPublicKey,
+    toPubkey: new PublicKey( publicKeys![0]),
+    fromPubkey : phantomPublicKey,
+    lamports : 0.01 * LAMPORTS_PER_SOL
+  })
+  transaction.add(transferInst)
+  // transaction.feePayer = new PublicKey(publicKeys![0]);
+  transaction.feePayer = phantomPublicKey;
+
+  const block = await conn.getRecentBlockhash("finalized")
+  transaction.recentBlockhash = block.blockhash
+
+  // let signed = await phantom.signTransaction(transaction)
+  // await torus?.sendTransaction(signed)
+  // let signed = await torus!.signTransaction(transaction)
+  const rest =  await phantom.sendTransaction( transaction, conn)
+  // signed = await phantom.signTransaction(signed)
+  // const rest = await conn.sendRawTransaction( signed.serialize() )
+  // console.log(rest)
+}
+
+const phantomRequestSend = async ()=>{
+  let phantomProvider = getProvider();
+  const resp = await phantomProvider.connect();
+  console.log(resp);
+  const phantomPublicKey = resp.publicKey as PublicKey
+  const transaction = new Transaction()
+  const transferInst = SystemProgram.transfer( {
+    // fromPubkey: new PublicKey( publicKeys![0]),
+    // toPubkey : phantomPublicKey,
+    toPubkey: new PublicKey( publicKeys![0]),
+    fromPubkey : phantomPublicKey,
+    lamports : 0.01 * LAMPORTS_PER_SOL
+  })
+  transaction.add(transferInst)
+  transaction.feePayer = new PublicKey(publicKeys![0]);
+  // transaction.feePayer = phantomPublicKey;
+
+  const block = await conn.getRecentBlockhash("finalized")
+  transaction.recentBlockhash = block.blockhash
+
+  // let signed = await phantomProvider.signTransaction(transaction)
+  // await torus?.sendTransaction(signed)
+  let signed = await torus!.signTransaction(transaction)
+  const resp1 = await phantomProvider.signAllTransactions([signed, signed])
+  // const resp1 = await phantomProvider.signTransaction(signed)
+  // await phantomProvider.signAndSendTransaction(signed)
+  // const resp1 = await phantomProvider.request( {
+  //   method: "signTransaction",
+  //   params: {
+  //        message: bs58.encode(signed.serializeMessage()),
+  //   },
+  // }) 
+  console.log(resp1)
+  const rest = await conn.sendRawTransaction( resp1.serialize() )
+  console.log(rest)
+}
 
 const pSPLTransfer = async () => {
-  const source = phantom.publicKey
+  const source = new PublicKey(pubkey.value) //phantom.publicKey
   if (!source) throw Error("no key")
   console.log(source)
   new PublicKey(source.toBase58() )
   const transaction = new Transaction({})
-  await transferSPL( transaction, source?.toBase58(), "4wuycuiEHNp4crsoRHh4KbEaUGjgPJS4dhUhn2he1yDs", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
-  await transferSPL( transaction, source?.toBase58(), "4bwBtipFFLhBy5NxPiwUKMyeAik4kxoa8heTwmNhFaao", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
-  await transferSPL( transaction, source?.toBase58(), "EyP2sutr9TEEC7csLnxkBKBnbT88isb3zpLmH2YLcLjJ", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
+  await transferSPL( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
+  // await transferSPL( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
+  await transferSPL( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
 
   transaction.recentBlockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-
-  phantom.sendTransaction( transaction , conn)
+  transaction.feePayer = phantom.publicKey!;
+  // phantom.signAllTransactions( [transaction ] );
+  phantom.signTransaction( transaction )
 }
+
 const splTransfer = async () => {
   let source = pubkey.value
   console.log(pubkey.value)
@@ -124,6 +203,7 @@ const splTransfer = async () => {
 
   transaction.recentBlockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   transaction.feePayer = new PublicKey(source)
+  // transaction.feePayer =  phantom.publicKey!
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
 }
@@ -180,7 +260,7 @@ const transfer = async () => {
     toPubkey: new PublicKey("BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH"),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) })//.add(TransactionInstruction);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -290,14 +370,25 @@ const sendMultipleInstructionTransaction = async () => {
 const gaslessTransfer = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
-    fromPubkey: new PublicKey(publicKeys![0]),
+    // fromPubkey: new PublicKey(publicKeys![0]),
+    fromPubkey: phantom.publicKey!,
     toPubkey: new PublicKey(publicKeys![0]),
-    lamports: 0.01 * LAMPORTS_PER_SOL,
+    lamports: 0.001 * LAMPORTS_PER_SOL,
   });
   try {
-    const res = await torus?.getGaslessPublicKey();
-    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res || "") }).add(TransactionInstruction);
-    const res_tx = await torus?.sendTransaction(transaction);
+    // const res = await torus?.getGaslessPublicKey();
+    // let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res || "") }).add(TransactionInstruction);
+    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+    // let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: phantom.publicKey }).add(TransactionInstruction);
+
+    transaction = await phantom.signTransaction(transaction);
+    const res_tx = await torus!.sendTransaction(transaction);
+    // console.log(transaction)
+    // const res_tx = await phantom.sendTransaction(transaction, conn);
+    console.log(transaction)
+    // const res = await conn.sendEncodedTransaction( transaction.serialize().toString("base64") )
+    // const res = await conn.simulateTransaction(transaction, undefined, [ phantom.publicKey!, new PublicKey(publicKeys![0]) ])
+    // console.log(res);
 
     debugConsole(res_tx as string);
   } catch (e) {
@@ -308,12 +399,14 @@ const gaslessTransfer = async () => {
 const signTransaction = async () => {
   const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   const TransactionInstruction = SystemProgram.transfer({
-    fromPubkey: new PublicKey(publicKeys![0]),
+    fromPubkey: new PublicKey(phantom.publicKey!),
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  // let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: phantom.publicKey }).add(TransactionInstruction);
 
+  transaction = await phantom.signTransaction(transaction);
   try {
     const res = await torus?.signTransaction(transaction);
     debugConsole(JSON.stringify(res));
@@ -430,6 +523,8 @@ const debugConsole = async (text: string) => {
       </div>
       <button @click="plogin">phantom connect</button>
       <button @click="pSPLTransfer">phantom send</button>
+      <button @click="phantomRequestSend">phantom request send</button>
+      <button @click="phantomSendGasless">phantom send gasless</button>
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
       <div v-if="pubkey">
