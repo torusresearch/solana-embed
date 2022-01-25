@@ -368,9 +368,11 @@ const mintToken = async (mintAddress:string)=>{
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
-  log.error(transaction.signatures)
   transaction.partialSign(mintAdmin)
 
+  // log.error(transaction.signatures)
+  // log.error(transaction.signatures.map(item=> item.publicKey.toBase58()))
+  
   // transaction.sig
   const result = await torus?.sendTransaction(transaction);
   // const result = await conn.sendRawTransaction(transaction.serialize());
@@ -482,7 +484,7 @@ const lookupRedeemSPL = async (mintAddress:string) => {
           <h4>SPL transfer example</h4>
           <div> Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></div>
           <button @click="sendusdc">Send usdc</button>
-          <button @click="signTransaction">Send and receive sdc</button>
+          <!-- <button @click="signTransaction">Send and receive sdc</button> -->
 
           <h4>Custom Program Example (Solana-Lookup) </h4>
           <button @click="lookupDepositSol" >Deposit SOL</button>
@@ -490,7 +492,7 @@ const lookupRedeemSPL = async (mintAddress:string) => {
           
           <button @click="()=>mintToken(mintAddress)">MintToken</button>
           <button @click="()=>lookupDepositSPL(mintAddress)">Deposit SPL</button>
-          <button @click="lookupRedeemSPL(mintAddress)">Redeem SPL</button>
+          <button @click="()=>lookupRedeemSPL(mintAddress)">Redeem SPL</button>
         </div>
       </div>
     </div>
