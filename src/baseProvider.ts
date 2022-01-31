@@ -88,7 +88,7 @@ abstract class BaseProvider<U extends BaseProviderState> extends SafeEventEmitte
    * Submits an RPC request for the given method, with the given params.
    * Resolves with the result of the method call, or rejects on error.
    */
-  async request<T>(args: RequestArguments): Promise<Maybe<T>> {
+  async request<TArgs, TResponse>(args: RequestArguments<TArgs>): Promise<Maybe<TResponse>> {
     if (!args || typeof args !== "object" || Array.isArray(args)) {
       throw ethErrors.rpc.invalidRequest({
         message: messages.errors.invalidRequestArgs(),
