@@ -286,10 +286,10 @@ export interface UnValidatedJsonRpcRequest extends JRPCRequest<unknown> {
   windowId?: string;
 }
 
-export interface RequestArguments {
+export interface RequestArguments<T> {
   /** The RPC method to request. */
   method: string;
 
   /** The params of the RPC method, if any. */
-  params?: unknown[] | Record<string, unknown>;
+  params?: T;
 }
