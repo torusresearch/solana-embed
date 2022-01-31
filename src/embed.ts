@@ -299,7 +299,10 @@ class Torus {
     if (!this.isInitialized) throw new Error("Torus is not initialized");
     const windowId = getWindowId();
     this.communicationProvider._handleWindow(windowId);
-    const topupResponse = await this.communicationProvider.request<unknown, boolean>({
+    const topupResponse = await this.communicationProvider.request<
+      { provider: PAYMENT_PROVIDER_TYPE; params: PaymentParams; windowId: string },
+      boolean
+    >({
       method: COMMUNICATION_JRPC_METHODS.TOPUP,
       params: { provider, params, windowId },
     });
