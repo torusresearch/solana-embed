@@ -57,7 +57,7 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
       this._state.isConnected = true;
     });
 
-    const jsonRpcNotificationHandler = (payload: RequestArguments) => {
+    const jsonRpcNotificationHandler = (payload: RequestArguments<unknown[] | Record<string, unknown>>) => {
       const { method, params } = payload;
       if (method === PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED) {
         this._handleAccountsChanged(params as unknown[]);
