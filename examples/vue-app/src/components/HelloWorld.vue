@@ -497,6 +497,32 @@ const topup = async () => {
   }
 };
 
+
+const errorTest = async () => {
+  try {
+    const res = await torus?.provider.request({
+      method : "sign_itransaction",
+      params : [] 
+    });
+  } catch (e) {
+    log.error(e);
+    debugConsole(JSON.stringify(e));
+  }
+};
+const errorTestPhantom = async () => {
+  try {
+    const signedMessage = await window.solana.request({
+      method: "signMessage",
+      params: {
+          message: "",
+          display: "hex",
+      },
+    });
+  } catch (e) {
+    log.error(e);
+    debugConsole(JSON.stringify(e));
+  }
+};
 const debugConsole = async (text: string) => {
   document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
@@ -543,6 +569,8 @@ const debugConsole = async (text: string) => {
         <button @click="signMessage">Sign Message</button>
         <button @click="splTransfer">dev spltransfer</button>
       </div>
+        <button @click="errorTest">error Test</button>
+        <button @click="errorTestPhantom">error Test Phantom</button>
     </div>
     <div id="console-wrapper">
       <div>Console :</div>
