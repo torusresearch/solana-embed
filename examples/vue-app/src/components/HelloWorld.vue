@@ -19,12 +19,6 @@ import nacl from "tweetnacl";
 import log from "loglevel";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
-declare global {
-  interface Window {
-    torus: any;
-  }
-}
-
 let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
@@ -47,7 +41,7 @@ const login = async () => {
       torus = new Torus();
     }
 
-    if (!torus.isInitialized ) {
+    if (!torus.isInitialized) {
       await torus.init({
         buildEnv: buildEnv.value,
         network: "mainnet-beta"
@@ -102,6 +96,7 @@ const transfer = async () => {
     //   params: { message: transaction.serializeMessage().toString("hex") }
     // });
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -152,6 +147,7 @@ const transferSPL = async () => {
     //   params: { message: transaction.serializeMessage().toString("hex") }
     // });
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -196,6 +192,7 @@ const sendMultipleInstructionTransaction = async () => {
     //   params: { message: transaction.serializeMessage().toString("hex") }
     // });
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -214,6 +211,7 @@ const gaslessTransfer = async () => {
 
     debugConsole(res_tx as string);
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -238,6 +236,7 @@ const signTransaction = async () => {
     // const tx = Transaction.from(msg);
     // debugConsole ( JSON.stringify(tx));
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -267,6 +266,7 @@ const signAllTransaction = async () => {
 
     // debugConsole(JSON.stringify(res));
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
