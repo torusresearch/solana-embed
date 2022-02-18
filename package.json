@@ -24,7 +24,7 @@
     "url": "git+https://github.com/torusresearch/solana-embed.git"
   },
   "dependencies": {
-    "@babel/runtime": "^7.16.7",
+    "@babel/runtime": "^7.17.2",
     "@solana/web3.js": "^1.35.0",
     "@toruslabs/base-controllers": "^1.6.1",
     "@toruslabs/http-helpers": "^2.2.0",
@@ -38,7 +38,6 @@
   },
   "devDependencies": {
     "@babel/register": "^7.17.0",
-    "@babel/runtime": "^7.17.2",
     "@commitlint/cli": "^16.2.1",
     "@commitlint/config-conventional": "^16.2.1",
     "@commitlint/is-ignored": "^16.2.1",
