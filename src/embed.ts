@@ -267,7 +267,7 @@ class Torus {
   }
 
   async showWallet(path: WALLET_PATH, params: Record<string, string> = {}): Promise<void> {
-    const instanceId = await this.communicationProvider.request<unknown, string>({
+    const instanceId = await this.communicationProvider.request<[], string>({
       method: COMMUNICATION_JRPC_METHODS.WALLET_INSTANCE_ID,
       params: [],
     });
@@ -288,7 +288,7 @@ class Torus {
   }
 
   async getUserInfo(): Promise<UserInfo> {
-    const userInfoResponse = await this.communicationProvider.request<unknown, UserInfo>({
+    const userInfoResponse = await this.communicationProvider.request<[], UserInfo>({
       method: COMMUNICATION_JRPC_METHODS.USER_INFO,
       params: [],
     });
@@ -299,7 +299,10 @@ class Torus {
     if (!this.isInitialized) throw new Error("Torus is not initialized");
     const windowId = getWindowId();
     this.communicationProvider._handleWindow(windowId);
-    const topupResponse = await this.communicationProvider.request<unknown, boolean>({
+    const topupResponse = await this.communicationProvider.request<
+      { provider: PAYMENT_PROVIDER_TYPE; params: PaymentParams; windowId: string },
+      boolean
+    >({
       method: COMMUNICATION_JRPC_METHODS.TOPUP,
       params: { provider, params, windowId },
     });
