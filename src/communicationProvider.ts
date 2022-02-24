@@ -70,18 +70,18 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       this._state.isConnected = true;
     });
 
-    const notificationHandler = (payload: RequestArguments) => {
+    const notificationHandler = (payload: RequestArguments<Record<string, unknown>>) => {
       const { method, params } = payload;
       if (method === COMMUNICATION_NOTIFICATIONS.IFRAME_STATUS) {
-        const { isFullScreen, rid } = params as Record<string, unknown>;
+        const { isFullScreen, rid } = params;
         this._displayIframe({ isFull: isFullScreen as boolean, rid: rid as string });
       } else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
       } else if (method === COMMUNICATION_NOTIFICATIONS.CLOSE_WINDOW) {
-        this._handleCloseWindow(params as Record<string, unknown>);
+        this._handleCloseWindow(params);
       } else if (method === COMMUNICATION_NOTIFICATIONS.USER_LOGGED_IN) {
-        const { currentLoginProvider } = params as Record<string, unknown>;
+        const { currentLoginProvider } = params;
         this._state.isLoggedIn = true;
         this._state.currentLoginProvider = currentLoginProvider as LOGIN_PROVIDER_TYPE;
       } else if (method === COMMUNICATION_NOTIFICATIONS.USER_LOGGED_OUT) {
