@@ -27,12 +27,6 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/sp
 import { PhantomWalletAdapter} from "@solana/wallet-adapter-wallets";
 import bs58 from "bs58";
 
-declare global {
-  interface Window {
-    torus: any;
-  }
-}
-
 const ec = new EC("secp256k1")
 const secp = ec.genKeyPair({entropy: "maximumentroyneededfortesting"})
 
@@ -70,7 +64,7 @@ const plogin = async ()=>{
   const pkey = await phantom.connect();
   
 }
-const transferSPL = async ( transaction: Transaction, source: string, dest : string, tokenMintAddress : string) => {
+const transferSPL2 = async ( transaction: Transaction, source: string, dest : string, tokenMintAddress : string) => {
   const receiverAccount = new PublicKey(dest);
   const soruceAccount = new PublicKey(source )
 
@@ -189,9 +183,9 @@ const pSPLTransfer = async () => {
   console.log(source)
   new PublicKey(source.toBase58() )
   const transaction = new Transaction({})
-  await transferSPL( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
+  await transferSPL2( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
   // await transferSPL( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
-  await transferSPL( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
+  await transferSPL2( transaction, source?.toBase58(), "BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
 
   transaction.recentBlockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   transaction.feePayer = phantom.publicKey!;
@@ -206,9 +200,9 @@ const splTransfer = async () => {
   console.log(source)
   const transaction = new Transaction({})
 
-  await transferSPL( transaction, source, "4wuycuiEHNp4crsoRHh4KbEaUGjgPJS4dhUhn2he1yDs", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
-  await transferSPL( transaction, source, "4bwBtipFFLhBy5NxPiwUKMyeAik4kxoa8heTwmNhFaao", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
-  await transferSPL( transaction, source, "EyP2sutr9TEEC7csLnxkBKBnbT88isb3zpLmH2YLcLjJ", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
+  await transferSPL2( transaction, source, "4wuycuiEHNp4crsoRHh4KbEaUGjgPJS4dhUhn2he1yDs", "2gX7pofXq6YK9cDco5LPAQZfRgyodxfXjkXdeHfksTGE" )
+  await transferSPL2( transaction, source, "4bwBtipFFLhBy5NxPiwUKMyeAik4kxoa8heTwmNhFaao", "BogPYCbnXevkaypTxTznJmGaJ1EdG9Dbf6rQ1h47KjvB" )
+  await transferSPL2( transaction, source, "EyP2sutr9TEEC7csLnxkBKBnbT88isb3zpLmH2YLcLjJ", "GU7eu5XzArRDFJ7WhRnFj1a6TpZ67AYNXMBzamd4hxtY" )
 
   transaction.recentBlockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   transaction.feePayer = new PublicKey(source)
@@ -225,7 +219,8 @@ const login = async () => {
     if (!torus.isInitialized ) {
       await torus.init({
         buildEnv: buildEnv.value,
-        network: "mainnet-beta"
+        // network: "mainnet-beta"
+        network: "devnet"
       })
       // await torus.init({
       //   buildEnv: buildEnv.value,
@@ -269,7 +264,7 @@ const transfer = async () => {
     toPubkey: new PublicKey("BMzEUbfovGzHNDocFqnFvpNpEwEJExMZYFsg262TQYBH"),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) })//.add(TransactionInstruction);
+  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -520,7 +515,7 @@ const errorTest = async () => {
 };
 const errorTestPhantom = async () => {
   try {
-    const signedMessage = await window.solana.request({
+    const signedMessage = await (window as any).solana.request({
       method: "signMessage",
       params: {
           message: "",
