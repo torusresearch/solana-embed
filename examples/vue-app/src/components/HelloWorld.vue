@@ -24,12 +24,6 @@ import { getSplInstructions  } from "./helper";
 import {ec as EC} from "elliptic";
 import { createHash } from "crypto";
 
-declare global {
-  interface Window {
-    torus: any;
-  }
-}
-
 const ec = new EC("secp256k1")
 const secp = ec.genKeyPair({entropy: "maximumentroyneededfortesting"})
 
@@ -41,6 +35,9 @@ const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
+
+const testnet= SUPPORTED_NETWORKS["testnet"].displayName
+
 watch(buildEnv, (buildEnv, prevBuildEnv) => {
   if (buildEnv !== prevBuildEnv) {
     if (torus) {
@@ -107,10 +104,6 @@ const transfer = async () => {
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
-    // const res = await torus.provider.request({
-    //   method: "send_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
   } catch (e) {
     debugConsole(e as string);
   }
@@ -157,10 +150,6 @@ const transferSPL = async () => {
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
-    // const res = await torus.provider.request({
-    //   method: "send_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
   } catch (e) {
     debugConsole(e as string);
   }
@@ -201,10 +190,6 @@ const sendMultipleInstructionTransaction = async () => {
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
-    // const res = await torus.provider.request({
-    //   method: "send_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
   } catch (e) {
     debugConsole(e as string);
   }
@@ -240,13 +225,6 @@ const signTransaction = async () => {
   try {
     const res = await torus?.signTransaction(transaction);
     debugConsole(JSON.stringify(res));
-    // const res = await torus.provider.request({
-    //   method: "sign_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
-    // const msg = Buffer.from(res, "hex");
-    // const tx = Transaction.from(msg);
-    // debugConsole ( JSON.stringify(tx));
   } catch (e) {
     debugConsole(e as string);
   }
@@ -480,19 +458,19 @@ const lookupRedeemSPL = async (mintAddress:string) => {
         <button @click="signMessage">Sign Message</button>
         
         <div>
-          <button @click="airdrop">Request SOL Airdrop</button>
           <h4>SPL transfer example</h4>
           <div> Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></div>
-          <button @click="sendusdc">Send usdc</button>
+          <button @click="sendusdc" :disabled="network!==testnet">Send usdc</button>
+          <button @click="airdrop" :disabled="network!==testnet">Request SOL Airdrop (Testnet only)</button>
           <!-- <button @click="signTransaction">Send and receive sdc</button> -->
 
-          <h4>Custom Program Example (Solana-Lookup) </h4>
-          <button @click="lookupDepositSol" >Deposit SOL</button>
-          <button @click="lookupRedeemSol">Redeem SOL </button>
+          <h4>Custom Program Example (Solana-Lookup) (Testnet only)</h4>
+          <button @click="lookupDepositSol" :disabled="network!==testnet">Deposit SOL</button>
+          <button @click="lookupRedeemSol" :disabled="network!==testnet">Redeem SOL </button>
           
-          <button @click="()=>mintToken(mintAddress)">MintToken</button>
-          <button @click="()=>lookupDepositSPL(mintAddress)">Deposit SPL</button>
-          <button @click="()=>lookupRedeemSPL(mintAddress)">Redeem SPL</button>
+          <button @click="()=>mintToken(mintAddress)" :disabled="network!==testnet">MintToken</button>
+          <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="network!==testnet">Deposit SPL</button>
+          <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="network!==testnet">Redeem SPL</button>
         </div>
       </div>
     </div>
