@@ -158,7 +158,7 @@ export const getNetworkConfig = (label: NetworkLabel): NetworkInterface | undefi
         chainId: "0x1",
         displayName: "Solana Mainnet",
         logo: "solana.svg",
-        rpcTarget: "https://api.mainnet-beta.solana.com",
+        rpcTarget: "https://api.google.mainnet-beta.solana.com",
         ticker: "SOL",
         tickerName: "Solana Token",
       } as NetworkInterface;
@@ -169,7 +169,7 @@ export const getNetworkConfig = (label: NetworkLabel): NetworkInterface | undefi
         chainId: "0x2",
         displayName: "Solana Testnet",
         logo: "solana.svg",
-        rpcTarget: "https://api.testnet.solana.com",
+        rpcTarget: "https://api.google.testnet.solana.com",
         ticker: "SOL",
         tickerName: "Solana Token",
       } as NetworkInterface;
@@ -180,7 +180,7 @@ export const getNetworkConfig = (label: NetworkLabel): NetworkInterface | undefi
         chainId: "0x3",
         displayName: "Solana Devnet",
         logo: "solana.svg",
-        rpcTarget: "https://api.devnet.solana.com",
+        rpcTarget: "https://api.google.devnet.solana.com",
         ticker: "SOL",
         tickerName: "Solana Token",
       } as NetworkInterface;
