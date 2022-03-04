@@ -57,7 +57,7 @@ const login = async () => {
     if (!torus.isInitialized ) {
       await torus.init({
         buildEnv: buildEnv.value,
-        network: "mainnet-beta"
+        // network: "mainnet-beta"
       })
       // await torus.init({
       //   buildEnv: buildEnv.value,
