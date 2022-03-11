@@ -1,4 +1,4 @@
-import { Transaction } from "@solana/web3.js";
+import { PublicKey, SignaturePubkeyPair, Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
@@ -310,31 +310,42 @@ class Torus {
   async sendTransaction(transaction: Transaction): Promise<string> {
     const response = (await this.provider.request({
       method: "send_transaction",
-      // params: { message: transaction.serializeMessage().toString("hex") },
-      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
+      params: { message: transaction.serializeMessage().toString("hex"), messageOnly: true },
     })) as string;
     return response;
   }
 
   async signTransaction(transaction: Transaction): Promise<Transaction> {
-    const response = (await this.provider.request({
+    const response: string = (await this.provider.request({
       method: "sign_transaction",
-      // params: { message: transaction.serializeMessage().toString("hex") },
-      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
+      params: { message: transaction.serializeMessage().toString("hex"), messageOnly: true },
     })) as string;
 
-    const buf = Buffer.from(response, "hex");
-    const sendTx = Transaction.from(buf);
-    return sendTx;
+    // reconstruct signature pair
+    const parsed = JSON.parse(response);
+    const signature: SignaturePubkeyPair = { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
+    transaction.addSignature(signature.publicKey, signature.signature);
+    return transaction;
   }
 
   async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    const encodedTransactions: string[] = transactions.map((x) => x.serialize({ requireAllSignatures: false }).toString("hex"));
+    const encodedMessage: string[] = transactions.map((tx) => {
+      return tx.serializeMessage().toString("hex");
+    });
     const response: string[] = await this.provider.request({
       method: "sign_all_transactions",
-      params: { message: encodedTransactions },
+      params: { message: encodedMessage, messageOnly: true },
     });
-    const allSignedTransaction = response.map((msg) => Transaction.from(Buffer.from(msg, "hex")));
+
+    // reconstruct signature pairs
+    const signatures: SignaturePubkeyPair[] = response.map((item) => {
+      const parsed = JSON.parse(item);
+      return { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
+    });
+    const allSignedTransaction = transactions.map((tx, idx) => {
+      tx.addSignature(signatures[idx].publicKey, signatures[idx].signature);
+      return tx;
+    });
     return allSignedTransaction;
   }
 
