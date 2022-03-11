@@ -352,9 +352,11 @@ const mintToken = async (mintAddress:string)=>{
   // log.error(transaction.signatures.map(item=> item.publicKey.toBase58()))
   
   // transaction.sig
-  const result = await torus?.sendTransaction(transaction);
+  // const result = await torus?.sendTransaction(transaction);
+  const signedTransaction = await torus?.signTransaction(transaction);
+  const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
   // const result = await conn.sendRawTransaction(transaction.serialize());
-  // debugConsole(result ||"");
+  debugConsole(result ||"");
 
 }
 
@@ -363,8 +365,9 @@ const lookupDepositSol = async () => {
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
-  const result = await torus?.sendTransaction(transaction);
-  // const result = await conn.sendRawTransaction(transaction.serialize());
+  // const result = await torus?.sendTransaction(transaction);
+  const signedTransaction = await torus?.signTransaction(transaction);
+  const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
   debugConsole(result||"")
 }
 const lookupDepositSPL = async (mintAddress: string) => {
@@ -372,7 +375,9 @@ const lookupDepositSPL = async (mintAddress: string) => {
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
-  const result = await torus?.sendTransaction(transaction);
+  const signedTransaction = await torus?.signTransaction(transaction);
+  const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
+  // const result = await torus?.sendTransaction(transaction);
   // const result = await conn.sendRawTransaction(transaction.serialize());
   debugConsole(result||"")
 }
@@ -384,8 +389,9 @@ const lookupRedeemSol = async () => {
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
-  const result = await torus?.sendTransaction(transaction);
-
+  const signedTransaction = await torus?.signTransaction(transaction);
+  const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
+  // const result = await torus?.sendTransaction(transaction);
   // const result = await conn.sendRawTransaction(transaction.serialize());
   debugConsole(result||"")
 }
@@ -413,7 +419,10 @@ const lookupRedeemSPL = async (mintAddress:string) => {
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
-  const result = await torus?.sendTransaction(transaction);
+
+  const signedTransaction = await torus?.signTransaction(transaction);
+  const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
+  // const result = await torus?.sendTransaction(transaction);
   // const result = await conn.sendRawTransaction(transaction.serialize());
   debugConsole(result|| "")
 }
