@@ -31,6 +31,8 @@ const secp = ec.genKeyPair({entropy: "maximumentroyneededfortesting"})
 let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
+
+const privateKey= ref();
 const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
@@ -87,6 +89,46 @@ const login = async () => {
     console.error(err);
   }
 };
+
+
+
+const loginWithPrivateKey = async () => {
+  try {
+    if (!torus) {
+      torus = new Torus();
+    }
+    if (!torus.isInitialized ) {
+      await torus.init({
+        buildEnv: buildEnv.value,
+        // network: "mainnet-beta"
+      })
+    }
+    console.log(torus)
+    console.log(secp.getPrivate().toString("hex"))
+    const publicKeys = await torus.loginWithPrivateKey({
+      privateKey : privateKey.value,
+      userInfo : {
+        email: "test@test.com",
+        name: "test",
+        profileImage : "",
+        verifier : "google",
+        verifierId: "google-test"
+      }
+    })
+    pubkey.value = publicKeys ? publicKeys[0] : "";
+    const target_network = (await torus.provider.request({
+      method: "solana_provider_config",
+      params: [],
+    })) as { rpcTarget: string; displayName: string };
+    console.log(target_network);
+    network.value = target_network.displayName;
+    conn = new Connection(target_network?.rpcTarget , "max");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
 
 const logout = async () => {
   torus?.logout();
@@ -439,6 +481,12 @@ const lookupRedeemSPL = async (mintAddress:string) => {
           <option value="development">Development</option>
         </select>
         <button @click="login">Login</button>
+          <span> OR </span>
+
+          <div>
+            <input :style="{ marginLeft: '20px' }" v-model="privateKey" :placeholder="`Enter private keyf from web3auth to login`" />
+            <button @click="loginWithPrivateKey">Login With Private Key</button>
+          </div>
       </div>
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
