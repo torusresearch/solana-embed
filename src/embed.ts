@@ -35,8 +35,10 @@ import {
   storageAvailable,
 } from "./utils";
 
-const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
-const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
+// const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
+// const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
+const PROVIDER_UNSAFE_METHODS = [];
+const COMMUNICATION_UNSAFE_METHODS = [];
 
 const isLocalStorageAvailable = storageAvailable("localStorage");
 
