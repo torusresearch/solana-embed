@@ -104,8 +104,7 @@ const loginWithPrivateKey = async () => {
       })
     }
     console.log(torus)
-    console.log(secp.getPrivate().toString("hex"))
-    const publicKeys = await torus.loginWithPrivateKey({
+    await torus.loginWithPrivateKey({
       privateKey : privateKey.value,
       userInfo : {
         email: "test@test.com",
@@ -115,6 +114,8 @@ const loginWithPrivateKey = async () => {
         verifierId: "google-test"
       }
     })
+    publicKeys = await torus.getAccounts();
+    log.info(publicKeys)
     pubkey.value = publicKeys ? publicKeys[0] : "";
     const target_network = (await torus.provider.request({
       method: "solana_provider_config",

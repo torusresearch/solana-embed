@@ -320,6 +320,14 @@ class Torus {
   }
 
   // Solana specific API
+  async getAccounts() {
+    const response = (await this.provider.request({
+      method: "getAccounts",
+      params: [],
+    })) as string[];
+    return response;
+  }
+
   async sendTransaction(transaction: Transaction): Promise<string> {
     const response = (await this.provider.request({
       method: "send_transaction",
