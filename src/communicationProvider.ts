@@ -152,14 +152,14 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     // Add to collection only if window is opened
     this.windowRefs[windowId] = handledWindow;
     // We tell the iframe that the window has been successfully opened
-    this.request<void>({
+    this.request<{ windowId: string }, unknown>({
       method: COMMUNICATION_JRPC_METHODS.OPENED_WINDOW,
       params: { windowId },
     });
     handledWindow.once("close", () => {
       // user closed the window
       delete this.windowRefs[windowId];
-      this.request<void>({
+      this.request<{ windowId: string }, unknown>({
         method: COMMUNICATION_JRPC_METHODS.CLOSED_WINDOW,
         params: { windowId },
       });
@@ -211,7 +211,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     }
     Object.assign(this.torusIframe.style, style);
     this._state.isIFrameFullScreen = isFull;
-    this.request<void>({
+    this.request<{ isIFrameFullScreen: boolean; rid: string }, unknown>({
       method: COMMUNICATION_JRPC_METHODS.IFRAME_STATUS,
       params: { isIFrameFullScreen: isFull, rid },
     });

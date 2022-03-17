@@ -26,8 +26,6 @@ import { createHash } from "crypto";
 
 const ec = new EC("secp256k1")
 const secp = ec.genKeyPair({entropy: "maximumentroyneededfortesting"})
-
-
 let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
@@ -54,7 +52,7 @@ const login = async () => {
       torus = new Torus();
     }
 
-    if (!torus.isInitialized ) {
+    if (!torus.isInitialized) {
       await torus.init({
         buildEnv: buildEnv.value,
         // network: "mainnet-beta"
@@ -105,6 +103,7 @@ const transfer = async () => {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -151,6 +150,7 @@ const transferSPL = async () => {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -191,6 +191,7 @@ const sendMultipleInstructionTransaction = async () => {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -209,6 +210,7 @@ const gaslessTransfer = async () => {
 
     debugConsole(res_tx as string);
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -226,6 +228,7 @@ const signTransaction = async () => {
     const res = await torus?.signTransaction(transaction);
     debugConsole(JSON.stringify(res));
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
@@ -255,6 +258,7 @@ const signAllTransaction = async () => {
 
     // debugConsole(JSON.stringify(res));
   } catch (e) {
+    log.error(e);
     debugConsole(e as string);
   }
 };
