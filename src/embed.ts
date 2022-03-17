@@ -214,17 +214,17 @@ class Torus {
     }
   }
 
-  async loginWithPrivateKey(loginParams: { privateKey: string; userInfo: UserInfo }): Promise<string> {
+  async loginWithPrivateKey(loginParams: { privateKey: string; userInfo: UserInfo }): Promise<void> {
     if (!this.isInitialized) throw new Error("Call init() first");
     const { privateKey, userInfo } = loginParams;
-    const publicKey = await this.communicationProvider.request<{ privateKey: string; userInfo: UserInfo }, string>({
+    const { success } = await this.communicationProvider.request<{ privateKey: string; userInfo: UserInfo }, { success: boolean }>({
       method: "login_with_private_key",
       params: {
         privateKey,
         userInfo,
       },
     });
-    return publicKey as string;
+    if (!success) throw new Error("Login Failed");
   }
 
   async logout(): Promise<void> {
