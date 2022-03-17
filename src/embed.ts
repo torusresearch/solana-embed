@@ -332,13 +332,13 @@ class Torus {
     const encodedMessage: string[] = transactions.map((tx) => {
       return tx.serializeMessage().toString("hex");
     });
-    const response: string[] = await this.provider.request({
+    const responses: string[] = await this.provider.request({
       method: "sign_all_transactions",
       params: { message: encodedMessage, messageOnly: true },
     });
 
     // reconstruct signature pairs
-    const signatures: SignaturePubkeyPair[] = response.map((item) => {
+    const signatures: SignaturePubkeyPair[] = responses.map((item) => {
       const parsed = JSON.parse(item);
       return { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
     });
