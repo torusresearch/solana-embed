@@ -342,11 +342,12 @@ class Torus {
       const parsed = JSON.parse(item);
       return { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
     });
-    const allSignedTransaction = transactions.map((tx, idx) => {
+
+    transactions.forEach((tx, idx) => {
       tx.addSignature(signatures[idx].publicKey, signatures[idx].signature);
       return tx;
     });
-    return allSignedTransaction;
+    return transactions;
   }
 
   async signMessage(data: Uint8Array): Promise<Uint8Array> {
