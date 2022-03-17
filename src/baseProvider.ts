@@ -11,7 +11,7 @@ import {
   Stream,
 } from "@toruslabs/openlogin-jrpc";
 import { ethErrors } from "eth-rpc-errors";
-import { isDuplexStream } from "is-stream";
+import { duplex as isDuplexStream } from "is-stream";
 import pump from "pump";
 import type { Duplex } from "readable-stream";
 

@@ -12,13 +12,20 @@ import {
   Keypair,
   Authorized,
   Lockup,
+TransactionInstruction,
 } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import  { createDeposit, createRedeemSolInstruction, createRedeemInstruction, redeemSol, redeemSplToken} from "@cwlee/solana-lookup-sdk";
+import { getSplInstructions  } from "./helper";
+import {ec as EC} from "elliptic";
+import { createHash } from "crypto";
 
+const ec = new EC("secp256k1")
+const secp = ec.genKeyPair({entropy: "maximumentroyneededfortesting"})
 let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
@@ -26,6 +33,9 @@ const network = ref("");
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
+
+const testnet= SUPPORTED_NETWORKS["testnet"].displayName
+
 watch(buildEnv, (buildEnv, prevBuildEnv) => {
   if (buildEnv !== prevBuildEnv) {
     if (torus) {
@@ -34,6 +44,7 @@ watch(buildEnv, (buildEnv, prevBuildEnv) => {
     }
   }
 });
+
 
 const login = async () => {
   try {
@@ -44,7 +55,7 @@ const login = async () => {
     if (!torus.isInitialized) {
       await torus.init({
         buildEnv: buildEnv.value,
-        network: "mainnet-beta"
+        // network: "mainnet-beta"
       })
       // await torus.init({
       //   buildEnv: buildEnv.value,
@@ -69,7 +80,7 @@ const login = async () => {
     })) as { rpcTarget: string; displayName: string };
     console.log(target_network);
     network.value = target_network.displayName;
-    conn = new Connection(target_network?.rpcTarget);
+    conn = new Connection(target_network?.rpcTarget , "max");
   } catch (err) {
     console.error(err);
   }
@@ -91,10 +102,6 @@ const transfer = async () => {
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
-    // const res = await torus.provider.request({
-    //   method: "send_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -142,10 +149,6 @@ const transferSPL = async () => {
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
-    // const res = await torus.provider.request({
-    //   method: "send_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -187,10 +190,6 @@ const sendMultipleInstructionTransaction = async () => {
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
-    // const res = await torus.provider.request({
-    //   method: "send_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -228,13 +227,6 @@ const signTransaction = async () => {
   try {
     const res = await torus?.signTransaction(transaction);
     debugConsole(JSON.stringify(res));
-    // const res = await torus.provider.request({
-    //   method: "sign_transaction",
-    //   params: { message: transaction.serializeMessage().toString("hex") }
-    // });
-    // const msg = Buffer.from(res, "hex");
-    // const tx = Transaction.from(msg);
-    // debugConsole ( JSON.stringify(tx));
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -320,6 +312,117 @@ const topup = async () => {
 const debugConsole = async (text: string) => {
   document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
+
+const airdrop = async ()=>{
+  await conn.requestAirdrop( new PublicKey(pubkey.value), 1* LAMPORTS_PER_SOL)
+}
+
+const sendusdc = async()=>{
+  // const usdcmint = network.value === "testnet" ? "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp" : ""; 
+  const usdcmint = "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp"
+  const inst =  await getSplInstructions( conn, pubkey.value, pubkey.value, 1, usdcmint)
+  const block = await conn.getRecentBlockhash();
+  const transaction = new Transaction({feePayer : new PublicKey(pubkey.value), recentBlockhash: block.blockhash })
+  transaction.add(...inst);
+
+  await torus?.sendTransaction(transaction);
+  // const result = await conn.sendRawTransaction(transaction.serialize())
+}
+
+const lookup = "Eu8Pv3TRDYjqSZxQ7UfKQZr5jYZTZwhCvxd4UWLKUq3L";
+const mintAddress = "2Ce9Bhf5oi9k1yftvgQUeCXf2ZUhasUPEcbWLktpDtv5"
+
+const mintAdminSrt = [75,62,204,173,88,58,245,115,230,162,141,243,101,197,220,230,6,106,50,85,249,51,227,43,223,176,10,129,76,139,106,3,134,111,220,26,52,217,174,38,102,164,15,39,205,92,223,133,63,183,60,38,89,23,196,253,116,105,23,255,166,196,220,189]
+const mintAdmin = Keypair.fromSecretKey(Buffer.from(mintAdminSrt)) 
+const mintToken = async (mintAddress:string)=>{
+  // mint token
+  const mint = new PublicKey(mintAddress);
+  const dest = new PublicKey(pubkey.value);
+  const tokenaccount = await Token.getAssociatedTokenAddress( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mint, dest)
+  const tokenaccountInfo = await conn.getAccountInfo(tokenaccount);
+  // log.error(tokenaccountInfo?.owner.toBase58())
+  const inst : TransactionInstruction[] = [];
+  if (!tokenaccountInfo?.owner.equals(TOKEN_PROGRAM_ID) )
+    inst.push(Token.createAssociatedTokenAccountInstruction( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, new PublicKey(mintAddress), tokenaccount , dest, dest))
+
+  inst.push( await Token.createMintToInstruction(TOKEN_PROGRAM_ID, mint, tokenaccount, mintAdmin.publicKey , [], 1* LAMPORTS_PER_SOL) ); 
+  
+  const block = await conn.getRecentBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  transaction.add(...inst);
+  transaction.partialSign(mintAdmin)
+
+  // log.error(transaction.signatures)
+  // log.error(transaction.signatures.map(item=> item.publicKey.toBase58()))
+  
+  // transaction.sig
+  const result = await torus?.sendTransaction(transaction);
+  // const result = await conn.sendRawTransaction(transaction.serialize());
+  // debugConsole(result ||"");
+
+}
+
+const lookupDepositSol = async () => {
+  const inst = await createDeposit( conn, secp.getPublic("hex"), new PublicKey(lookup), new PublicKey(pubkey.value) , 0.1 )
+  const block = await conn.getRecentBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  transaction.add(...inst);
+  const result = await torus?.sendTransaction(transaction);
+  // const result = await conn.sendRawTransaction(transaction.serialize());
+  debugConsole(result||"")
+}
+const lookupDepositSPL = async (mintAddress: string) => {
+  const inst = await createDeposit( conn, secp.getPublic("hex"), new PublicKey(lookup), new PublicKey(pubkey.value) , 1 ,new PublicKey(mintAddress) )
+  const block = await conn.getRecentBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  transaction.add(...inst);
+  const result = await torus?.sendTransaction(transaction);
+  // const result = await conn.sendRawTransaction(transaction.serialize());
+  debugConsole(result||"")
+}
+const lookupRedeemSol = async () => {
+  const hashValue = createHash("sha256").update("lookup").digest("hex")
+  const signature = secp.sign(hashValue)
+
+  const inst = await redeemSol( secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), new PublicKey(pubkey.value) )
+  const block = await conn.getRecentBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  transaction.add(...inst);
+  const result = await torus?.sendTransaction(transaction);
+
+  // const result = await conn.sendRawTransaction(transaction.serialize());
+  debugConsole(result||"")
+}
+const lookupRedeemSPL = async (mintAddress:string) => {
+  // const dest =pubkey.value;
+  const hashValue = createHash("sha256").update("lookup").digest("hex")
+  const signature = secp.sign(hashValue)
+
+  const signer = new PublicKey(pubkey.value);
+  const mintAccount = new PublicKey(mintAddress);
+  
+  const receiver = signer;
+  // const receiver = mintAdmin.publicKey;
+  const dest = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, receiver );
+  const destAccountInfo = await conn.getAccountInfo(dest);
+
+  const inst : TransactionInstruction[] = []
+
+  if (!destAccountInfo) 
+    inst.push ( await Token.createAssociatedTokenAccountInstruction( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, dest, receiver, signer) )
+  
+  // redeem instruction
+  inst.push ( ... await redeemSplToken( conn, secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), mintAccount , signer, dest ) )
+  
+  const block = await conn.getRecentBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  transaction.add(...inst);
+  const result = await torus?.sendTransaction(transaction);
+  // const result = await conn.sendRawTransaction(transaction.serialize());
+  debugConsole(result|| "")
+}
+
+
 </script>
 
 <template>
@@ -357,6 +460,22 @@ const debugConsole = async (text: string) => {
         <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="sendMultipleInstructionTransaction">Multiple Instruction tx</button>
         <button @click="signMessage">Sign Message</button>
+        
+        <div>
+          <h4>SPL transfer example</h4>
+          <div> Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></div>
+          <button @click="sendusdc" :disabled="network!==testnet">Send usdc</button>
+          <button @click="airdrop" :disabled="network!==testnet">Request SOL Airdrop (Testnet only)</button>
+          <!-- <button @click="signTransaction">Send and receive sdc</button> -->
+
+          <h4>Custom Program Example (Solana-Lookup) (Testnet only)</h4>
+          <button @click="lookupDepositSol" :disabled="network!==testnet">Deposit SOL</button>
+          <button @click="lookupRedeemSol" :disabled="network!==testnet">Redeem SOL </button>
+          
+          <button @click="()=>mintToken(mintAddress)" :disabled="network!==testnet">MintToken</button>
+          <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="network!==testnet">Deposit SPL</button>
+          <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="network!==testnet">Redeem SPL</button>
+        </div>
       </div>
     </div>
     <div id="console-wrapper">
