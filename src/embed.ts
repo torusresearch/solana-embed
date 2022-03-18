@@ -312,7 +312,7 @@ class Torus {
   async sendTransaction(transaction: Transaction): Promise<string> {
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: transaction.serializeMessage().toString("hex"), messageOnly: true },
+      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
     })) as string;
     return response;
   }
