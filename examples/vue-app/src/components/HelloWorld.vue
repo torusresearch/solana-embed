@@ -103,7 +103,7 @@ const loginWithPrivateKey = async () => {
     }
     console.log(torus)
     await torus.loginWithPrivateKey({
-      privateKey : privateKey.value,
+      privateKey : privateKey.value || secp.getPrivate("hex") ,
       userInfo : {
         email: "test@test.com",
         name: "test",
