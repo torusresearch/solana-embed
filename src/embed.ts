@@ -213,6 +213,19 @@ class Torus {
     }
   }
 
+  async loginWithPrivateKey(loginParams: { privateKey: string; userInfo: UserInfo }): Promise<void> {
+    if (!this.isInitialized) throw new Error("Call init() first");
+    const { privateKey, userInfo } = loginParams;
+    const { success } = await this.communicationProvider.request<{ privateKey: string; userInfo: UserInfo }, { success: boolean }>({
+      method: "login_with_private_key",
+      params: {
+        privateKey,
+        userInfo,
+      },
+    });
+    if (!success) throw new Error("Login Failed");
+  }
+
   async logout(): Promise<void> {
     if (!this.communicationProvider.isLoggedIn) throw new Error("Not logged in");
 
@@ -309,6 +322,14 @@ class Torus {
   }
 
   // Solana specific API
+  async getAccounts() {
+    const response = (await this.provider.request({
+      method: "getAccounts",
+      params: [],
+    })) as string[];
+    return response;
+  }
+
   async sendTransaction(transaction: Transaction): Promise<string> {
     const response = (await this.provider.request({
       method: "send_transaction",
