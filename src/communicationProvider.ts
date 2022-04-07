@@ -1,8 +1,8 @@
-import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS, CommunicationWalletProviderState } from "@toruslabs/base-controllers";
 import { JRPCRequest } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import type { Duplex } from "readable-stream";
 
+import { COMMUNICATION_JRPC_METHODS, COMMUNICATION_NOTIFICATIONS, CommunicationWalletProviderState } from "./base-controllers";
 import BaseProvider from "./baseProvider";
 import configuration from "./config";
 import { documentReady, htmlToElement } from "./embedUtils";

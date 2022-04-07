@@ -1,4 +1,3 @@
-import { createLoggerMiddleware, SafeEventEmitterProvider, SendCallBack } from "@toruslabs/base-controllers";
 import {
   createIdRemapMiddleware,
   createStreamMiddleware,
@@ -15,6 +14,7 @@ import { duplex as isDuplexStream } from "is-stream";
 import pump from "pump";
 import type { Duplex } from "readable-stream";
 
+import { createLoggerMiddleware, SafeEventEmitterProvider, SendCallBack } from "./base-controllers";
 import { BaseProviderState, Maybe, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest } from "./interfaces";
 import messages from "./messages";
 import { createErrorMiddleware, logStreamDisconnectWarning } from "./utils";
