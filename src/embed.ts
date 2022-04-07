@@ -154,6 +154,8 @@ class Torus {
           window.document.body.appendChild(this.torusAlertContainer);
           this.torusIframe.addEventListener("load", async () => {
             const dappMetadata = await getSiteMetadata();
+            const search = new URLSearchParams(location.search);
+            const dappLink = search.get("dappLink");
             // send init params here
             this.torusIframe.contentWindow.postMessage(
               {
@@ -161,7 +163,7 @@ class Torus {
                 apiKey,
                 network,
                 dappMetadata,
-                extraParams,
+                extraParams: { ...extraParams, dappLink },
               },
               torusIframeUrl.origin
             );
