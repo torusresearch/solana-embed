@@ -13,7 +13,7 @@
     "@project-serum/borsh": "^0.2.3",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.34.0",
-    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-0.1.4.tgz",
+    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-0.1.5.tgz",
     "@types/elliptic": "^6.4.14",
     "bs58": "^4.0.1",
     "core-js": "^3.8.3",
