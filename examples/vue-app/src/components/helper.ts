@@ -22,7 +22,7 @@ export const getSplInstructions = async ( connection: Connection, signerAddress:
     const signer = new PublicKey(signerAddress); // add gasless transactions
     const sourceTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, signer);
     const receiverAccount = new PublicKey(receiver);
-    
+
     let associatedTokenAccount = receiverAccount;
     try {
       associatedTokenAccount = await Token.getAssociatedTokenAddress(
@@ -66,6 +66,28 @@ export const getSplInstructions = async ( connection: Connection, signerAddress:
     return instruction;
     // transaction.add(transferInstructions);
     // transaction.recentBlockhash = (await connection.getRecentBlockhash("finalized")).blockhash;
-    // transaction.feePayer = signer 
+    // transaction.feePayer = signer
     // return transaction;
   }
+
+
+export const whiteLabelData = {
+  theme: {
+    isDark: true,
+    colors: {
+      torusBrand1: "#44ff00",
+    },
+  },
+  logoDark: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // dark logo for light background
+  logoLight: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // light logo for dark background
+  topupHide: false,
+  defaultLanguage: "ja",
+  customTranslations: {
+    ja: {
+      walletSettings: {
+        selectTheme: "Some random",
+      }
+    },
+  },
+};
+

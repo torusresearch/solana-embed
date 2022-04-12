@@ -20,7 +20,7 @@ import nacl from "tweetnacl";
 import log from "loglevel";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import  { createDeposit, createRedeemSolInstruction, createRedeemInstruction, redeemSol, redeemSplToken} from "@cwlee/solana-lookup-sdk";
-import { getSplInstructions  } from "./helper";
+import { getSplInstructions, whiteLabelData } from "./helper";
 import {ec as EC} from "elliptic";
 import { createHash } from "crypto";
 
@@ -57,6 +57,7 @@ const login = async () => {
     if (!torus.isInitialized) {
       await torus.init({
         buildEnv: buildEnv.value,
+        whiteLabel: whiteLabelData
         // network: "mainnet-beta"
       })
       // await torus.init({
@@ -361,7 +362,7 @@ const airdrop = async ()=>{
 }
 
 const sendusdc = async()=>{
-  // const usdcmint = network.value === "testnet" ? "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp" : ""; 
+  // const usdcmint = network.value === "testnet" ? "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp" : "";
   const usdcmint = "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp"
   const inst =  await getSplInstructions( conn, pubkey.value, pubkey.value, 1, usdcmint)
   const block = await conn.getRecentBlockhash();
@@ -376,7 +377,7 @@ const lookup = "Eu8Pv3TRDYjqSZxQ7UfKQZr5jYZTZwhCvxd4UWLKUq3L";
 const mintAddress = "2Ce9Bhf5oi9k1yftvgQUeCXf2ZUhasUPEcbWLktpDtv5"
 
 const mintAdminSrt = [75,62,204,173,88,58,245,115,230,162,141,243,101,197,220,230,6,106,50,85,249,51,227,43,223,176,10,129,76,139,106,3,134,111,220,26,52,217,174,38,102,164,15,39,205,92,223,133,63,183,60,38,89,23,196,253,116,105,23,255,166,196,220,189]
-const mintAdmin = Keypair.fromSecretKey(Buffer.from(mintAdminSrt)) 
+const mintAdmin = Keypair.fromSecretKey(Buffer.from(mintAdminSrt))
 const mintToken = async (mintAddress:string)=>{
   // mint token
   const mint = new PublicKey(mintAddress);
@@ -388,8 +389,8 @@ const mintToken = async (mintAddress:string)=>{
   if (!tokenaccountInfo?.owner.equals(TOKEN_PROGRAM_ID) )
     inst.push(Token.createAssociatedTokenAccountInstruction( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, new PublicKey(mintAddress), tokenaccount , dest, dest))
 
-  inst.push( await Token.createMintToInstruction(TOKEN_PROGRAM_ID, mint, tokenaccount, mintAdmin.publicKey , [], 1* LAMPORTS_PER_SOL) ); 
-  
+  inst.push( await Token.createMintToInstruction(TOKEN_PROGRAM_ID, mint, tokenaccount, mintAdmin.publicKey , [], 1* LAMPORTS_PER_SOL) );
+
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
@@ -397,7 +398,7 @@ const mintToken = async (mintAddress:string)=>{
 
   // log.error(transaction.signatures)
   // log.error(transaction.signatures.map(item=> item.publicKey.toBase58()))
-  
+
   // transaction.sig
   // const result = await torus?.sendTransaction(transaction);
   const signedTransaction = await torus?.signTransaction(transaction);
@@ -449,7 +450,7 @@ const lookupRedeemSPL = async (mintAddress:string) => {
 
   const signer = new PublicKey(pubkey.value);
   const mintAccount = new PublicKey(mintAddress);
-  
+
   const receiver = signer;
   // const receiver = mintAdmin.publicKey;
   const dest = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, receiver );
@@ -457,12 +458,12 @@ const lookupRedeemSPL = async (mintAddress:string) => {
 
   const inst : TransactionInstruction[] = []
 
-  if (!destAccountInfo) 
+  if (!destAccountInfo)
     inst.push ( await Token.createAssociatedTokenAccountInstruction( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, dest, receiver, signer) )
-  
+
   // redeem instruction
   inst.push ( ... await redeemSplToken( conn, secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), mintAccount , signer, dest ) )
-  
+
   const block = await conn.getRecentBlockhash();
   const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
   transaction.add(...inst);
@@ -518,7 +519,7 @@ const lookupRedeemSPL = async (mintAddress:string) => {
         <button @click="signAllTransaction">Sign All Transactions</button>
         <button @click="sendMultipleInstructionTransaction">Multiple Instruction tx</button>
         <button @click="signMessage">Sign Message</button>
-        
+
         <div>
           <h4>SPL transfer example</h4>
           <div> Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></div>
@@ -529,7 +530,7 @@ const lookupRedeemSPL = async (mintAddress:string) => {
           <h4>Custom Program Example (Solana-Lookup) (Testnet only)</h4>
           <button @click="lookupDepositSol" :disabled="network!==testnet">Deposit SOL</button>
           <button @click="lookupRedeemSol" :disabled="network!==testnet">Redeem SOL </button>
-          
+
           <button @click="()=>mintToken(mintAddress)" :disabled="network!==testnet">MintToken</button>
           <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="network!==testnet">Deposit SPL</button>
           <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="network!==testnet">Redeem SPL</button>

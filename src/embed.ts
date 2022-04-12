@@ -20,6 +20,7 @@ import {
   UnValidatedJsonRpcRequest,
   UserInfo,
   WALLET_PATH,
+  WhiteLabelParams,
 } from "./interfaces";
 import log from "./loglevel";
 import PopupHandler from "./PopupHandler";
@@ -84,6 +85,8 @@ class Torus {
 
   private styleLink: HTMLLinkElement;
 
+  whiteLabel: WhiteLabelParams;
+
   constructor({ modalZIndex = 99999 }: TorusCtorArgs = {}) {
     this.torusUrl = "";
     this.isInitialized = false; // init done
@@ -107,12 +110,13 @@ class Torus {
     buttonPosition = BUTTON_POSITION.BOTTOM_LEFT,
     apiKey = "torus-default",
     extraParams = {},
+    whiteLabel,
   }: TorusParams = {}): Promise<void> {
     if (this.isInitialized) throw new Error("Already initialized");
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
     log.info(torusUrl, "url loaded");
-
+    this.whiteLabel = whiteLabel;
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
@@ -162,6 +166,7 @@ class Torus {
                 network,
                 dappMetadata,
                 extraParams,
+                whiteLabel,
               },
               torusIframeUrl.origin
             );

@@ -188,6 +188,51 @@ export interface LocaleLinks<T> {
 
 export type NetworkLabel = "mainnet-beta" | "testnet" | "devnet";
 
+export interface ThemeParams {
+  /**
+   * If true, enables dark mode
+   * Defaults to false
+   * @defaultValue false
+   */
+  isDark: boolean;
+  /**
+   * Colors object to customize colors in torus theme.
+   *
+   * Contact us for whitelabel. Example provided in `examples/vue-app`
+   */
+  colors: Record<string, string>;
+}
+
+export interface WhiteLabelParams {
+  /**
+   * Whitelabel theme
+   */
+  theme: ThemeParams;
+  /**
+   * Language of whitelabel.
+   *
+   * order of preference: Whitelabel language \> user language (in torus-website) \> browser language
+   */
+  defaultLanguage?: string;
+  /**
+   * Logo Url to be used in light mode (dark logo)
+   */
+  logoDark: string;
+  /**
+   * Logo Url to be used in dark mode (light logo)
+   */
+  logoLight: string;
+  /**
+   * Shows/hides topup option in torus-website/widget.
+   * Defaults to false
+   * @defaultValue false
+   */
+  topupHide?: boolean;
+  /**
+   * Custom translations. See (examples/vue-app) to configure
+   */
+  customTranslations?: LocaleLinks<unknown>;
+}
 export interface TorusParams {
   /**
    * Determines where the torus widget is visible on the page.
@@ -241,6 +286,10 @@ export interface TorusParams {
    * Defaults to empty object
    */
   extraParams?: { [keyof: string]: string };
+  /**
+   * Params to enable whitelabelling of torus website and widget
+   */
+  whiteLabel?: WhiteLabelParams;
 }
 
 export interface TorusLoginParams {
