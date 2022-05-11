@@ -6,7 +6,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "install:local": "npm i ../../*.tgz"
+    "install:local": "npm i ../../*.tgz",
+    "test": "playwright test --config playwright.config.ts"
   },
   "dependencies": {
     "@cwlee/solana-lookup-sdk": "0.0.3",
