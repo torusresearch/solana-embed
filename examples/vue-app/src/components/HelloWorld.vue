@@ -225,15 +225,16 @@ const sendMultipleInstructionTransaction = async () => {
     71, 96, 58, 71, 182, 68, 5, 211, 15, 221, 192, 126, 159, 98, 194, 44, 50, 10, 114, 47, 130, 1, 176, 42, 196, 90, 16, 245, 93, 126, 52, 170, 32,
   ]);
 
-  const fromPubkey = Keypair.generate().publicKey;
-  const newAccountPubkey = Keypair.generate().publicKey;
+  // const fromPubkey = Keypair.generate().publicKey;
+  const fromPubkey = new PublicKey(publicKeys![0]);
+  const stakeAccount = Keypair.generate();
   const authorizedPubkey = Keypair.generate().publicKey;
   const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
   const lockup = new Lockup(0, 0, fromPubkey);
-  const lamports = 123;
+  const lamports = (await conn.getMinimumBalanceForRentExemption(StakeProgram.space)) + 20;
   const transactionStaking = StakeProgram.createAccount({
     fromPubkey,
-    stakePubkey: newAccountPubkey,
+    stakePubkey: stakeAccount.publicKey,
     authorized,
     lockup,
     lamports,
@@ -247,8 +248,10 @@ const sendMultipleInstructionTransaction = async () => {
   });
 
   let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) })
+    .add(systemInstruction)
     .add(stakeInstruction)
-    .add(TransactionInstruction2);
+    .add(TransactionInstruction2)
+  transaction.partialSign(stakeAccount);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -541,17 +544,17 @@ const lookupRedeemSPL = async (mintAddress:string) => {
         <div>
           <h4>SPL transfer example</h4>
           <div> Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></div>
-          <button @click="sendusdc" :disabled="network!==testnet">Send usdc</button>
-          <button @click="airdrop" :disabled="network!==testnet">Request SOL Airdrop (Testnet only)</button>
+          <button @click="sendusdc" :disabled="isMainnet()">Send usdc</button>
+          <button @click="airdrop" :disabled="isMainnet()">Request SOL Airdrop (Testnet only)</button>
           <!-- <button @click="signTransaction">Send and receive sdc</button> -->
 
           <h4>Custom Program Example (Solana-Lookup) (Testnet only)</h4>
-          <button @click="lookupDepositSol" :disabled="network!==testnet">Deposit SOL</button>
-          <button @click="lookupRedeemSol" :disabled="network!==testnet">Redeem SOL </button>
+          <button @click="lookupDepositSol" :disabled="isMainnet()">Deposit SOL</button>
+          <button @click="lookupRedeemSol" :disabled="isMainnet()">Redeem SOL </button>
           
-          <button @click="()=>mintToken(mintAddress)" :disabled="network!==testnet">MintToken</button>
-          <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="network!==testnet">Deposit SPL</button>
-          <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="network!==testnet">Redeem SPL</button>
+          <button @click="()=>mintToken(mintAddress)" :disabled="isMainnet()">MintToken</button>
+          <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="isMainnet()">Deposit SPL</button>
+          <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="isMainnet()">Redeem SPL</button>
         </div>
       </div>
     </div>
