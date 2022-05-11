@@ -124,8 +124,15 @@ class Torus {
     if (torusIframeUrl.pathname.endsWith("/")) torusIframeUrl.pathname += "frame";
     else torusIframeUrl.pathname += "/frame";
 
+    const parentSearch = new URLSearchParams(location.search);
+    const w3aClientID = parentSearch.get("w3aClientID");
+    const dappOriginURL = parentSearch.get("dappOriginURL");
+
     const hashParams = new URLSearchParams();
     if (dappStorageKey) hashParams.append("dappStorageKey", dappStorageKey);
+    if (w3aClientID) hashParams.append("w3aClientID", w3aClientID);
+    if (dappOriginURL) hashParams.append("dappOriginURL", dappOriginURL);
+
     hashParams.append("origin", window.location.origin);
 
     torusIframeUrl.hash = hashParams.toString();
@@ -146,6 +153,10 @@ class Torus {
     );
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
+
+    if (w3aClientID) extraParams.w3aClientID = w3aClientID;
+    if (dappOriginURL) extraParams.dappOriginURL = dappOriginURL;
+
     const handleSetup = async () => {
       return new Promise<void>((resolve, reject) => {
         try {
