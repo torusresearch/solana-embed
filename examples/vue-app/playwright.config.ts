@@ -4,8 +4,6 @@ const config: PlaywrightTestConfig = {
   timeout: 30_000,
   testDir: "tests/e2e",
   testMatch: "*.test.ts",
-  globalSetup: "tests/e2e/global-setup.ts",
-  globalTeardown: "tests/e2e/global-teardown.ts",
   projects: [
     {
       name: "Chrome Stable",
