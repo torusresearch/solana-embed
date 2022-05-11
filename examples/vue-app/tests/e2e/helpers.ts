@@ -1,5 +1,6 @@
 import { Page, Browser } from "@playwright/test"
 import { DOMAIN, TESTING_PRIVATE_KEY } from "./constants"
+import { wait } from "./utils";
 
 export async function login(browser: Browser, dontSwitchNetwork?: boolean): Promise<Page> {
   const context = await browser.newContext();
@@ -23,6 +24,7 @@ export async function login(browser: Browser, dontSwitchNetwork?: boolean): Prom
       page1.waitForEvent("close"), 
       page1.click("button >> text=Confirm"),
     ]);
+    await wait(500);
   }
   return page;
 }
