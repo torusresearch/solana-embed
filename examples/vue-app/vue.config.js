@@ -11,9 +11,8 @@ module.exports = {
       crypto: require.resolve("crypto-browserify"),
       stream: require.resolve("stream-browserify"),
       assert: require.resolve("assert"),
-      // os: require.resolve("os-browserify/browser"),
-      // https: require.resolve("https-browserify"),
-      // http: require.resolve("stream-http"),
+      os: require.resolve("os-browserify/browser"),
+      http: require.resolve("stream-http"),
     };
     config.resolve.alias = {
       ...config.resolve.alias,
