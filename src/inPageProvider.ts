@@ -1,9 +1,9 @@
-import { InPageWalletProviderState, PROVIDER_JRPC_METHODS, PROVIDER_NOTIFICATIONS } from "@toruslabs/base-controllers";
 import { JRPCRequest, JRPCSuccess } from "@toruslabs/openlogin-jrpc";
 import { EthereumRpcError } from "eth-rpc-errors";
 import dequal from "fast-deep-equal";
 import type { Duplex } from "readable-stream";
 
+import { InPageWalletProviderState, PROVIDER_JRPC_METHODS, PROVIDER_NOTIFICATIONS } from "./base-controllers";
 import BaseProvider from "./baseProvider";
 import { InPageProviderState, ProviderOptions, RequestArguments, UnValidatedJsonRpcRequest } from "./interfaces";
 import log from "./loglevel";

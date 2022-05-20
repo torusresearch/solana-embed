@@ -1,8 +1,8 @@
 import { PublicKey, SignaturePubkeyPair, Transaction } from "@solana/web3.js";
-import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
+import { COMMUNICATION_JRPC_METHODS } from "./base-controllers";
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
 import { documentReady, htmlToElement } from "./embedUtils";
