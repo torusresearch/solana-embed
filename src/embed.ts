@@ -59,6 +59,7 @@ const isLocalStorageAvailable = storageAvailable("localStorage");
   }
 })();
 
+const parentSearch = window.location.search;
 class Torus {
   isInitialized: boolean;
 
@@ -124,7 +125,7 @@ class Torus {
     if (torusIframeUrl.pathname.endsWith("/")) torusIframeUrl.pathname += "frame";
     else torusIframeUrl.pathname += "/frame";
 
-    const parentSearch = window.location.search;
+    // const parentSearch = window.location.search;
 
     const hashParams = new URLSearchParams();
     if (dappStorageKey) hashParams.append("dappStorageKey", dappStorageKey);
