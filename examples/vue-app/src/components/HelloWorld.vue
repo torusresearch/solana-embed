@@ -288,7 +288,7 @@ const signAllTransaction = async () => {
       toPubkey: new PublicKey(publicKeys![0]),
       lamports: Math.floor(0.1 * Math.random() * LAMPORTS_PER_SOL),
     });
-    return new Transaction({ recentBlockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
+    return new Transaction({ recentBlockhash :block.blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
   }
 
   try {
