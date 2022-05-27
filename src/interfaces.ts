@@ -205,6 +205,14 @@ export interface ThemeParams {
 
 export interface WhiteLabelParams {
   /**
+   * App name to display in the UI
+   */
+  name?: string;
+  /**
+   * App url
+   */
+  url?: string;
+  /**
    * Whitelabel theme
    */
   theme: ThemeParams;

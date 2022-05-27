@@ -72,16 +72,20 @@ export const getSplInstructions = async ( connection: Connection, signerAddress:
 
 
 export const whiteLabelData = {
+  name: "HelloDemo",
+  url: "http://localhost:3000",
   theme: {
-    isDark: true,
+    isDark: false,
     colors: {
-      torusBrand1: "#44ff00",
+      torusBrand1: "#FF9900",
     },
   },
-  logoDark: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // dark logo for light background
-  logoLight: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // light logo for dark background
+  // logoDark: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // dark logo for light background
+  // logoLight: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // light logo for dark background
+  logoDark: "https://images.web3auth.io/example-hello.svg",
+  logoLight: "https://images.web3auth.io/example-hello-light.svg",
   topupHide: false,
-  defaultLanguage: "ja",
+  // defaultLanguage: "ja",
   customTranslations: {
     ja: {
       walletSettings: {
