@@ -286,9 +286,9 @@ const signAllTransaction = async () => {
     let inst = SystemProgram.transfer({
       fromPubkey: new PublicKey(publicKeys![0]),
       toPubkey: new PublicKey(publicKeys![0]),
-      lamports: 0.1 * Math.random() * LAMPORTS_PER_SOL,
+      lamports: Math.floor(0.1 * Math.random() * LAMPORTS_PER_SOL),
     });
-    return new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
+    return new Transaction({ recentBlockhash :block.blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
   }
 
   try {
