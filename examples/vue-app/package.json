@@ -6,15 +6,14 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "install:local": "npm i ../../*.tgz",
-    "test": "playwright test --config playwright.config.ts --workers=1"
+    "install:local": "npm i ../../*.tgz"
   },
   "dependencies": {
     "@cwlee/solana-lookup-sdk": "0.0.3",
     "@project-serum/borsh": "^0.2.3",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.34.0",
-    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-0.1.6.tgz",
+    "@toruslabs/solana-embed": "file:../../toruslabs-solana-embed-0.2.0.tgz",
     "@types/elliptic": "^6.4.14",
     "bs58": "^4.0.1",
     "core-js": "^3.8.3",
@@ -23,7 +22,6 @@
     "vue": "^3.2.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.21.1",
     "@typescript-eslint/eslint-plugin": "^4.15.1",
     "@typescript-eslint/parser": "^4.15.1",
     "@vue/cli-plugin-babel": "~5.0.0-beta.4",
@@ -32,9 +30,16 @@
     "@vue/cli-service": "~5.0.0-beta.4",
     "@vue/compiler-sfc": "^3.2.6",
     "@vue/eslint-config-typescript": "^7.0.0",
+    "assert": "^2.0.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
     "eslint": "^7.20.0",
     "eslint-plugin-vue": "^7.2.0",
+    "os-browserify": "^0.3.0",
+    "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
-    "typescript": "~4.1.5"
+    "stream-http": "^3.2.0",
+    "typescript": "~4.1.5",
+    "url": "^0.11.0"
   }
 }

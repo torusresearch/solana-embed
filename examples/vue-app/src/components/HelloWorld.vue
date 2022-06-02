@@ -127,9 +127,7 @@ const loginWithPrivateKey = async () => {
   }
 };
 
-function isMainnet() {
-  return network.value === SUPPORTED_NETWORKS["mainnet"].displayName;
-}
+
 
 const logout = async () => {
   torus?.logout();
@@ -137,13 +135,13 @@ const logout = async () => {
 };
 
 const transfer = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  const block = (await conn.getLatestBlockhash("finalized"))
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  let transaction = new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -154,60 +152,45 @@ const transfer = async () => {
 };
 
 const transferSPL = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
-  const walletSelectedAccount = new PublicKey(publicKeys![0]);
-  const dummyOwnerAccount = new PublicKey("GLV6NbHHV31CMQX2zn67V5Bihfcsdi1V5uGhmyLNASK9");
-  const dummyUsdcAccount = new PublicKey("4s6Fn4vZebRRgP4mMhZk5BJnX5FJ3KzBrehzKHf5PN8j");
-  const usdcMintAccount = isMainnet() ?
-                          new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v") :
-                          new PublicKey("CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp") ;
+  const block = (await conn.getLatestBlockhash("finalized"));
 
   // usdc mint account on mainnet
-  const walletAssociatedAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, usdcMintAccount, walletSelectedAccount);
   const destinationTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
-    usdcMintAccount, dummyOwnerAccount); // Phantom account for testing, it already has a associated account
-
-  console.log(`Destination ATA: ${walletAssociatedAccount.toBase58()}`);
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), new PublicKey("GLV6NbHHV31CMQX2zn67V5Bihfcsdi1V5uGhmyLNASK9")); // Phantom account for testing, it already has an associated account
+  const fromTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), new PublicKey("Fu4CutxCWcQmA1gvcJyAZX88GPgbKpA1zegFr1LiUUb")); // Phantom account for testing, it already has an associated account
 
   const transferInstructions = Token.createTransferCheckedInstruction(
     TOKEN_PROGRAM_ID,
-    walletAssociatedAccount,
-    usdcMintAccount,
-    walletAssociatedAccount,
-    walletSelectedAccount,
+    fromTokenAccount,
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+    destinationTokenAccount,
+    new PublicKey(publicKeys![0]),
     [],
-    10000,
+    1000000,
     6
   );
 
   // fida mint account on mainet
-  // const sourceTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
-  //   new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"), new PublicKey(publicKeys![0]));
+  const sourceTokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"), new PublicKey(publicKeys![0]));
 
-  // const destinationTokenAccount2 = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
-  //   new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"), new PublicKey("D2LtZtYTj6Aep84DGmFiUiNCgcz2J8HvhV4qortTx3mM"));
+  const destinationTokenAccount2 = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"), new PublicKey("D2LtZtYTj6Aep84DGmFiUiNCgcz2J8HvhV4qortTx3mM"));
 
-  // const transferInstructions2 = Token.createTransferCheckedInstruction(
-  //   TOKEN_PROGRAM_ID,
-  //   sourceTokenAccount,
-  //   new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"),
-  //   destinationTokenAccount2,
-  //   new PublicKey(publicKeys![0]),
-  //   [],
-  //   100000,
-  //   6
-  // );
+  const transferInstructions2 = Token.createTransferCheckedInstruction(
+    TOKEN_PROGRAM_ID,
+    sourceTokenAccount,
+    new PublicKey("EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp"),
+    destinationTokenAccount2,
+    new PublicKey(publicKeys![0]),
+    [],
+    100000,
+    6
+  );
 
 
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: walletSelectedAccount });
-
-  // Create Associated Token Account if it doesn't exist
-  const walletAssociatedAccountInfo = await conn.getAccountInfo(walletAssociatedAccount);
-  if (!walletAssociatedAccountInfo) {
-    const createATAInst = Token.createAssociatedTokenAccountInstruction(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, usdcMintAccount, walletAssociatedAccount, walletSelectedAccount, walletSelectedAccount);
-    transaction.add(createATAInst);
-  }
-  transaction.add(transferInstructions);
+  let transaction = new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) }).add(transferInstructions);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -218,23 +201,22 @@ const transferSPL = async () => {
 };
 
 const sendMultipleInstructionTransaction = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  const block = (await conn.getLatestBlockhash("finalized"));
 
   const pubkey = new Uint8Array([
     81, 176, 126, 129, 139, 165, 11, 146, 225, 138, 101, 191, 188, 243, 174, 70, 93, 52, 206, 152, 74, 55, 152, 76, 232, 40, 61, 17, 126, 237, 151,
     71, 96, 58, 71, 182, 68, 5, 211, 15, 221, 192, 126, 159, 98, 194, 44, 50, 10, 114, 47, 130, 1, 176, 42, 196, 90, 16, 245, 93, 126, 52, 170, 32,
   ]);
 
-  // const fromPubkey = Keypair.generate().publicKey;
-  const fromPubkey = new PublicKey(publicKeys![0]);
-  const stakeAccount = Keypair.generate();
+  const fromPubkey = Keypair.generate().publicKey;
+  const newAccountPubkey = Keypair.generate().publicKey;
   const authorizedPubkey = Keypair.generate().publicKey;
   const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
   const lockup = new Lockup(0, 0, fromPubkey);
-  const lamports = (await conn.getMinimumBalanceForRentExemption(StakeProgram.space)) + 20;
+  const lamports = 123;
   const transactionStaking = StakeProgram.createAccount({
     fromPubkey,
-    stakePubkey: stakeAccount.publicKey,
+    stakePubkey: newAccountPubkey,
     authorized,
     lockup,
     lamports,
@@ -247,11 +229,9 @@ const sendMultipleInstructionTransaction = async () => {
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
 
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) })
-    .add(systemInstruction)
+  let transaction = new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) })
     .add(stakeInstruction)
-    .add(TransactionInstruction2)
-  transaction.partialSign(stakeAccount);
+    .add(TransactionInstruction2);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -262,7 +242,7 @@ const sendMultipleInstructionTransaction = async () => {
 };
 
 const gaslessTransfer = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  const block = (await conn.getLatestBlockhash("finalized"));
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
@@ -270,7 +250,7 @@ const gaslessTransfer = async () => {
   });
   try {
     const res = await torus?.getGaslessPublicKey();
-    let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(res || "") }).add(TransactionInstruction);
+    let transaction = new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(res || "") }).add(TransactionInstruction);
     const res_tx = await torus?.sendTransaction(transaction);
 
     debugConsole(res_tx as string);
@@ -281,13 +261,13 @@ const gaslessTransfer = async () => {
 };
 
 const signTransaction = async () => {
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
+  const block = (await conn.getLatestBlockhash("finalized"));
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  let transaction = new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
+  let transaction = new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) }).add(TransactionInstruction);
 
   try {
     const res = await torus?.signTransaction(transaction);
@@ -300,16 +280,17 @@ const signTransaction = async () => {
 
 // MAKE SURE browser allow pop up from this site
 const signAllTransaction = async () => {
+  const block = (await conn.getLatestBlockhash("finalized"));
+
   function getNewTx() {
     let inst = SystemProgram.transfer({
       fromPubkey: new PublicKey(publicKeys![0]),
       toPubkey: new PublicKey(publicKeys![0]),
-      lamports: 0.1 * Math.random() * LAMPORTS_PER_SOL,
+      lamports: Math.floor(0.1 * Math.random() * LAMPORTS_PER_SOL),
     });
-    return new Transaction({ recentBlockhash: blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
+    return new Transaction({ recentBlockhash :block.blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
   }
 
-  const blockhash = (await conn.getRecentBlockhash("finalized")).blockhash;
   try {
     const res = await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
     const serializedTxns = res?.map((x) => x.serialize());
@@ -321,7 +302,7 @@ const signAllTransaction = async () => {
     let data = await Promise.all(promises);
     console.log(data);
 
-    debugConsole(JSON.stringify(res));
+    // debugConsole(JSON.stringify(res));
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -386,8 +367,8 @@ const sendusdc = async()=>{
   // const usdcmint = network.value === "testnet" ? "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp" : ""; 
   const usdcmint = "CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp"
   const inst =  await getSplInstructions( conn, pubkey.value, pubkey.value, 1, usdcmint)
-  const block = await conn.getRecentBlockhash();
-  const transaction = new Transaction({feePayer : new PublicKey(pubkey.value), recentBlockhash: block.blockhash })
+  const block = await conn.getLatestBlockhash();
+  const transaction = new Transaction({feePayer : new PublicKey(pubkey.value), blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight })
   transaction.add(...inst);
 
   await torus?.sendTransaction(transaction);
@@ -412,8 +393,8 @@ const mintToken = async (mintAddress:string)=>{
 
   inst.push( await Token.createMintToInstruction(TOKEN_PROGRAM_ID, mint, tokenaccount, mintAdmin.publicKey , [], 1* LAMPORTS_PER_SOL) ); 
   
-  const block = await conn.getRecentBlockhash();
-  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  const block = await conn.getLatestBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight})
   transaction.add(...inst);
   transaction.partialSign(mintAdmin)
 
@@ -431,8 +412,8 @@ const mintToken = async (mintAddress:string)=>{
 
 const lookupDepositSol = async () => {
   const inst = await createDeposit( conn, secp.getPublic("hex"), new PublicKey(lookup), new PublicKey(pubkey.value) , 0.1 )
-  const block = await conn.getRecentBlockhash();
-  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  const block = await conn.getLatestBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight})
   transaction.add(...inst);
   // const result = await torus?.sendTransaction(transaction);
   const signedTransaction = await torus?.signTransaction(transaction);
@@ -441,8 +422,8 @@ const lookupDepositSol = async () => {
 }
 const lookupDepositSPL = async (mintAddress: string) => {
   const inst = await createDeposit( conn, secp.getPublic("hex"), new PublicKey(lookup), new PublicKey(pubkey.value) , 1 ,new PublicKey(mintAddress) )
-  const block = await conn.getRecentBlockhash();
-  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  const block = await conn.getLatestBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight})
   transaction.add(...inst);
   const signedTransaction = await torus?.signTransaction(transaction);
   const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
@@ -455,8 +436,8 @@ const lookupRedeemSol = async () => {
   const signature = secp.sign(hashValue)
 
   const inst = await redeemSol( secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), new PublicKey(pubkey.value) )
-  const block = await conn.getRecentBlockhash();
-  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  const block = await conn.getLatestBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight})
   transaction.add(...inst);
   const signedTransaction = await torus?.signTransaction(transaction);
   const result = await conn.sendRawTransaction( signedTransaction?.serialize() || []);
@@ -480,13 +461,13 @@ const lookupRedeemSPL = async (mintAddress:string) => {
   const inst : TransactionInstruction[] = []
 
   if (!destAccountInfo) 
-    inst.push ( await Token.createAssociatedTokenAccountInstruction( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, dest, receiver, signer) )
+    inst.push (Token.createAssociatedTokenAccountInstruction( ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintAccount, dest, receiver, signer) )
   
   // redeem instruction
   inst.push ( ... await redeemSplToken( conn, secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), mintAccount , signer, dest ) )
   
-  const block = await conn.getRecentBlockhash();
-  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), recentBlockhash :block.blockhash})
+  const block = await conn.getLatestBlockhash();
+  const transaction = new Transaction({feePayer: new PublicKey(pubkey.value), blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight})
   transaction.add(...inst);
 
   const signedTransaction = await torus?.signTransaction(transaction);
@@ -544,17 +525,17 @@ const lookupRedeemSPL = async (mintAddress:string) => {
         <div>
           <h4>SPL transfer example</h4>
           <div> Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></div>
-          <button @click="sendusdc" :disabled="isMainnet()">Send usdc</button>
-          <button @click="airdrop" :disabled="isMainnet()">Request SOL Airdrop (Testnet only)</button>
+          <button @click="sendusdc" :disabled="network!==testnet">Send usdc</button>
+          <button @click="airdrop" :disabled="network!==testnet">Request SOL Airdrop (Testnet only)</button>
           <!-- <button @click="signTransaction">Send and receive sdc</button> -->
 
           <h4>Custom Program Example (Solana-Lookup) (Testnet only)</h4>
-          <button @click="lookupDepositSol" :disabled="isMainnet()">Deposit SOL</button>
-          <button @click="lookupRedeemSol" :disabled="isMainnet()">Redeem SOL </button>
+          <button @click="lookupDepositSol" :disabled="network!==testnet">Deposit SOL</button>
+          <button @click="lookupRedeemSol" :disabled="network!==testnet">Redeem SOL </button>
           
-          <button @click="()=>mintToken(mintAddress)" :disabled="isMainnet()">MintToken</button>
-          <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="isMainnet()">Deposit SPL</button>
-          <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="isMainnet()">Redeem SPL</button>
+          <button @click="()=>mintToken(mintAddress)" :disabled="network!==testnet">MintToken</button>
+          <button @click="()=>lookupDepositSPL(mintAddress)" :disabled="network!==testnet">Deposit SPL</button>
+          <button @click="()=>lookupRedeemSPL(mintAddress)" :disabled="network!==testnet">Redeem SPL</button>
         </div>
       </div>
     </div>
