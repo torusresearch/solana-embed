@@ -33,7 +33,8 @@ import {
   getWindowId,
   storageAvailable,
 } from "./utils";
-
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version } = require("../package.json");
 const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
@@ -85,6 +86,7 @@ class Torus {
   private styleLink: HTMLLinkElement;
 
   constructor({ modalZIndex = 99999 }: TorusCtorArgs = {}) {
+    log.info(`Solana Embed Version :${version}`);
     this.torusUrl = "";
     this.isInitialized = false; // init done
     this.requestedLoginProvider = null;
