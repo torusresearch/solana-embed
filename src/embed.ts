@@ -86,7 +86,6 @@ class Torus {
   private styleLink: HTMLLinkElement;
 
   constructor({ modalZIndex = 99999 }: TorusCtorArgs = {}) {
-    log.info(`Solana Embed Version :${version}`);
     this.torusUrl = "";
     this.isInitialized = false; // init done
     this.requestedLoginProvider = null;
@@ -113,8 +112,9 @@ class Torus {
     if (this.isInitialized) throw new Error("Already initialized");
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
+    log.enableAll();
     log.info(torusUrl, "url loaded");
-
+    log.info(`Solana Embed Version :${version}`);
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
