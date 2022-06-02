@@ -33,7 +33,8 @@ import {
   getWindowId,
   storageAvailable,
 } from "./utils";
-
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version } = require("../package.json");
 const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
@@ -111,8 +112,9 @@ class Torus {
     if (this.isInitialized) throw new Error("Already initialized");
     setAPIKey(apiKey);
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
+    log.enableAll();
     log.info(torusUrl, "url loaded");
-
+    log.info(`Solana Embed Version :${version}`);
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
