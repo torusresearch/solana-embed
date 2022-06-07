@@ -42,10 +42,10 @@ test.describe("Blockchain Specific API", () => {
 
     await page1.waitForSelector("text=Payment Confirmation");
     await page1.click("button >> text=Confirm")
-    await wait(1000);
+    await wait(2000);
 
     const consoleData = JSON.parse(await page.locator("#console > p").innerText());
-    expect(consoleData).toHaveProperty(["signatures", "0", "signature"]);
+    expect(consoleData).toHaveProperty(["instructions", "0", "data"]);
   });
 
   test("Sign All Transactions API returns multiple signed transaction data ", async () => {

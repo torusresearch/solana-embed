@@ -208,15 +208,15 @@ const sendMultipleInstructionTransaction = async () => {
     71, 96, 58, 71, 182, 68, 5, 211, 15, 221, 192, 126, 159, 98, 194, 44, 50, 10, 114, 47, 130, 1, 176, 42, 196, 90, 16, 245, 93, 126, 52, 170, 32,
   ]);
 
-  const fromPubkey = Keypair.generate().publicKey;
-  const newAccountPubkey = Keypair.generate().publicKey;
+  const fromPubkey = new PublicKey(publicKeys![0]);
+  const stakeAccount = Keypair.generate();
   const authorizedPubkey = Keypair.generate().publicKey;
   const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
   const lockup = new Lockup(0, 0, fromPubkey);
-  const lamports = 123;
+  const lamports = (await conn.getMinimumBalanceForRentExemption(StakeProgram.space)) + 20;
   const transactionStaking = StakeProgram.createAccount({
     fromPubkey,
-    stakePubkey: newAccountPubkey,
+    stakePubkey: stakeAccount.publicKey,
     authorized,
     lockup,
     lamports,
@@ -230,8 +230,10 @@ const sendMultipleInstructionTransaction = async () => {
   });
 
   let transaction = new Transaction({ blockhash :block.blockhash, lastValidBlockHeight: block.lastValidBlockHeight, feePayer: new PublicKey(publicKeys![0]) })
+    .add(systemInstruction)
     .add(stakeInstruction)
     .add(TransactionInstruction2);
+  transaction.partialSign(stakeAccount);
   try {
     const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
@@ -293,16 +295,16 @@ const signAllTransaction = async () => {
 
   try {
     const res = await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
-    const serializedTxns = res?.map((x) => x.serialize());
+    // const serializedTxns = res?.map((x) => x.serialize());
 
-    let promises: Promise<string>[] = [];
-    serializedTxns?.forEach((buffer) => {
-      promises.push(conn.sendRawTransaction(buffer));
-    });
-    let data = await Promise.all(promises);
-    console.log(data);
+    // let promises: Promise<string>[] = [];
+    // serializedTxns?.forEach((buffer) => {
+    //   promises.push(conn.sendRawTransaction(buffer));
+    // });
+    // let data = await Promise.all(promises);
+    // console.log(data);
 
-    // debugConsole(JSON.stringify(res));
+    debugConsole(JSON.stringify(res));
   } catch (e) {
     log.error(e);
     debugConsole(e as string);

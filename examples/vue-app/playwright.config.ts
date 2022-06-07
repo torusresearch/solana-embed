@@ -11,14 +11,7 @@ const config: PlaywrightTestConfig = {
         browserName: "chromium",
         channel: "chrome",
       },
-    },
-    {
-      name: "iOS Safari",
-      use: {
-        ...devices["iPad Pro 11 landscape"],
-        trace: "retain-on-failure",
-      },
-    },
+    }
   ],
 };
 export default config;

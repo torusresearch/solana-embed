@@ -2,7 +2,7 @@ import { Page, Browser } from "@playwright/test"
 import { DOMAIN, TESTING_PRIVATE_KEY } from "./constants"
 import { wait } from "./utils";
 
-export async function login(browser: Browser, dontSwitchNetwork?: boolean): Promise<Page> {
+export async function login(browser: Browser, useTestnet: boolean = true): Promise<Page> {
   const context = await browser.newContext();
   let page = await context.newPage();
 
@@ -11,7 +11,7 @@ export async function login(browser: Browser, dontSwitchNetwork?: boolean): Prom
   await page.fill("input[placeholder='Enter private keyf from web3auth to login']",   TESTING_PRIVATE_KEY);
   await page.click("button >> text=Login With Private Key");
 
-  if (!dontSwitchNetwork) {
+  if (useTestnet) {
     const [page1] = await Promise.all([
       page.waitForEvent('popup'),
       page.click('button >> text=Change Provider')

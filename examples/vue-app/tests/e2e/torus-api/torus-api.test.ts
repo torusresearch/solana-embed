@@ -1,6 +1,6 @@
 import { test, expect, Page } from "@playwright/test"
 import { login } from "../helpers";
-import { ensureTextualElementExists } from "../utils";
+import { ensureTextualElementExists, wait } from "../utils";
 
 test.describe("Torus specific API", () => {
   let page: Page;
@@ -43,12 +43,15 @@ test.describe("Torus specific API", () => {
   });
 
   test("Top up popup is visible", async () => {
+    test.slow();
     const [page1] = await Promise.all([
       page.waitForEvent("popup"),
-      page.click("button >> Top Up")
+      page.click("button >> text=Top Up")
     ]);
 
-    ensureTextualElementExists(page1, "Buy Crypto");
+    await page1.waitForEvent("load");
+    await wait(10_000);   // Wait for Moonpay page to load
+    await ensureTextualElementExists(page1, "Buy Crypto");
     await page1.close();
   })
 });
