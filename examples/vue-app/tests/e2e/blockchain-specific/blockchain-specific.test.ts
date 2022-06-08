@@ -21,7 +21,7 @@ test.describe("Blockchain Specific API", () => {
     expect((await page.locator("#console > p").innerText()).length).toBeGreaterThan(0);
   });
 
-  test("Send SPL Transaction API returns a transaction hash", async () => {
+  test.only("Send SPL Transaction API returns tx hash & does not return error", async () => {
     const [page1] = await Promise.all([
       page.waitForEvent("popup"),
       page.click("button >> text=Send SPL Transaction")
@@ -31,7 +31,9 @@ test.describe("Blockchain Specific API", () => {
     await page1.click("button >> text=Approve")
     await wait(1500);
 
-    expect((await page.locator("#console > p").innerText()).length).toBeGreaterThan(0);
+    const consoleText = await page.locator("#console > p").innerText();
+    expect(consoleText.length).toBeGreaterThan(0);
+    expect(consoleText.includes("error")).toBe(false);
   });
 
   test("Sign Transaction API returns signed transaction data", async () => {
@@ -78,7 +80,6 @@ test.describe("Blockchain Specific API", () => {
   });
 
   test("Sign Message API returns signed data", async() => {
-    await wait(1000);
     const [page1] = await Promise.all([
       page.waitForEvent("popup"),
       page.click("button >> text=Sign Message")
