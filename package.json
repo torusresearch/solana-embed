@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/solana-embed",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Embed script for solana blockchain",
   "main": "dist/solanaEmbed.cjs.js",
   "module": "dist/solanaEmbed.esm.js",
@@ -25,7 +25,7 @@
     "url": "git+https://github.com/torusresearch/solana-embed.git"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.43.0",
+    "@solana/web3.js": "^1.36.0",
     "@toruslabs/base-controllers": "^2.0.0",
     "@toruslabs/http-helpers": "^3.0.0",
     "@toruslabs/openlogin-jrpc": "^2.0.0",
