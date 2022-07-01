@@ -366,7 +366,7 @@ const getUserInfo = async () => {
 };
 
 const toggleButton = async () => {
-  const toggleChecked = document.getElementById('default-toggle')?.checked;
+  const toggleChecked = (document.getElementById("default-toggle") as HTMLInputElement)?.checked;
   if (!toggleChecked) {
     await torus?.hideTorusButton();
     // showButton.value = false;
@@ -578,7 +578,7 @@ const clearUiconsole = (): void => {
       <h6 class="pb-4 text-[#595857]">Note: This is a testing application. Please open console for debugging</h6>
       <div class="pb-2">
         <h3 class="font-semibold text-[#595857]">Select build environment</h3>
-        <select name="buildEnv" v-model="buildEnv" class="select-menu p-1">
+        <select name="buildEnv" v-model="buildEnv" class="select-menu bg-dropdown p-1">
           <option value="production">Production</option>
           <option value="testing">Testing</option>
           <option value="development">Development</option>
@@ -590,7 +590,7 @@ const clearUiconsole = (): void => {
       <h6 class="py-4 text-[#595857]">or</h6>
       <div class="pb-2">
         <h3 class="font-semibold text-[#595857]">Private Key</h3>
-        <input placeholder="https://example.com/logo.svg" v-model="privateKey" class="btn-login p-2" />
+        <input placeholder="https://example.com/logo.svg" v-model="privateKey" class="btn-login px-4 py-2" />
       </div>
       <div>
         <button @click="loginWithPrivateKey" class="btn-login">Login with Private Key</button>
@@ -631,7 +631,7 @@ const clearUiconsole = (): void => {
             <h7 class="text-xl font-semibold">Torus APIs</h7>
             <div>
               <label for="default-toggle" class="inline-flex relative items-center cursor-pointer">
-                <input type="checkbox" id="default-toggle" class="sr-only peer" @click="toggleButton"/>
+                <input type="checkbox" id="default-toggle" class="sr-only peer" @click="toggleButton" />
                 <div
                   class="w-11 h-6 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
                 ></div>
@@ -765,8 +765,11 @@ a {
   overflow-wrap: break-word;
 }
 .select-menu {
-  @apply bg-white h-12 w-80 rounded-3xl text-center;
+  @apply h-12 w-80 rounded-3xl text-center bg-white bg-no-repeat;
   border: solid 1px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-position: right 16px top 50%;
 }
 .btn {
   @apply h-11 w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
