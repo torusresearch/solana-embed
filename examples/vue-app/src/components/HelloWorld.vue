@@ -781,7 +781,9 @@ a {
 .btn:disabled {
   @apply bg-gray-100 opacity-30;
 }
-
+.btn-large:disabled {
+  @apply bg-gray-100 opacity-30;
+}
 .copy-btn {
   @apply h-6 px-2 m-2 text-sm inline-flex items-center overflow-hidden bg-[#e9e9ea] rounded-3xl text-[#7F8FA4] leading-4 font-bold;
 }
