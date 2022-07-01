@@ -37,6 +37,7 @@ const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
 const copied = ref(false);
+const consoleDiv = ref<HTMLDivElement>();
 
 const testnet = SUPPORTED_NETWORKS["testnet"].displayName;
 
@@ -389,7 +390,8 @@ const topup = async () => {
 };
 
 const debugConsole = async (text: string) => {
-  document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+  // document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+  consoleDiv.value.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
 
 const airdrop = async () => {
@@ -563,10 +565,7 @@ function getAddress(address: string) {
   return `${address.slice(0, 5)}...${address.slice(-5)}`;
 }
 const clearUiconsole = (): void => {
-  const el = document.querySelector("#console > p");
-  if (el) {
-    el.innerHTML = "";
-  }
+  consoleDiv.value.innerHTML = "";
 };
 </script>
 
@@ -597,12 +596,12 @@ const clearUiconsole = (): void => {
       </div>
     </div>
     <div v-else>
-      <div class="flex box md:rows-span-2 m-6">
-        <div class="mt-7 ml-6">
+      <div class="flex box md:rows-span-2 m-6 items-center py-4">
+        <div class="ml-6">
           <h7 class="text-2xl font-semibold">demo-solana.tor.us</h7>
-          <h6 class="pb-8 text-left">Build environment : {{ buildEnv }}</h6>
+          <h6 class="text-left">Build environment : {{ buildEnv }}</h6>
         </div>
-        <div class="ml-auto mt-7">
+        <div class="ml-auto">
           <button
             type="button"
             class="copy-btn"
@@ -697,7 +696,7 @@ const clearUiconsole = (): void => {
           </div>
         </div>
         <div class="box-grey" id="console">
-          <p style="white-space: pre-line"></p>
+          <p ref="consoleDiv" style="white-space: pre-line"></p>
           <div><button class="clear-button" @click="clearUiconsole">Clear console</button></div>
         </div>
       </div>
@@ -772,12 +771,15 @@ a {
   background-position: right 16px top 50%;
 }
 .btn {
-  @apply h-11 w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
+  @apply min-h-[44px] w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
   border: 1px solid #6f717a;
 }
 .btn-large {
-  @apply h-11 w-full m-0 bg-white rounded-3xl text-[#6F717A] text-xs lg:text-base font-medium;
+  @apply min-h-[44px] w-full m-0 bg-white rounded-3xl text-[#6F717A] text-xs lg:text-base font-medium;
   border: 1px solid #6f717a;
+}
+.btn:disabled {
+  @apply bg-gray-100 opacity-30;
 }
 
 .copy-btn {
@@ -811,7 +813,7 @@ a {
   @apply m-2;
 }
 .btn {
-  @apply h-11 w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
+  @apply min-h-[44px] w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
   border: 1px solid #6f717a;
 }
 .custom-switch {
