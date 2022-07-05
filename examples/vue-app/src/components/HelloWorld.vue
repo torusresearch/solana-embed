@@ -20,7 +20,7 @@ import nacl from "tweetnacl";
 import log from "loglevel";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import  { createDeposit, createRedeemSolInstruction, createRedeemInstruction, redeemSol, redeemSplToken} from "@cwlee/solana-lookup-sdk";
-import { getSplInstructions  } from "./helper";
+import { getSplInstructions, whiteLabelData  } from "./helper";
 import {ec as EC} from "elliptic";
 import { createHash } from "crypto";
 
@@ -29,6 +29,7 @@ const secp = ec.genKeyPair({entropy: "maximumentroyneededfortesting"})
 let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
+let isWhiteLabeEnabled = false;
 
 const privateKey= ref();
 const network = ref("");
@@ -48,14 +49,18 @@ watch(buildEnv, (buildEnv, prevBuildEnv) => {
 });
 
 
-const login = async () => {
+const login = async (isWhiteLabel = false) => {
   try {
-    if (!torus) {
+    if (!torus || isWhiteLabel !== isWhiteLabeEnabled) {
       torus = new Torus();
     }
 
-    if (!torus.isInitialized) {
-      await torus.init({
+    if (!torus.isInitialized || isWhiteLabel !== isWhiteLabeEnabled) {
+      isWhiteLabeEnabled = isWhiteLabel;
+      isWhiteLabeEnabled ? await torus.init({
+        buildEnv: buildEnv.value,
+        whiteLabel: whiteLabelData
+      }) : await torus.init({
         buildEnv: buildEnv.value,
         // network: "mainnet-beta"
       })
@@ -497,13 +502,15 @@ const lookupRedeemSPL = async (mintAddress:string) => {
           <option value="testing">Testing</option>
           <option value="development">Development</option>
         </select>
-        <button @click="login">Login</button>
+        <button @click="() => login(false)">Login</button>
           <span> OR </span>
 
           <div>
             <input :style="{ marginLeft: '20px' }" v-model="privateKey" :placeholder="`Enter private keyf from web3auth to login`" />
             <button @click="loginWithPrivateKey">Login With Private Key</button>
           </div>
+          <span> OR </span>
+          <button @click="() => login(true)">Login With WhiteLabel</button>
       </div>
       <!-- <button v-if="!pubkey" @click="login">Login</button> -->
       <button v-if="pubkey" @click="logout">Logout</button>
