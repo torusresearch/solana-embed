@@ -589,7 +589,7 @@ const clearUiconsole = (): void => {
       <h6 class="py-4 text-[#595857]">or</h6>
       <div class="pb-2">
         <h3 class="font-semibold text-[#595857]">Private Key</h3>
-        <input placeholder="https://example.com/logo.svg" v-model="privateKey" class="btn-login px-4 py-2" />
+        <input placeholder="https://example.com/" v-model="privateKey" class="btn-login px-4 py-2" />
       </div>
       <div>
         <button @click="loginWithPrivateKey" class="btn-login">Login with Private Key</button>
