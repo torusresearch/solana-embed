@@ -75,7 +75,7 @@ export const getSplInstructions = async ( connection: Connection, signerAddress:
     name: "HelloDemo",
     // url: "http://localhost:3000",
     theme: {
-      isDark: false,
+      isDark: true,
       colors: {
         torusBrand1: "#2dffb2",
       },
