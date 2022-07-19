@@ -77,6 +77,8 @@ class Torus {
 
   dappStorageKey: string;
 
+  isTopupHidden = false;
+
   private torusAlertContainer: HTMLDivElement;
 
   private torusUrl: string;
@@ -172,6 +174,7 @@ class Torus {
               torusUrl,
             });
             if (showTorusButton) this.showTorusButton();
+            if (whiteLabel?.topupHide) this.isTopupHidden = whiteLabel.topupHide;
             else this.hideTorusButton();
             this.isInitialized = true;
             (window as any).torus = this;

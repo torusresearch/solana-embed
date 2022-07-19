@@ -33,6 +33,7 @@ let isWhiteLabeEnabled = false;
 
 const privateKey= ref();
 const network = ref("");
+const isTopupHidden = ref(false);
 const pubkey = ref("");
 const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
 const showButton = ref(false);
@@ -80,6 +81,7 @@ const login = async (isWhiteLabel = false) => {
     }
     console.log(torus)
     publicKeys = await torus?.login({});
+    isTopupHidden.value = torus?.isTopupHidden;
     pubkey.value = publicKeys ? publicKeys[0] : "";
     const target_network = (await torus.provider.request({
       method: "solana_provider_config",
@@ -350,13 +352,15 @@ const toggleButton = async () => {
 };
 
 const topup = async () => {
-  try {
-    const result = await torus?.initiateTopup("rampnetwork", {
-      selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9",
-    });
-    if (result) debugConsole("Top Up Successful");
-  } catch {
-    debugConsole("Top Up Failed");
+  if(!isTopupHidden.value) {
+    try {
+      const result = await torus?.initiateTopup("rampnetwork", {
+        selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9",
+      });
+      if (result) debugConsole("Top Up Successful");
+    } catch {
+      debugConsole("Top Up Failed");
+    }
   }
 };
 
@@ -519,7 +523,7 @@ const lookupRedeemSPL = async (mintAddress:string) => {
         <button @click="getUserInfo">Get UserInfo</button>
         <button @click="changeProvider">Change Provider</button>
         <button @click="toggleButton">Toggle Show</button>
-        <button @click="topup">Top Up</button>
+        <button v-if="!isTopupHidden" @click="topup">Top Up</button>
         <h4>Blockchain Specific API</h4>
         <button @click="transfer">Send Transaction</button>
         <button @click="transferSPL">Send SPL Transaction</button>
