@@ -75,7 +75,7 @@ const login = async () => {
       //   },
       // });
     }
-    // console.log(torus);
+    console.log(torus);
     publicKeys = await torus?.login({});
     pubkey.value = publicKeys ? publicKeys[0] : "";
     const target_network = (await torus.provider.request({
@@ -390,8 +390,7 @@ const topup = async () => {
 };
 
 const debugConsole = async (text: string) => {
-  // document.querySelector("#console > p")!.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
-  consoleDiv.value.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+  if (consoleDiv.value) consoleDiv.value.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
 };
 
 const airdrop = async () => {
@@ -565,7 +564,7 @@ function getAddress(address: string) {
   return `${address.slice(0, 5)}...${address.slice(-5)}`;
 }
 const clearUiconsole = (): void => {
-  consoleDiv.value.innerHTML = "";
+  if (consoleDiv.value) consoleDiv.value.innerHTML = "";
 };
 </script>
 
@@ -573,10 +572,10 @@ const clearUiconsole = (): void => {
   <div id="app">
     <div class="grid text-center justify-center pt-20" v-if="!pubkey">
       <h7 class="font-bold text-3xl">Login and resets</h7>
-      <h6 class="font-semibold text-[#595857]">Build Environment : {{ buildEnv }}</h6>
-      <h6 class="pb-4 text-[#595857]">Note: This is a testing application. Please open console for debugging</h6>
+      <h6 class="font-semibold font-color">Build Environment : {{ buildEnv }}</h6>
+      <h6 class="pb-4 font-color">Note: This is a testing application. Please open console for debugging</h6>
       <div class="pb-2">
-        <h3 class="font-semibold text-[#595857]">Select build environment</h3>
+        <h3 class="font-semibold font-color">Select build environment</h3>
         <select name="buildEnv" v-model="buildEnv" class="select-menu bg-dropdown p-1">
           <option value="production">Production</option>
           <option value="testing">Testing</option>
@@ -586,10 +585,10 @@ const clearUiconsole = (): void => {
       <div>
         <button @click="login" class="btn-login">Login</button>
       </div>
-      <h6 class="py-4 text-[#595857]">or</h6>
+      <h6 class="py-4 font-color">or</h6>
       <div class="pb-2">
-        <h3 class="font-semibold text-[#595857]">Private Key</h3>
-        <input placeholder="Enter your Private Key" v-model="privateKey" class="btn-login px-4 py-2" />
+        <h3 class="font-semibold font-color">Private Key</h3>
+        <input placeholder="Enter private key from web3auth to login" v-model="privateKey" class="btn-login px-4 py-2" />
       </div>
       <div>
         <button @click="loginWithPrivateKey" class="btn-login">Login with Private Key</button>
@@ -826,5 +825,8 @@ a {
   display: block;
   min-height: 1.5rem;
   padding-left: 1.5rem;
+}
+.font-color {
+  @apply text-[#595857];
 }
 </style>
