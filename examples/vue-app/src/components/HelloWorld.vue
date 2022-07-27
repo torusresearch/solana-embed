@@ -595,16 +595,20 @@ const clearUiconsole = (): void => {
       <div>
         <button @click="login(false)" class="btn-login">Login</button>
       </div>
-      <h6 class="py-4 font-color">or</h6>
+      <h6 class="py-2 font-color">or</h6>
       <div class="pb-2">
+        <h3 class="font-semibold font-color">White Labelling</h3>
+      </div>
+      <div>
+        <button @click="login(true)" class="btn-login">Login With White Labelling</button>
+      </div>
+      <h6 class="py-2 font-color">or</h6>
+      <div class="py-2">
         <h3 class="font-semibold font-color">Private Key</h3>
         <input placeholder="Enter private key from web3auth to login" v-model="privateKey" class="btn-login px-4 py-2" />
       </div>
       <div>
         <button @click="loginWithPrivateKey" class="btn-login">Login with Private Key</button>
-      </div>
-      <div>
-        <button @click="login(true)" class="btn-login">Login With White Labelling</button>
       </div>
     </div>
     <div v-else>
