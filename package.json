@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.36.0",
-    "@toruslabs/base-controllers": "^2.0.0",
+    "@toruslabs/base-controllers": "^2.2.3",
     "@toruslabs/http-helpers": "^3.0.0",
     "@toruslabs/openlogin-jrpc": "^2.0.0",
     "eth-rpc-errors": "^4.0.3",

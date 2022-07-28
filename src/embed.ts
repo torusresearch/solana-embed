@@ -77,6 +77,8 @@ class Torus {
 
   dappStorageKey: string;
 
+  isTopupHidden = false;
+
   private torusAlertContainer: HTMLDivElement;
 
   private torusUrl: string;
@@ -108,6 +110,7 @@ class Torus {
     buttonPosition = BUTTON_POSITION.BOTTOM_LEFT,
     apiKey = "torus-default",
     extraParams = {},
+    whiteLabel,
   }: TorusParams = {}): Promise<void> {
     if (this.isInitialized) throw new Error("Already initialized");
     setAPIKey(apiKey);
@@ -119,7 +122,6 @@ class Torus {
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
     else log.disableAll();
-
     const dappStorageKey = this.handleDappStorageKey(useLocalStorage);
 
     const torusIframeUrl = new URL(torusUrl);
@@ -164,6 +166,7 @@ class Torus {
                 network,
                 dappMetadata,
                 extraParams,
+                whiteLabel,
               },
               torusIframeUrl.origin
             );
@@ -171,6 +174,7 @@ class Torus {
               torusUrl,
             });
             if (showTorusButton) this.showTorusButton();
+            if (whiteLabel?.topupHide) this.isTopupHidden = whiteLabel.topupHide;
             else this.hideTorusButton();
             this.isInitialized = true;
             (window as any).torus = this;

@@ -69,3 +69,21 @@ export const getSplInstructions = async ( connection: Connection, signerAddress:
     // transaction.feePayer = signer 
     // return transaction;
   }
+  
+  // Sample White Label data with light theme and solana logo
+  export const whiteLabelData = {
+    name: "HelloDemo",
+    // url: "http://localhost:3000",
+    theme: {
+      isDark: true,
+      colors: {
+        torusBrand1: "#2dffb2",
+      },
+    },
+    // logoDark: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // dark logo for light background
+    // logoLight: "https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg", // light logo for dark background
+    logoDark: "https://solana-testing.tor.us/img/solana-logo-light.46db0c8f.svg",
+    logoLight: "https://solana-testing.tor.us/img/solana-logo-light.46db0c8f.svg",
+    topupHide: true,
+    // defaultLanguage: "ja",
+  };
