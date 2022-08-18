@@ -1,4 +1,4 @@
-import { PublicKey, SignaturePubkeyPair, Transaction } from "@solana/web3.js";
+import { PublicKey, SendOptions, SignaturePubkeyPair, Transaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
@@ -340,6 +340,14 @@ class Torus {
     const response = (await this.provider.request({
       method: "send_transaction",
       params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
+    })) as string;
+    return response;
+  }
+
+  async signAndSendTransaction(transaction: Transaction, options?: SendOptions): Promise<string> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex"), options },
     })) as string;
     return response;
   }
