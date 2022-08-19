@@ -344,6 +344,7 @@ class Torus {
     return response;
   }
 
+  // support sendOptions
   async signAndSendTransaction(transaction: Transaction, options?: SendOptions): Promise<{ signature: string }> {
     const response = (await this.provider.request({
       method: "send_transaction",
