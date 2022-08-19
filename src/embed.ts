@@ -344,12 +344,12 @@ class Torus {
     return response;
   }
 
-  async signAndSendTransaction(transaction: Transaction, options?: SendOptions): Promise<string> {
+  async signAndSendTransaction(transaction: Transaction, options?: SendOptions): Promise<{ signature: string }> {
     const response = (await this.provider.request({
       method: "send_transaction",
       params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex"), options },
     })) as string;
-    return response;
+    return { signature: response };
   }
 
   async signTransaction(transaction: Transaction): Promise<Transaction> {
