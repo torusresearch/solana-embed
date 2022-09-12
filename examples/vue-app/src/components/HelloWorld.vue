@@ -821,7 +821,7 @@ a {
 }
 .height-fit {
   @apply min-h-fit relative;
-  height: 75vh;
+  height: 80vh;
 }
 #console {
   text-align: left;
