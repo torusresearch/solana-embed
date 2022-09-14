@@ -47,11 +47,11 @@ await torus.login();
 
 ## 🩹 Examples
 
-Checkout the examples for your preferred blockchain and platform in our [examples repository](https://github.com/Web3Auth/examples/tree/main/web-core-sdk)
+Checkout the examples `Solana Embed` in our [example directory.](https://github.com/torusresearch/solana-embed/tree/main/examples/vue-app)
 
 ## 🌐 Demo
 
-Checkout the [Web3Auth Demo](https://demo-app.web3auth.io/) to see how Web3Auth can be used in your application.
+Checkout the [Web3Auth Demo](https://demo-solana.tor.us/) to see how `Solana Embed` can be used in your application.
 
 ## 💬 Troubleshooting and Discussions
 
