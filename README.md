@@ -1,7 +1,63 @@
-# Torus Embed — New Frictionless login for Dapps
+# Solana Embed (by Web3Auth)
 
 [![npm version](https://badge.fury.io/js/%40toruslabs%2Fsolana-embed.svg)](https://badge.fury.io/js/%40toruslabs%2Fsolana-embed)
 ![npm](https://img.shields.io/npm/dw/@toruslabs/solana-embed)
+[![minzip](https://img.shields.io/bundlephobia/minzip/@toruslabs/solana-embed?label=%22%22)](https://bundlephobia.com/result?p=@toruslabs/solana-embed)
+
+> [Web3Auth](https://web3auth.io) is where passwordless auth meets non-custodial key infrastructure for Web3 apps and wallets. By aggregating OAuth (Google, Twitter, Discord) logins, different wallets and innovative Multi Party Computation (MPC) - Web3Auth provides a seamless login experience to every user on your application.
+
+## 📖 Documentation
+
+Checkout the official [Torus Documentation for Solana Embed](https://docs.tor.us/solana-wallet/api-reference/installation) to get started.
+
+## 🔗 Installation
+
+```shell
+npm install --save @toruslabs/solana-embed
+```
+
+## ⚡ Quick Start
+
+### Get your Client ID from Web3Auth Dashboard
+
+Hop on to the [Web3Auth Dashboard](https://dashboard.web3auth.io/) and create a new Torus Wallet project. Use the Client ID of the project to start your integration.
+
+![Web3Auth Dashboard - Torus Wallets](https://user-images.githubusercontent.com/6962565/187207779-9420f4ad-17e8-43fa-b578-0bc64f50e4d3.png)
+
+## Initialize & Login
+
+```ts
+import Torus from "@toruslabs/solana-embed";
+
+const torus = new Torus();
+await torus.init({
+  buttonPosition: "top-left", // default: bottom-left
+  buildEnv: "production", // default: production
+  enableLogging: true, // default: false
+  showTorusButton: false, // default: true
+  whitelabel: {
+    theme: { isDark: true, colors: { torusBrand1: "#00a8ff" } },
+    logoDark: "https://web3auth.io/images/w3a-L-Favicon-1.svg",
+    logoLight: "https://web3auth.io/images/w3a-D-Favicon-1.svg",
+    topupHide: true,
+  },
+});
+await torus.login();
+```
+
+## 🩹 Examples
+
+Checkout the examples `Solana Embed` in our [example directory.](https://github.com/torusresearch/solana-embed/tree/main/examples/vue-app)
+
+## 🌐 Demo
+
+Checkout the [Web3Auth Demo](https://demo-solana.tor.us/) to see how `Solana Embed` can be used in your application.
+
+## 💬 Troubleshooting and Discussions
+
+- Have a look at our [GitHub Discussions](https://github.com/Web3Auth/Web3Auth/discussions?discussions_q=sort%3Atop) to see if anyone has any questions or issues you might be having.
+- Checkout our [Troubleshooting Documentation Page](https://web3auth.io/docs/troubleshooting) to know the common issues and solutions
+- Join our [Discord](https://discord.gg/web3auth) to join our community and get private integration support or help with your integration.
 
 ## Introduction
 
@@ -9,13 +65,9 @@ This module generates the javascript to include in a DApp via a script tag.
 It creates an iframe that loads the Torus page and sets up communication streams between
 the iframe and the DApp javascript context.
 
-Please refer to docs for API Reference available [here](https://docs.tor.us/wallet/api-reference/installation) or [change log](https://docs.tor.us/torus-wallet/changelog).
-
 ## Features
 
 - Typescript compatible. Includes Type definitions
-
-Please refer to docs for API Reference available [here](https://docs.tor.us/wallet/api-reference/installation) or [change log](https://docs.tor.us/torus-wallet/changelog).
 
 ## Installation
 
@@ -88,7 +140,7 @@ entry-point: `index.js`
 ## Requirements
 
 - This package requires a peer dependency of `@babel/runtime`
-- Node 10+
+- Node 14+
 
 ## License
 
