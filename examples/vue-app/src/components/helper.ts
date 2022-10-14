@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { Connection, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Token, ASSOCIATED_TOKEN_PROGRAM_ID,TOKEN_PROGRAM_ID, MintInfo } from "@solana/spl-token";
 import log from "loglevel";
 import * as bors from "@project-serum/borsh";
@@ -16,7 +16,6 @@ export const MintLayout = bors.struct([
 
 export const getSplInstructions = async ( connection: Connection, signerAddress:string,  receiver: string, amount: number, mintAddress: string): Promise<TransactionInstruction[]> => {
     const instruction : TransactionInstruction[] = []
-    const transaction = new Transaction();
     const tokenMintAddress = mintAddress;
     const mintAccount = new PublicKey(tokenMintAddress);
     const signer = new PublicKey(signerAddress); // add gasless transactions

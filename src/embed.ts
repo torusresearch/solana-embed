@@ -1,4 +1,4 @@
-import { PublicKey, SendOptions, SignaturePubkeyPair, Transaction } from "@solana/web3.js";
+import { PublicKey, SendOptions, SignaturePubkeyPair, VersionedTransaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
@@ -336,27 +336,29 @@ class Torus {
     return response;
   }
 
-  async sendTransaction(transaction: Transaction): Promise<string> {
+  async sendTransaction(transaction: VersionedTransaction): Promise<string> {
+    // eslint-disable-next-line no-debugger
+    debugger;
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
+      params: { message: transaction.serialize() },
     })) as string;
     return response;
   }
 
   // support sendOptions
-  async signAndSendTransaction(transaction: Transaction, options?: SendOptions): Promise<{ signature: string }> {
+  async signAndSendTransaction(transaction: VersionedTransaction, options?: SendOptions): Promise<{ signature: string }> {
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex"), options },
+      params: { message: transaction.serialize(), options },
     })) as string;
     return { signature: response };
   }
 
-  async signTransaction(transaction: Transaction): Promise<Transaction> {
+  async signTransaction(transaction: VersionedTransaction): Promise<VersionedTransaction> {
     const response: string = (await this.provider.request({
       method: "sign_transaction",
-      params: { message: transaction.serializeMessage().toString("hex"), messageOnly: true },
+      params: { message: transaction.message.serialize(), messageOnly: true },
     })) as string;
 
     // reconstruct signature pair
@@ -366,9 +368,9 @@ class Torus {
     return transaction;
   }
 
-  async signAllTransactions(transactions: Transaction[]): Promise<Transaction[]> {
-    const encodedMessage: string[] = transactions.map((tx) => {
-      return tx.serializeMessage().toString("hex");
+  async signAllTransactions(transactions: VersionedTransaction[]): Promise<VersionedTransaction[]> {
+    const encodedMessage = transactions.map((tx) => {
+      return tx.message.serialize();
     });
     const responses: string[] = await this.provider.request({
       method: "sign_all_transactions",
