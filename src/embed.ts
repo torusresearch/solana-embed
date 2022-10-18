@@ -337,8 +337,6 @@ class Torus {
   }
 
   async sendTransaction(transaction: VersionedTransaction): Promise<string> {
-    // eslint-disable-next-line no-debugger
-    debugger;
     const response = (await this.provider.request({
       method: "send_transaction",
       params: { message: transaction.serialize() },

@@ -13,15 +13,16 @@ import {
   Authorized,
   Lockup,
   TransactionInstruction,
-TransactionMessage,
-VersionedTransaction,
-Signer,
+  TransactionMessage,
+  VersionedTransaction,
+  Signer,
+  AddressLookupTableProgram,
 } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
-import { getSplInstructions, whiteLabelData  } from "./helper";
+import { getSplInstructions, whiteLabelData } from "./helper";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { createDeposit, createRedeemSolInstruction, createRedeemInstruction, redeemSol, redeemSplToken } from "@cwlee/solana-lookup-sdk";
 import { ec as EC } from "elliptic";
@@ -55,7 +56,6 @@ watch(buildEnv, (buildEnv, prevBuildEnv) => {
   }
 });
 
-
 const login = async (isWhiteLabel = false) => {
   try {
     if (!torus || isWhiteLabel !== isWhiteLabeEnabled) {
@@ -64,13 +64,15 @@ const login = async (isWhiteLabel = false) => {
 
     if (!torus.isInitialized || isWhiteLabel !== isWhiteLabeEnabled) {
       isWhiteLabeEnabled = isWhiteLabel;
-      isWhiteLabeEnabled ? await torus.init({
-        buildEnv: buildEnv.value,
-        whiteLabel: whiteLabelData
-      }) : await torus.init({
-        buildEnv: buildEnv.value,
-        // network: "mainnet-beta"
-      });
+      isWhiteLabeEnabled
+        ? await torus.init({
+            buildEnv: buildEnv.value,
+            whiteLabel: whiteLabelData,
+          })
+        : await torus.init({
+            buildEnv: buildEnv.value,
+            // network: "mainnet-beta"
+          });
       // await torus.init({
       //   buildEnv: buildEnv.value,
       //   showTorusButton: showButton.value,
@@ -153,11 +155,11 @@ const transfer = async () => {
   const latestBlockhash = await conn.getLatestBlockhash();
 
   const messageV0 = new TransactionMessage({
-      payerKey: new PublicKey(publicKeys![0]),
-      instructions: [TransactionInstruction],
-      recentBlockhash: latestBlockhash.blockhash,
-    }).compileToV0Message();
-    const transactionV0 = new VersionedTransaction(messageV0);
+    payerKey: new PublicKey(publicKeys![0]),
+    instructions: [TransactionInstruction],
+    recentBlockhash: latestBlockhash.blockhash,
+  }).compileToV0Message();
+  const transactionV0 = new VersionedTransaction(messageV0);
 
   try {
     const res = await torus?.sendTransaction(transactionV0);
@@ -229,7 +231,7 @@ const transferSPL = async () => {
     recentBlockhash: latestBlockhash.blockhash,
   }).compileToV0Message();
   const transactionV0 = new VersionedTransaction(messageV0);
-  
+
   try {
     const res = await torus?.sendTransaction(transactionV0);
     debugConsole(res as string);
@@ -340,7 +342,7 @@ const signAllTransaction = async () => {
   const block = await conn.getLatestBlockhash("finalized");
 
   function getNewTx() {
-  // create v0 compatible message
+    // create v0 compatible message
     let inst = SystemProgram.transfer({
       fromPubkey: new PublicKey(publicKeys![0]),
       toPubkey: new PublicKey(publicKeys![0]),
@@ -372,6 +374,106 @@ const signAllTransaction = async () => {
     debugConsole(e as string);
   }
 };
+
+const SendV0Transaction = async () => {
+  const { value: lookupTable } = await conn.getAddressLookupTable(new PublicKey("F3MfgEJe1TApJiA14nN2m4uAH4EBVrqdBnHeGeSXvQ7B"));
+  if (!lookupTable) {
+    return;
+  }
+
+  const {
+    context: { slot: minContextSlot },
+    value: { blockhash, lastValidBlockHeight },
+  } = await conn.getLatestBlockhashAndContext();
+
+  const message = new TransactionMessage({
+    payerKey: new PublicKey(publicKeys![0]),
+    instructions: [
+      {
+        data: Buffer.from("Hello, from the Solana Wallet Adapter example app!"),
+        keys: lookupTable.state.addresses.map((pubkey, index) => ({
+          pubkey,
+          isWritable: index % 2 == 0,
+          isSigner: false,
+        })),
+        programId: new PublicKey("Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo"),
+      },
+    ],
+    recentBlockhash: blockhash,
+  });
+
+  const lookupTables = [lookupTable];
+  const transaction = new VersionedTransaction(message.compileToV0Message(lookupTables));
+
+  try {
+    const res = await torus?.sendTransaction(transaction);
+    debugConsole(res as string);
+  } catch (e) {
+    log.error(e);
+    debugConsole(e as string);
+  }
+};
+
+async function sendTransactionV0(connection: Connection, instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
+  let { blockhash } = await connection.getLatestBlockhash();
+
+  const messageV0 = new TransactionMessage({
+    payerKey: payer,
+    recentBlockhash: blockhash,
+    instructions,
+  }).compileToV0Message();
+
+  const tx = new VersionedTransaction(messageV0);
+  const sx = await torus?.sendTransaction(tx);
+
+  console.log(`** -- Signature: ${sx}`);
+}
+
+const testInstr = async () => {
+  const TransactionInstruction = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.01 * LAMPORTS_PER_SOL,
+  });
+  await sendTransactionV0WithLookupTable([TransactionInstruction], new PublicKey(publicKeys![0]));
+};
+
+async function sendTransactionV0WithLookupTable(instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
+  let lookupTablePubkey: PublicKey;
+  let ix: TransactionInstruction;
+  [ix, lookupTablePubkey] = AddressLookupTableProgram.createLookupTable({
+    authority: payer,
+    payer: payer,
+    recentSlot: await conn.getSlot(),
+  });
+  await sendTransactionV0(conn, [ix], payer);
+
+  // const ix2 = AddressLookupTableProgram.extendLookupTable({
+  //   addresses: [new PublicKey(publicKeys![0])],
+  //   authority: payer,
+  //   lookupTable: lookupTablePubkey,
+  //   payer: payer,
+  // });
+
+  // await sendTransactionV0(conn, [ix2], payer);
+
+  const { value: lookupTableAccount } = await conn.getAddressLookupTable(lookupTablePubkey);
+
+  let { blockhash } = await conn.getLatestBlockhash();
+
+  if (lookupTableAccount) {
+    const messageV0 = new TransactionMessage({
+      payerKey: payer,
+      recentBlockhash: blockhash,
+      instructions,
+    }).compileToV0Message([lookupTableAccount]);
+
+    const tx = new VersionedTransaction(messageV0);
+    const sx = await torus?.sendTransaction(tx);
+
+    console.log(`** -- Signature: ${sx}`);
+  }
+}
 
 const signMessage = async () => {
   try {
@@ -410,7 +512,7 @@ const toggleButton = async () => {
 };
 
 const topup = async () => {
-  if(!isTopupHidden.value) {
+  if (!isTopupHidden.value) {
     try {
       const result = await torus?.initiateTopup("rampnetwork", {
         selectedAddress: "3zLbFcrLPYk1hSdXdy1jcBRpeeXrhC47iCSjdwqsUaf9",
@@ -456,7 +558,7 @@ const mintAdminSrt = [
 ];
 const mintAdmin = Keypair.fromSecretKey(Buffer.from(mintAdminSrt));
 
-const generateVersionedTransaction = async(payerKey: PublicKey, instructions: TransactionInstruction[]) => {
+const generateVersionedTransaction = async (payerKey: PublicKey, instructions: TransactionInstruction[]) => {
   const latestBlockhash = await conn.getLatestBlockhash();
   // create v0 compatible message
   const messageV0 = new TransactionMessage({
@@ -466,7 +568,7 @@ const generateVersionedTransaction = async(payerKey: PublicKey, instructions: Tr
   }).compileToV0Message();
   const transactionV0 = new VersionedTransaction(messageV0);
   return transactionV0;
-}
+};
 
 const mintToken = async (mintAddress: string) => {
   // mint token
@@ -490,10 +592,9 @@ const mintToken = async (mintAddress: string) => {
 
   inst.push(await Token.createMintToInstruction(TOKEN_PROGRAM_ID, mint, tokenaccount, mintAdmin.publicKey, [], 1 * LAMPORTS_PER_SOL));
 
-  
-  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst)
+  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst);
   transactionV0.sign([mintAdmin as Signer]);
-  
+
   // log.error(transaction.signatures)
   // log.error(transaction.signatures.map(item=> item.publicKey.toBase58()))
 
@@ -508,7 +609,7 @@ const mintToken = async (mintAddress: string) => {
 const lookupDepositSol = async () => {
   const inst = await createDeposit(conn, secp.getPublic("hex"), new PublicKey(lookup), new PublicKey(pubkey.value), 0.1);
   const block = await conn.getLatestBlockhash();
-  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst)
+  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst);
 
   const signedTransaction = await torus?.signTransaction(transactionV0);
   const result = await conn.sendRawTransaction(signedTransaction?.serialize() || []);
@@ -517,7 +618,7 @@ const lookupDepositSol = async () => {
 const lookupDepositSPL = async (mintAddress: string) => {
   const inst = await createDeposit(conn, secp.getPublic("hex"), new PublicKey(lookup), new PublicKey(pubkey.value), 1, new PublicKey(mintAddress));
 
-  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst)
+  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst);
   const signedTransaction = await torus?.signTransaction(transactionV0);
 
   const result = await conn.sendRawTransaction(signedTransaction?.serialize() || []);
@@ -531,7 +632,7 @@ const lookupRedeemSol = async () => {
 
   const inst = await redeemSol(secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), new PublicKey(pubkey.value));
 
-  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst)
+  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst);
   const signedTransaction = await torus?.signTransaction(transactionV0);
   const result = await conn.sendRawTransaction(signedTransaction?.serialize() || []);
   // const result = await torus?.sendTransaction(transaction);
@@ -559,9 +660,9 @@ const lookupRedeemSPL = async (mintAddress: string) => {
   // redeem instruction
   inst.push(...(await redeemSplToken(conn, secp.getPublic("hex"), signature, hashValue, new PublicKey(lookup), mintAccount, signer, dest)));
 
-  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst)
+  const transactionV0 = await generateVersionedTransaction(new PublicKey(pubkey.value), inst);
   const signedTransaction = await torus?.signTransaction(transactionV0);
-  
+
   const result = await conn.sendRawTransaction(signedTransaction?.serialize() || []);
   // const result = await torus?.sendTransaction(transaction);
   // const result = await conn.sendRawTransaction(transaction.serialize());
@@ -691,6 +792,7 @@ const clearUiconsole = (): void => {
               <button @click="signTransaction" class="btn">Sign Transaction</button>
               <button @click="signAllTransaction" class="btn">Sign All Transactions</button>
               <button @click="signMessage" class="btn">Sign Message</button>
+              <button @click="testInstr" class="btn">SendV0Transaction</button>
               <button @click="sendMultipleInstructionTransaction" class="btn">Multiple Instruction tx</button>
             </div>
           </div>
