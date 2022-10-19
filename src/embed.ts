@@ -365,7 +365,7 @@ class Torus {
   async signTransaction(transaction: TransactionOrVersionedTransaction): Promise<TransactionOrVersionedTransaction> {
     const isVersionedTransaction = isVersionedTransactionInstance(transaction);
     const message = isVersionedTransaction
-      ? (transaction as VersionedTransaction).message.serialize()
+      ? Buffer.from((transaction as VersionedTransaction).message.serialize()).toString("hex")
       : (transaction as Transaction).serializeMessage().toString("hex");
 
     const response: string = (await this.provider.request({
@@ -384,7 +384,9 @@ class Torus {
     let isVersionedTransaction: boolean;
     const encodedMessage = transactions.map((tx) => {
       isVersionedTransaction = isVersionedTransactionInstance(tx);
-      return isVersionedTransaction ? (tx as VersionedTransaction).message.serialize() : (tx as Transaction).serializeMessage().toString("hex");
+      return isVersionedTransaction
+        ? Buffer.from((tx as VersionedTransaction).message.serialize()).toString("hex")
+        : (tx as Transaction).serializeMessage().toString("hex");
     });
     const responses: string[] = await this.provider.request({
       method: "sign_all_transactions",
@@ -393,8 +395,6 @@ class Torus {
 
     // reconstruct signature pairs
     const signatures: SignaturePubkeyPair[] = responses.map((item) => {
-      // eslint-disable-next-line no-console
-      console.log({ item });
       const parsed = JSON.parse(item);
       return { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
     });

@@ -17,6 +17,7 @@ import {
   VersionedTransaction,
   Signer,
   AddressLookupTableProgram,
+Version,
 } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
@@ -31,7 +32,7 @@ import copyToClipboard from "copy-to-clipboard";
 
 const ec = new EC("secp256k1");
 const secp = ec.genKeyPair({ entropy: "maximumentroyneededfortesting" });
-let torus: Torus | null;
+let torus: Torus;
 let conn: Connection;
 let publicKeys: string[] | undefined;
 let isWhiteLabeEnabled = false;
@@ -290,7 +291,7 @@ const sendMultipleInstructionTransaction = async () => {
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  let instructions = [ TransactionInstruction2, TransactionInstruction2 ];
+  let instructions = [TransactionInstruction2, TransactionInstruction2];
 
   const latestBlockhash = await conn.getLatestBlockhash();
   // create v0 compatible message
@@ -334,7 +335,7 @@ const sendMultipleInstructionTransaction = async () => {
 // };
 
 const signTransaction = async () => {
-  const block = await conn.getLatestBlockhash("finalized");
+  // const block = await conn.getLatestBlockhash("finalized");
   const TransactionInstruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(publicKeys![0]),
     toPubkey: new PublicKey(publicKeys![0]),
@@ -350,7 +351,8 @@ const signTransaction = async () => {
   const transactionV0 = new VersionedTransaction(messageV0);
 
   try {
-    const res = await torus?.signTransaction(transactionV0);
+    const res = await torus.signTransaction(transactionV0);
+    // const hash = await conn.sendRawTransaction(res.serialize());
     debugConsole(JSON.stringify(res));
   } catch (e) {
     log.error(e);
@@ -388,8 +390,7 @@ const signAllTransaction = async () => {
     });
     let data = await Promise.all(promises);
     console.log(data);
-
-    // debugConsole(JSON.stringify(res));
+    debugConsole(JSON.stringify(res), data);
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -409,14 +410,15 @@ const signTransactionLegacy = async (isOldImplementation = false) => {
     feePayer: new PublicKey(publicKeys![0]),
   }).add(TransactionInstruction);
   try {
-    const res = isOldImplementation ? await torus?.signTransaction(transaction) : await torus?.signTransaction(transaction);
-    debugConsole(JSON.stringify(res));
+    const res = await torus.signTransaction(transaction) as Transaction;
+    let hash = await conn.sendRawTransaction(res.serialize());
+    debugConsole(JSON.stringify(res), hash);
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
   }
 };
-// MAKE SURE browser allow pop up from this site
+
 const signAllTransactionLegacy = async (isOldImplementation = false) => {
   const block = await conn.getLatestBlockhash("finalized");
   function getNewTx() {
@@ -428,11 +430,13 @@ const signAllTransactionLegacy = async (isOldImplementation = false) => {
     return new Transaction({ recentBlockhash: block.blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
   }
   try {
-    const res = isOldImplementation ? await torus?.signAllTransactionsOld([getNewTx(), getNewTx(), getNewTx()]) : await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
+    const res = isOldImplementation
+      ? await torus?.signAllTransactionsOld([getNewTx(), getNewTx(), getNewTx()])
+      : await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
     const serializedTxns = res?.map((x) => x.serialize());
     let promises: Promise<string>[] = [];
     serializedTxns?.forEach((buffer) => {
-      promises.push(conn.sendRawTransaction(buffer))  ;
+      promises.push(conn.sendRawTransaction(buffer));
     });
     let data = await Promise.all(promises);
     console.log(data);
@@ -553,8 +557,15 @@ const topup = async () => {
   }
 };
 
-const debugConsole = async (text: string) => {
-  if (consoleDiv.value) consoleDiv.value.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+const debugConsole = async (...text: any[]) => {
+  if (consoleDiv.value) {
+    // consoleDiv.value.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
+    let data = ""
+    text.forEach(x => {
+      data += "-" + JSON.stringify(x) + "\n"
+    })
+    consoleDiv.value.innerHTML = data
+  }
 };
 
 const airdrop = async () => {
