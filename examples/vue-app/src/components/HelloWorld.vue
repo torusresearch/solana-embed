@@ -17,7 +17,7 @@ import {
   VersionedTransaction,
   Signer,
   AddressLookupTableProgram,
-Version,
+  Version,
 } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
@@ -32,7 +32,7 @@ import copyToClipboard from "copy-to-clipboard";
 
 const ec = new EC("secp256k1");
 const secp = ec.genKeyPair({ entropy: "maximumentroyneededfortesting" });
-let torus: Torus;
+let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
 let isWhiteLabeEnabled = false;
@@ -184,7 +184,7 @@ const transferLegacy = async (isOldImplementation = false) => {
     feePayer: new PublicKey(publicKeys![0]),
   }).add(TransactionInstruction);
   try {
-    const res = isOldImplementation ? await torus?.sendTransactionOld(transaction) : await torus?.sendTransaction(transaction);
+    const res = await torus?.sendTransaction(transaction);
     debugConsole(res as string);
   } catch (e) {
     log.error(e);
@@ -351,7 +351,7 @@ const signTransaction = async () => {
   const transactionV0 = new VersionedTransaction(messageV0);
 
   try {
-    const res = await torus.signTransaction(transactionV0);
+    const res = await torus?.signTransaction(transactionV0);
     // const hash = await conn.sendRawTransaction(res.serialize());
     debugConsole(JSON.stringify(res));
   } catch (e) {
@@ -410,7 +410,7 @@ const signTransactionLegacy = async (isOldImplementation = false) => {
     feePayer: new PublicKey(publicKeys![0]),
   }).add(TransactionInstruction);
   try {
-    const res = await torus.signTransaction(transaction) as Transaction;
+    const res = (await torus?.signTransaction(transaction)) as Transaction;
     let hash = await conn.sendRawTransaction(res.serialize());
     debugConsole(JSON.stringify(res), hash);
   } catch (e) {
@@ -430,9 +430,7 @@ const signAllTransactionLegacy = async (isOldImplementation = false) => {
     return new Transaction({ recentBlockhash: block.blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
   }
   try {
-    const res = isOldImplementation
-      ? await torus?.signAllTransactionsOld([getNewTx(), getNewTx(), getNewTx()])
-      : await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
+    const res = await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
     const serializedTxns = res?.map((x) => x.serialize());
     let promises: Promise<string>[] = [];
     serializedTxns?.forEach((buffer) => {
@@ -560,11 +558,11 @@ const topup = async () => {
 const debugConsole = async (...text: any[]) => {
   if (consoleDiv.value) {
     // consoleDiv.value.innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
-    let data = ""
-    text.forEach(x => {
-      data += "-" + JSON.stringify(x) + "\n"
-    })
-    consoleDiv.value.innerHTML = data
+    let data = "";
+    text.forEach((x) => {
+      data += "-" + JSON.stringify(x) + "\n";
+    });
+    consoleDiv.value.innerHTML = data;
   }
 };
 
@@ -829,18 +827,13 @@ const clearUiconsole = (): void => {
           <div class="col-span-2 text-left">
             <div class="font-semibold">Signing</div>
             <div class="grid grid-cols-2 gap-2">
-              <button @click="signTransaction" class="btn">Sign Transaction</button>
+              <button @click="signTransaction" class="btn">Sign Versioned Transaction</button>
               <button @click="() => signTransactionLegacy(false)" class="btn">Sign Legacy Transaction</button>
-              <button @click="signAllTransaction" class="btn">Sign All Transactions</button>
+              <button @click="signAllTransaction" class="btn">Sign All Versioned Transactions</button>
               <button @click="() => signAllTransactionLegacy(false)" class="btn">Sign All Legacy Transactions</button>
               <button @click="signMessage" class="btn">Sign Message</button>
-              <button @click="testInstr" class="btn">SendV0Transaction</button>
+              <button @click="testInstr" class="btn">SendVersioned ALT Table Transaction</button>
               <button @click="sendMultipleInstructionTransaction" class="btn">Multiple Instruction tx</button>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button @click="() => signTransactionLegacy(true)" class="btn">Sign Transaction Old</button>
-              <button @click="() => signAllTransactionLegacy(true)" class="btn">Sign All Transactions</button>
-              <button @click="() => transferLegacy(true)" class="btn">Send Legacy Transaction</button>
             </div>
           </div>
           <div class="col-span-2 text-left">
