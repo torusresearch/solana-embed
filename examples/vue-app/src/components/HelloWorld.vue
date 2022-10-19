@@ -170,6 +170,27 @@ const transfer = async () => {
   }
 };
 
+const transferLegacy = async (isOldImplementation = false) => {
+  const block = await conn.getLatestBlockhash("finalized");
+  const TransactionInstruction = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.01 * LAMPORTS_PER_SOL,
+  });
+  let transaction = new Transaction({
+    blockhash: block.blockhash,
+    lastValidBlockHeight: block.lastValidBlockHeight,
+    feePayer: new PublicKey(publicKeys![0]),
+  }).add(TransactionInstruction);
+  try {
+    const res = isOldImplementation ? await torus?.sendTransactionOld(transaction) : await torus?.sendTransaction(transaction);
+    debugConsole(res as string);
+  } catch (e) {
+    log.error(e);
+    debugConsole(e as string);
+  }
+};
+
 const transferSPL = async () => {
   const block = await conn.getLatestBlockhash("finalized");
 
@@ -254,13 +275,13 @@ const sendMultipleInstructionTransaction = async () => {
   const authorizedPubkey = Keypair.generate().publicKey;
   const authorized = new Authorized(authorizedPubkey, authorizedPubkey);
   const lockup = new Lockup(0, 0, fromPubkey);
-  const lamports = 123;
+  const rapports = 123;
   const transactionStaking = StakeProgram.createAccount({
     fromPubkey,
     stakePubkey: newAccountPubkey,
     authorized,
     lockup,
-    lamports,
+    lamports: rapports,
   });
   const [systemInstruction, stakeInstruction] = transactionStaking.instructions;
 
@@ -269,7 +290,7 @@ const sendMultipleInstructionTransaction = async () => {
     toPubkey: new PublicKey(publicKeys![0]),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  let instructions = [stakeInstruction, TransactionInstruction2];
+  let instructions = [ TransactionInstruction2, TransactionInstruction2 ];
 
   const latestBlockhash = await conn.getLatestBlockhash();
   // create v0 compatible message
@@ -375,39 +396,47 @@ const signAllTransaction = async () => {
   }
 };
 
-const SendV0Transaction = async () => {
-  const { value: lookupTable } = await conn.getAddressLookupTable(new PublicKey("F3MfgEJe1TApJiA14nN2m4uAH4EBVrqdBnHeGeSXvQ7B"));
-  if (!lookupTable) {
-    return;
-  }
-
-  const {
-    context: { slot: minContextSlot },
-    value: { blockhash, lastValidBlockHeight },
-  } = await conn.getLatestBlockhashAndContext();
-
-  const message = new TransactionMessage({
-    payerKey: new PublicKey(publicKeys![0]),
-    instructions: [
-      {
-        data: Buffer.from("Hello, from the Solana Wallet Adapter example app!"),
-        keys: lookupTable.state.addresses.map((pubkey, index) => ({
-          pubkey,
-          isWritable: index % 2 == 0,
-          isSigner: false,
-        })),
-        programId: new PublicKey("Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo"),
-      },
-    ],
-    recentBlockhash: blockhash,
+const signTransactionLegacy = async (isOldImplementation = false) => {
+  const block = await conn.getLatestBlockhash("finalized");
+  const TransactionInstruction = SystemProgram.transfer({
+    fromPubkey: new PublicKey(publicKeys![0]),
+    toPubkey: new PublicKey(publicKeys![0]),
+    lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-
-  const lookupTables = [lookupTable];
-  const transaction = new VersionedTransaction(message.compileToV0Message(lookupTables));
-
+  let transaction = new Transaction({
+    blockhash: block.blockhash,
+    lastValidBlockHeight: block.lastValidBlockHeight,
+    feePayer: new PublicKey(publicKeys![0]),
+  }).add(TransactionInstruction);
   try {
-    const res = await torus?.sendTransaction(transaction);
-    debugConsole(res as string);
+    const res = isOldImplementation ? await torus?.signTransaction(transaction) : await torus?.signTransaction(transaction);
+    debugConsole(JSON.stringify(res));
+  } catch (e) {
+    log.error(e);
+    debugConsole(e as string);
+  }
+};
+// MAKE SURE browser allow pop up from this site
+const signAllTransactionLegacy = async (isOldImplementation = false) => {
+  const block = await conn.getLatestBlockhash("finalized");
+  function getNewTx() {
+    let inst = SystemProgram.transfer({
+      fromPubkey: new PublicKey(publicKeys![0]),
+      toPubkey: new PublicKey(publicKeys![0]),
+      lamports: Math.floor(0.1 * Math.random() * LAMPORTS_PER_SOL),
+    });
+    return new Transaction({ recentBlockhash: block.blockhash, feePayer: new PublicKey(publicKeys![0]) }).add(inst);
+  }
+  try {
+    const res = isOldImplementation ? await torus?.signAllTransactionsOld([getNewTx(), getNewTx(), getNewTx()]) : await torus?.signAllTransactions([getNewTx(), getNewTx(), getNewTx()]);
+    const serializedTxns = res?.map((x) => x.serialize());
+    let promises: Promise<string>[] = [];
+    serializedTxns?.forEach((buffer) => {
+      promises.push(conn.sendRawTransaction(buffer))  ;
+    });
+    let data = await Promise.all(promises);
+    console.log(data);
+    // debugConsole(JSON.stringify(res));
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
@@ -790,16 +819,24 @@ const clearUiconsole = (): void => {
             <div class="font-semibold">Signing</div>
             <div class="grid grid-cols-2 gap-2">
               <button @click="signTransaction" class="btn">Sign Transaction</button>
+              <button @click="() => signTransactionLegacy(false)" class="btn">Sign Legacy Transaction</button>
               <button @click="signAllTransaction" class="btn">Sign All Transactions</button>
+              <button @click="() => signAllTransactionLegacy(false)" class="btn">Sign All Legacy Transactions</button>
               <button @click="signMessage" class="btn">Sign Message</button>
               <button @click="testInstr" class="btn">SendV0Transaction</button>
               <button @click="sendMultipleInstructionTransaction" class="btn">Multiple Instruction tx</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button @click="() => signTransactionLegacy(true)" class="btn">Sign Transaction Old</button>
+              <button @click="() => signAllTransactionLegacy(true)" class="btn">Sign All Transactions</button>
+              <button @click="() => transferLegacy(true)" class="btn">Send Legacy Transaction</button>
             </div>
           </div>
           <div class="col-span-2 text-left">
             <div class="font-semibold">Transactions</div>
             <div class="grid grid-cols-2 gap-2">
               <button @click="transfer" class="btn">Send Transaction</button>
+              <button @click="() => transferLegacy(false)" class="btn">Send Legacy Transaction</button>
               <button @click="transferSPL" class="btn">Send SPL Transaction</button>
             </div>
           </div>

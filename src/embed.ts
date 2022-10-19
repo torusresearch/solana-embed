@@ -1,11 +1,11 @@
-import { PublicKey, SendOptions, SignaturePubkeyPair, VersionedTransaction } from "@solana/web3.js";
+import { PublicKey, SendOptions, SignaturePubkeyPair, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
-import { documentReady, htmlToElement } from "./embedUtils";
+import { documentReady, htmlToElement, isVersionedTransactionInstance } from "./embedUtils";
 import TorusInPageProvider from "./inPageProvider";
 import {
   BUTTON_POSITION,
@@ -17,6 +17,7 @@ import {
   TorusCtorArgs,
   TorusLoginParams,
   TorusParams,
+  TransactionOrVersionedTransaction,
   UnValidatedJsonRpcRequest,
   UserInfo,
   WALLET_PATH,
@@ -336,27 +337,40 @@ class Torus {
     return response;
   }
 
-  async sendTransaction(transaction: VersionedTransaction): Promise<string> {
+  async sendTransaction(transaction: TransactionOrVersionedTransaction): Promise<string> {
+    const isVersionedTransaction = isVersionedTransactionInstance(transaction);
+    const message = isVersionedTransaction
+      ? (transaction as VersionedTransaction).serialize()
+      : (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex");
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: transaction.serialize() },
+      params: { message, isVersionedTransaction },
     })) as string;
     return response;
   }
 
   // support sendOptions
-  async signAndSendTransaction(transaction: VersionedTransaction, options?: SendOptions): Promise<{ signature: string }> {
+  async signAndSendTransaction(transaction: TransactionOrVersionedTransaction, options?: SendOptions): Promise<{ signature: string }> {
+    const isVersionedTransaction = isVersionedTransactionInstance(transaction);
+    const message = isVersionedTransaction
+      ? (transaction as VersionedTransaction).serialize()
+      : (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex");
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message: transaction.serialize(), options },
+      params: { message, options, isVersionedTransaction },
     })) as string;
     return { signature: response };
   }
 
-  async signTransaction(transaction: VersionedTransaction): Promise<VersionedTransaction> {
+  async signTransaction(transaction: TransactionOrVersionedTransaction): Promise<TransactionOrVersionedTransaction> {
+    const isVersionedTransaction = isVersionedTransactionInstance(transaction);
+    const message = isVersionedTransaction
+      ? (transaction as VersionedTransaction).message.serialize()
+      : (transaction as Transaction).serializeMessage().toString("hex");
+
     const response: string = (await this.provider.request({
       method: "sign_transaction",
-      params: { message: transaction.message.serialize(), messageOnly: true },
+      params: { message, messageOnly: true, isVersionedTransaction },
     })) as string;
 
     // reconstruct signature pair
@@ -366,17 +380,21 @@ class Torus {
     return transaction;
   }
 
-  async signAllTransactions(transactions: VersionedTransaction[]): Promise<VersionedTransaction[]> {
+  async signAllTransactions(transactions: TransactionOrVersionedTransaction[]): Promise<TransactionOrVersionedTransaction[]> {
+    let isVersionedTransaction: boolean;
     const encodedMessage = transactions.map((tx) => {
-      return tx.message.serialize();
+      isVersionedTransaction = isVersionedTransactionInstance(tx);
+      return isVersionedTransaction ? (tx as VersionedTransaction).message.serialize() : (tx as Transaction).serializeMessage().toString("hex");
     });
     const responses: string[] = await this.provider.request({
       method: "sign_all_transactions",
-      params: { message: encodedMessage, messageOnly: true },
+      params: { message: encodedMessage, messageOnly: true, isVersionedTransaction },
     });
 
     // reconstruct signature pairs
     const signatures: SignaturePubkeyPair[] = responses.map((item) => {
+      // eslint-disable-next-line no-console
+      console.log({ item });
       const parsed = JSON.parse(item);
       return { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
     });
@@ -396,6 +414,45 @@ class Torus {
       },
     })) as Uint8Array;
     return response;
+  }
+
+  async sendTransactionOld(transaction: Transaction): Promise<string> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex") },
+    })) as string;
+    return response;
+  }
+
+  // support sendOptions
+  async signAndSendTransactionOld(transaction: Transaction, options?: SendOptions): Promise<{ signature: string }> {
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message: transaction.serialize({ requireAllSignatures: false }).toString("hex"), options },
+    })) as string;
+    return { signature: response };
+  }
+
+  async signAllTransactionsOld(transactions: Transaction[]): Promise<Transaction[]> {
+    const encodedMessage: string[] = transactions.map((tx) => {
+      return tx.serializeMessage().toString("hex");
+    });
+    const responses: string[] = await this.provider.request({
+      method: "sign_all_transactions",
+      params: { message: encodedMessage, messageOnly: true },
+    });
+
+    // reconstruct signature pairs
+    const signatures: SignaturePubkeyPair[] = responses.map((item) => {
+      const parsed = JSON.parse(item);
+      return { publicKey: new PublicKey(parsed.publicKey), signature: Buffer.from(parsed.signature, "hex") };
+    });
+
+    transactions.forEach((tx, idx) => {
+      tx.addSignature(signatures[idx].publicKey, signatures[idx].signature);
+      return tx;
+    });
+    return transactions;
   }
 
   async getGaslessPublicKey(): Promise<string> {

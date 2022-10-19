@@ -1,3 +1,4 @@
+import { Transaction, VersionedTransaction } from "@solana/web3.js";
 import { JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
 export const PAYMENT_PROVIDER = {
@@ -14,6 +15,8 @@ export const TORUS_BUILD_ENV = {
   DEVELOPMENT: "development",
   TESTING: "testing",
 } as const;
+
+export type TransactionOrVersionedTransaction = Transaction | VersionedTransaction;
 
 export type PAYMENT_PROVIDER_TYPE = typeof PAYMENT_PROVIDER[keyof typeof PAYMENT_PROVIDER];
 
