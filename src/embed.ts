@@ -339,12 +339,13 @@ class Torus {
 
   async sendTransaction(transaction: TransactionOrVersionedTransaction): Promise<string> {
     const isVersionedTransaction = isVersionedTransactionInstance(transaction);
-    const message = isVersionedTransaction
-      ? Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex")
-      : (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex");
+    const message =
+      isVersionedTransaction === "0"
+        ? Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex")
+        : (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex");
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message, isVersionedTransaction },
+      params: { message },
     })) as string;
     return response;
   }
@@ -352,25 +353,27 @@ class Torus {
   // support sendOptions
   async signAndSendTransaction(transaction: TransactionOrVersionedTransaction, options?: SendOptions): Promise<{ signature: string }> {
     const isVersionedTransaction = isVersionedTransactionInstance(transaction);
-    const message = isVersionedTransaction
-      ? Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex")
-      : (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex");
+    const message =
+      isVersionedTransaction === "0"
+        ? Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex")
+        : (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex");
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message, options, isVersionedTransaction },
+      params: { message, options },
     })) as string;
     return { signature: response };
   }
 
   async signTransaction(transaction: TransactionOrVersionedTransaction): Promise<TransactionOrVersionedTransaction> {
     const isVersionedTransaction = isVersionedTransactionInstance(transaction);
-    const message = isVersionedTransaction
-      ? Buffer.from((transaction as VersionedTransaction).message.serialize()).toString("hex")
-      : (transaction as Transaction).serializeMessage().toString("hex");
+    const message =
+      isVersionedTransaction === "0"
+        ? Buffer.from((transaction as VersionedTransaction).message.serialize()).toString("hex")
+        : (transaction as Transaction).serializeMessage().toString("hex");
 
     const response: string = (await this.provider.request({
       method: "sign_transaction",
-      params: { message, messageOnly: true, isVersionedTransaction },
+      params: { message, messageOnly: true },
     })) as string;
 
     // reconstruct signature pair
@@ -381,16 +384,15 @@ class Torus {
   }
 
   async signAllTransactions(transactions: TransactionOrVersionedTransaction[]): Promise<TransactionOrVersionedTransaction[]> {
-    let isVersionedTransaction: boolean;
     const encodedMessage = transactions.map((tx) => {
-      isVersionedTransaction = isVersionedTransactionInstance(tx);
-      return isVersionedTransaction
+      const isVersionedTransaction = isVersionedTransactionInstance(tx);
+      return isVersionedTransaction === "0"
         ? Buffer.from((tx as VersionedTransaction).message.serialize()).toString("hex")
         : (tx as Transaction).serializeMessage().toString("hex");
     });
     const responses: string[] = await this.provider.request({
       method: "sign_all_transactions",
-      params: { message: encodedMessage, messageOnly: true, isVersionedTransaction },
+      params: { message: encodedMessage, messageOnly: true },
     });
 
     // reconstruct signature pairs

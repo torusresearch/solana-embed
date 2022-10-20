@@ -352,8 +352,8 @@ const signTransaction = async () => {
 
   try {
     const res = await torus?.signTransaction(transactionV0);
-    // const hash = await conn.sendRawTransaction(res.serialize());
-    debugConsole(JSON.stringify(res));
+    const hash = await conn.sendRawTransaction((res as VersionedTransaction).serialize());
+    debugConsole(JSON.stringify(res), hash);
   } catch (e) {
     log.error(e);
     debugConsole(e as string);
