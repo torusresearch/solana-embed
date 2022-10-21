@@ -18,6 +18,8 @@ import {
   Signer,
   AddressLookupTableProgram,
   Version,
+AddressLookupTableAccount,
+VersionedMessage,
 } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
 import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
@@ -466,10 +468,30 @@ const testInstr = async () => {
     toPubkey: new PublicKey("9Zzn5KGrjKzJvYbHWgzz6hJkFdGUPg6nMg6RtaLTWbGK"),
     lamports: 0.01 * LAMPORTS_PER_SOL,
   });
-  await sendTransactionV0WithLookupTable1([TransactionInstruction], new PublicKey(publicKeys![0]));
+  await sendTransactionV0WithLookupTable([TransactionInstruction], new PublicKey(publicKeys![0]));
 };
 
-async function sendTransactionV0WithLookupTable1(instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
+const findLookUpTable = async(pubKey: PublicKey) => {
+  const {value} = await (conn.getAddressLookupTable(pubKey));
+  return value as AddressLookupTableAccount;
+}
+
+const findArgs = async(messageV0: VersionedMessage): Promise<{
+    addressLookupTableAccounts: AddressLookupTableAccount[];
+} | undefined> => {
+  const isALTx = messageV0.addressTableLookups.length;
+    let args = undefined;
+    if (isALTx) {
+      const altPubKeys = messageV0.addressTableLookups.map((atl) => atl.accountKey);
+      let lookupTableAccount: AddressLookupTableAccount[] = [];
+      lookupTableAccount = await Promise.all(altPubKeys.map((pubKey) => findLookUpTable(pubKey)));
+      args = lookupTableAccount.length ? { addressLookupTableAccounts: lookupTableAccount } : undefined;
+    }
+    return args;
+}
+
+
+async function sendTransactionV0WithLookupTable(instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
   let lt = "9Zzn5KGrjKzJvYbHWgzz6hJkFdGUPg6nMg6RtaLTWbGK"
 
   let lookupTablePubkey = new PublicKey(lt);
@@ -486,59 +508,14 @@ async function sendTransactionV0WithLookupTable1(instructions: TransactionInstru
       recentBlockhash: blockhash,
       instructions,
     }).compileToV0Message([lookupTableAccount]);
-    
     const tx = new VersionedTransaction(messageV0);
-    // const message = TransactionMessage.decompile(messageV0 )
 
-    // console.log("message v0", messageV0, message);
-    // tx.sign([])
+    const args = await findArgs(messageV0);
+    console.log(TransactionMessage.decompile(messageV0, args));
+    console.log(Buffer.from(tx.message.serialize()).toString("base64"));
     const sx = await torus?.sendTransaction(tx);
 
     console.log(`** -- Signature: ${sx}`);
-  }
-}
-
-async function sendTransactionV0WithLookupTable(instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
-  const [lookupTableInst, lookupTableAddress] = AddressLookupTableProgram.createLookupTable({
-    authority: payer,
-    payer: payer,
-    recentSlot: await conn.getSlot(),
-  });
-  const extendInstr = AddressLookupTableProgram.extendLookupTable({
-    payer: payer,
-    authority: payer,
-    lookupTable: lookupTableAddress,
-    addresses: [
-      payer,
-      SystemProgram.programId,
-      new PublicKey("FKUPMMJM89UEuq2zGiTYHp69oD13s8ioqjYTuys2MgKP"),
-    ],
-  })
-
-  // const ix2 = AddressLookupTableProgram.extendLookupTable({
-  //   addresses: [new PublicKey(publicKeys![0])],
-  //   authority: payer,
-  //   lookupTable: lookupTablePubkey,
-  //   payer: payer,
-  // });
-
-  // await sendTransactionV0(conn, [ix2], payer);
-  const {value} = await conn.getAddressLookupTable(new PublicKey("3HUUREG6HTQtxqB9rrpBG5DsyL9FLMEcEhFkeMeA7wMi"));
-
-  let { blockhash } = await conn.getLatestBlockhash();
-  if (value) {
-    const messageV0 = new TransactionMessage({
-      payerKey: payer,
-      recentBlockhash: blockhash,
-      instructions,
-    }).compileToV0Message([value]);
-
-    const tx = new VersionedTransaction(messageV0);
-    const sx = await torus?.sendTransaction(tx);
-
-    console.log(`** -- Signature: ${sx}`);
-    debugConsole(sx);
-
   }
 }
 
