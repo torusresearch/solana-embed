@@ -470,14 +470,21 @@ const testInstr = async () => {
 };
 
 async function sendTransactionV0WithLookupTable(instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
-  let lookupTablePubkey: PublicKey;
-  let ix: TransactionInstruction;
-  [ix, lookupTablePubkey] = AddressLookupTableProgram.createLookupTable({
+  const [lookupTableInst, lookupTableAddress] = AddressLookupTableProgram.createLookupTable({
     authority: payer,
     payer: payer,
     recentSlot: await conn.getSlot(),
   });
-  await sendTransactionV0(conn, [ix], payer);
+  const extendInstr = AddressLookupTableProgram.extendLookupTable({
+    payer: payer,
+    authority: payer,
+    lookupTable: lookupTableAddress,
+    addresses: [
+      payer,
+      SystemProgram.programId,
+      new PublicKey("FKUPMMJM89UEuq2zGiTYHp69oD13s8ioqjYTuys2MgKP"),
+    ],
+  })
 
   // const ix2 = AddressLookupTableProgram.extendLookupTable({
   //   addresses: [new PublicKey(publicKeys![0])],
@@ -487,22 +494,22 @@ async function sendTransactionV0WithLookupTable(instructions: TransactionInstruc
   // });
 
   // await sendTransactionV0(conn, [ix2], payer);
-
-  const { value: lookupTableAccount } = await conn.getAddressLookupTable(lookupTablePubkey);
+  const {value} = await conn.getAddressLookupTable(new PublicKey("3HUUREG6HTQtxqB9rrpBG5DsyL9FLMEcEhFkeMeA7wMi"));
 
   let { blockhash } = await conn.getLatestBlockhash();
-
-  if (lookupTableAccount) {
+  if (value) {
     const messageV0 = new TransactionMessage({
       payerKey: payer,
       recentBlockhash: blockhash,
       instructions,
-    }).compileToV0Message([lookupTableAccount]);
+    }).compileToV0Message([value]);
 
     const tx = new VersionedTransaction(messageV0);
     const sx = await torus?.sendTransaction(tx);
 
     console.log(`** -- Signature: ${sx}`);
+    debugConsole(sx);
+
   }
 }
 
