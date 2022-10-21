@@ -27,6 +27,6 @@ export const htmlToElement = <T extends Element>(html: string): T => {
   return template.content.firstChild as T;
 };
 
-export function findTransactionVersion(transaction: TransactionOrVersionedTransaction): string {
-  return (transaction as VersionedTransaction)?.version?.toString() || "legacy";
+export function isVersionedTransactionInstance(transaction: TransactionOrVersionedTransaction): boolean {
+  return (transaction as VersionedTransaction).version !== undefined;
 }
