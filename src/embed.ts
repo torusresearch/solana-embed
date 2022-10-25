@@ -1,11 +1,11 @@
-import { PublicKey, SendOptions, SignaturePubkeyPair, Transaction, TransactionVersion, VersionedTransaction } from "@solana/web3.js";
+import { PublicKey, SendOptions, SignaturePubkeyPair, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
-import { documentReady, htmlToElement } from "./embedUtils";
+import { documentReady, htmlToElement, isLegacyTransactionInstance } from "./embedUtils";
 import TorusInPageProvider from "./inPageProvider";
 import {
   BUTTON_POSITION,
@@ -35,7 +35,7 @@ import {
   storageAvailable,
 } from "./utils";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version: packageVersion } = require("../package.json");
+const { version } = require("../package.json");
 const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
@@ -118,7 +118,7 @@ class Torus {
     const { torusUrl, logLevel } = await getTorusUrl(buildEnv);
     log.enableAll();
     log.info(torusUrl, "url loaded");
-    log.info(`Solana Embed Version :${packageVersion}`);
+    log.info(`Solana Embed Version :${version}`);
     this.torusUrl = torusUrl;
     log.setDefaultLevel(logLevel);
     if (enableLogging) log.enableAll();
@@ -338,35 +338,41 @@ class Torus {
   }
 
   async sendTransaction(transaction: TransactionOrVersionedTransaction): Promise<string> {
-    return (await this.signAndSendTransaction(transaction)).signature;
+    const isLegacyTransaction = isLegacyTransactionInstance(transaction);
+    const message = isLegacyTransaction
+      ? (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex")
+      : Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex");
+    const response = (await this.provider.request({
+      method: "send_transaction",
+      params: { message, isLegacyTransaction },
+    })) as string;
+    return response;
   }
 
   // support sendOptions
   async signAndSendTransaction(transaction: TransactionOrVersionedTransaction, options?: SendOptions): Promise<{ signature: string }> {
-    const version: TransactionVersion = transaction instanceof Transaction ? "legacy" : transaction.version;
+    const isLegacyTransaction = isLegacyTransactionInstance(transaction);
 
-    const message =
-      transaction instanceof Transaction
-        ? transaction.serialize({ requireAllSignatures: false }).toString("hex")
-        : Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex");
+    const message = isLegacyTransaction
+      ? (transaction as Transaction).serialize({ requireAllSignatures: false }).toString("hex")
+      : Buffer.from((transaction as VersionedTransaction).serialize()).toString("hex");
     const response = (await this.provider.request({
       method: "send_transaction",
-      params: { message, options, version },
+      params: { message, options, isLegacyTransaction },
     })) as string;
     return { signature: response };
   }
 
   async signTransaction(transaction: TransactionOrVersionedTransaction): Promise<TransactionOrVersionedTransaction> {
-    const version: TransactionVersion = transaction instanceof Transaction ? "legacy" : transaction.version;
+    const isLegacyTransaction = isLegacyTransactionInstance(transaction);
 
-    const message =
-      transaction instanceof Transaction
-        ? transaction.serializeMessage().toString("hex")
-        : Buffer.from(transaction.message.serialize()).toString("hex");
+    const message = isLegacyTransaction
+      ? (transaction as Transaction).serializeMessage().toString("hex")
+      : Buffer.from((transaction as VersionedTransaction).message.serialize()).toString("hex");
 
     const response: string = (await this.provider.request({
       method: "sign_transaction",
-      params: { message, messageOnly: true, version },
+      params: { message, messageOnly: true, isLegacyTransaction },
     })) as string;
 
     // reconstruct signature pair
@@ -377,17 +383,16 @@ class Torus {
   }
 
   async signAllTransactions(transactions: TransactionOrVersionedTransaction[]): Promise<TransactionOrVersionedTransaction[]> {
-    const versions = [];
-    const messages = [];
-
-    transactions.forEach((tx) => {
-      const version: TransactionVersion = tx instanceof Transaction ? "legacy" : tx.version;
-      versions.push(version);
-      messages.push(tx instanceof Transaction ? tx.serializeMessage().toString("hex") : Buffer.from(tx.message.serialize()).toString("hex"));
+    let isLegacyTransaction;
+    const encodedMessage = transactions.map((tx) => {
+      isLegacyTransaction = isLegacyTransactionInstance(tx);
+      return isLegacyTransaction
+        ? (tx as Transaction).serializeMessage().toString("hex")
+        : Buffer.from((tx as VersionedTransaction).message.serialize()).toString("hex");
     });
     const responses: string[] = await this.provider.request({
       method: "sign_all_transactions",
-      params: { message: messages, messageOnly: true, versions },
+      params: { message: encodedMessage, messageOnly: true, isLegacyTransaction },
     });
 
     // reconstruct signature pairs
