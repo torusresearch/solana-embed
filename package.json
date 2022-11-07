@@ -6,7 +6,7 @@
   "module": "dist/solanaEmbed.esm.js",
   "unpkg": "dist/solanaEmbed.umd.min.js",
   "jsdelivr": "dist/solanaEmbed.umd.min.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/types/src/index.d.ts",
   "files": [
     "dist",
     "src"
