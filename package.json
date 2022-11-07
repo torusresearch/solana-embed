@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "start": "torus-scripts start",
-    "build": "torus-scripts build",
+    "build": "rimraf dist/ && torus-scripts build",
     "build:test": "cross-env NODE_ENV=testing torus-scripts build",
     "release": "torus-scripts release",
     "prepack": "npm run build",
