@@ -23,7 +23,6 @@ export default defineComponent({
   color: #2c3e50;
 }
 html, body, #app {
-  height: 100%;
   padding: 0;
   margin: 0;
   box-sizing: border-box;

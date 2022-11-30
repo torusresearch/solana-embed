@@ -641,7 +641,7 @@ const clearUiconsole = (): void => {
         </div>
       </div>
       <div class="grid grid-cols-5 gap-7 m-6 height-fit">
-        <div class="grid grid-cols-2 col-span-5 md:col-span-2 text-left gap-2 p-4 box md:pb-74">
+        <div class="grid grid-cols-2 col-span-5 md:col-span-2 text-left gap-2 p-4 box md:pb-74 overflow-auto min-h-[400px]">
           <div class="col-span-2">
             <h7 class="text-xl font-semibold">Torus APIs</h7>
             <div>
@@ -655,15 +655,15 @@ const clearUiconsole = (): void => {
             </div>
           </div>
           <div class="col-span-1">
-            <div class="font-semibold">User Info</div>
+            <div class="font-semibold pt-2">User Info</div>
             <div><button class="btn" @click="getUserInfo">Get User Info</button></div>
           </div>
           <div class="col-span-1">
-            <div class="font-semibold">Provider</div>
+            <div class="font-semibold pt-2">Provider</div>
             <div><button class="btn" @click="changeProvider">Change Provider</button></div>
           </div>
           <div class="col-span-1">
-            <div class="font-semibold">Top-up wallet</div>
+            <div class="font-semibold pt-2">Top-up wallet</div>
             <div><button @click="topup" class="btn">Top Up</button></div>
           </div>
           <!-- <div class="col-span-1">
@@ -674,8 +674,8 @@ const clearUiconsole = (): void => {
             <h7 class="text-xl font-semibold">Blockchain APIs</h7>
           </div>
           <div class="col-span-2 text-left">
-            <div class="font-semibold">Signing</div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="font-semibold pt-2">Signing</div>
+            <div class="grid grid-cols-2 gap-4">
               <button @click="signTransaction" class="btn">Sign Transaction</button>
               <button @click="signAllTransaction" class="btn">Sign All Transactions</button>
               <button @click="signMessage" class="btn">Sign Message</button>
@@ -683,25 +683,25 @@ const clearUiconsole = (): void => {
             </div>
           </div>
           <div class="col-span-2 text-left">
-            <div class="font-semibold">Transactions</div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="font-semibold pt-2">Transactions</div>
+            <div class="grid grid-cols-2 gap-4">
               <button @click="transfer" class="btn">Send Transaction</button>
               <button @click="transferSPL" class="btn">Send SPL Transaction</button>
             </div>
           </div>
           <div class="col-span-2 text-left">
-            <div class="font-semibold">
+            <div class="font-semibold pt-2">
               SPL transfer example:
               <span class="text-[grey] text-xs">Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></span>
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-4">
               <button @click="sendusdc" :disabled="network !== testnet" class="btn">Send usdc</button>
-              <button @click="airdrop" :disabled="network !== testnet" class="btn-large">Request SOL Airdrop (Testnet only)</button>
+              <button @click="airdrop" :disabled="network !== testnet" class="btn">Request SOL Airdrop (Testnet only)</button>
             </div>
           </div>
           <div class="col-span-2 text-left">
-            <div class="font-semibold">Custom Program Example (Solana-Lookup) (Testnet only)</div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="font-semibold pt-2">Custom Program Example (Solana-Lookup) (Testnet only)</div>
+            <div class="grid grid-cols-2 gap-4">
               <button @click="lookupDepositSol" :disabled="network !== testnet" class="btn">Deposit SOL</button>
               <button @click="lookupRedeemSol" :disabled="network !== testnet" class="btn">Redeem SOL</button>
 
@@ -711,9 +711,9 @@ const clearUiconsole = (): void => {
             </div>
           </div>
         </div>
-        <div class="box-grey" id="console">
+        <div class="box-grey relative" id="console">
           <p ref="consoleDiv" style="white-space: pre-line"></p>
-          <div><button class="clear-button" @click="clearUiconsole">Clear console</button></div>
+          <button class="clear-button" @click="clearUiconsole">Clear console</button>
         </div>
       </div>
     </div>
@@ -731,7 +731,7 @@ const clearUiconsole = (): void => {
 }
 
 .box-grey {
-  @apply col-span-5 md:col-span-3 overflow-hidden min-h-[400px] bg-[#f3f3f4] rounded-3xl relative;
+  @apply col-span-5 md:col-span-3 overflow-hidden min-h-[400px] bg-[#f3f3f4] rounded-3xl;
   border: 1px solid #f3f3f4;
   box-shadow: 4px 4px 20px rgba(46, 91, 255, 0.1);
 }
@@ -816,12 +816,12 @@ a {
   border: 1px solid #f3f3f4;
 }
 .clear-button {
-  @apply absolute md:fixed right-8 bottom-2 md:right-8 md:bottom-12 w-28 h-7 bg-[#f3f3f4] rounded-md;
+  @apply fixed md:absolute right-2 bottom-2 w-28 h-7 bg-[#f3f3f4] rounded-md;
   border: 1px solid #0f1222;
 }
 .height-fit {
-  @apply min-h-fit;
-  height: 75vh;
+  @apply min-h-fit relative;
+  height: 80vh;
 }
 #console {
   text-align: left;
