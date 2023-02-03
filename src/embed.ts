@@ -3,6 +3,7 @@ import { COMMUNICATION_JRPC_METHODS } from "@toruslabs/base-controllers";
 import { setAPIKey } from "@toruslabs/http-helpers";
 import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toruslabs/openlogin-jrpc";
 
+import { version } from "../package.json";
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
 import { documentReady, htmlToElement, isLegacyTransactionInstance } from "./embedUtils";
@@ -34,8 +35,6 @@ import {
   getWindowId,
   storageAvailable,
 } from "./utils";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version } = require("../package.json");
 const PROVIDER_UNSAFE_METHODS = ["send_transaction", "sign_transaction", "sign_all_transactions", "sign_message", "connect"];
 const COMMUNICATION_UNSAFE_METHODS = [COMMUNICATION_JRPC_METHODS.SET_PROVIDER];
 
