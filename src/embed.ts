@@ -434,13 +434,14 @@ class Torus {
   // }
 
   private handleDappStorageKey(useLocalStorage: boolean) {
+    const localStorageKey = `${configuration.localStorageKeyPrefix}${window.location.hostname}`;
     let dappStorageKey = "";
     if (isLocalStorageAvailable && useLocalStorage) {
-      const storedKey = window.localStorage.getItem(configuration.localStorageKey);
+      const storedKey = window.localStorage.getItem(localStorageKey);
       if (storedKey) dappStorageKey = storedKey;
       else {
         const generatedKey = `torus-app-${getWindowId()}`;
-        window.localStorage.setItem(configuration.localStorageKey, generatedKey);
+        window.localStorage.setItem(localStorageKey, generatedKey);
         dappStorageKey = generatedKey;
       }
     }
