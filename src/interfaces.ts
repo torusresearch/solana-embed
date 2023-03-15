@@ -18,9 +18,9 @@ export const TORUS_BUILD_ENV = {
 
 export type TransactionOrVersionedTransaction = Transaction | VersionedTransaction;
 
-export type PAYMENT_PROVIDER_TYPE = typeof PAYMENT_PROVIDER[keyof typeof PAYMENT_PROVIDER];
+export type PAYMENT_PROVIDER_TYPE = (typeof PAYMENT_PROVIDER)[keyof typeof PAYMENT_PROVIDER];
 
-export type TORUS_BUILD_ENV_TYPE = typeof TORUS_BUILD_ENV[keyof typeof TORUS_BUILD_ENV];
+export type TORUS_BUILD_ENV_TYPE = (typeof TORUS_BUILD_ENV)[keyof typeof TORUS_BUILD_ENV];
 
 export const BUTTON_POSITION = {
   BOTTOM_LEFT: "bottom-left",
@@ -38,7 +38,7 @@ export type EMBED_TRANSLATION_ITEM = {
   clickHere: string;
 };
 
-export type BUTTON_POSITION_TYPE = typeof BUTTON_POSITION[keyof typeof BUTTON_POSITION];
+export type BUTTON_POSITION_TYPE = (typeof BUTTON_POSITION)[keyof typeof BUTTON_POSITION];
 
 export type WALLET_PATH = "transfer" | "topup" | "home" | "settings" | "history" | "discover";
 
@@ -59,7 +59,7 @@ export const LOGIN_PROVIDER = {
   EMAIL_PASSWORDLESS: "email_passwordless",
 } as const;
 
-export type LOGIN_PROVIDER_TYPE = typeof LOGIN_PROVIDER[keyof typeof LOGIN_PROVIDER];
+export type LOGIN_PROVIDER_TYPE = (typeof LOGIN_PROVIDER)[keyof typeof LOGIN_PROVIDER];
 
 export interface TorusCtorArgs {
   /**
