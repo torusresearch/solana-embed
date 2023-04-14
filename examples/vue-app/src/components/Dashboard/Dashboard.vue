@@ -18,14 +18,14 @@ import {
   Signer,
   AddressLookupTableProgram,
   Version,
-AddressLookupTableAccount,
-VersionedMessage,
+  AddressLookupTableAccount,
+  VersionedMessage,
 } from "@solana/web3.js";
 import Torus, { TORUS_BUILD_ENV_TYPE } from "@toruslabs/solana-embed";
-import { SUPPORTED_NETWORKS, CHAINS } from "../assets/const";
+import { SUPPORTED_NETWORKS, CHAINS } from "../../assets/const";
 import nacl from "tweetnacl";
 import log from "loglevel";
-import { getSplInstructions, whiteLabelData } from "./helper";
+import { getSplInstructions, whiteLabelData } from "../helper";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { createDeposit, createRedeemSolInstruction, createRedeemInstruction, redeemSol, redeemSplToken } from "@cwlee/solana-lookup-sdk";
 import { ec as EC } from "elliptic";
@@ -38,6 +38,7 @@ let torus: Torus | null;
 let conn: Connection;
 let publicKeys: string[] | undefined;
 let isWhiteLabeEnabled = false;
+const isCopied = ref(false);
 
 const privateKey = ref();
 const network = ref("");
@@ -471,28 +472,32 @@ const testInstr = async () => {
   await sendTransactionV0WithLookupTable([TransactionInstruction], new PublicKey(publicKeys![0]));
 };
 
-const findLookUpTable = async(pubKey: PublicKey) => {
-  const {value} = await (conn.getAddressLookupTable(pubKey));
+const findLookUpTable = async (pubKey: PublicKey) => {
+  const { value } = await conn.getAddressLookupTable(pubKey);
   return value as AddressLookupTableAccount;
-}
+};
 
-const findArgs = async(messageV0: VersionedMessage): Promise<{
-    addressLookupTableAccounts: AddressLookupTableAccount[];
-} | undefined> => {
-  const isALTx = messageV0.addressTableLookups.length;
-    let args = undefined;
-    if (isALTx) {
-      const altPubKeys = messageV0.addressTableLookups.map((atl) => atl.accountKey);
-      let lookupTableAccount: AddressLookupTableAccount[] = [];
-      lookupTableAccount = await Promise.all(altPubKeys.map((pubKey) => findLookUpTable(pubKey)));
-      args = lookupTableAccount.length ? { addressLookupTableAccounts: lookupTableAccount } : undefined;
+const findArgs = async (
+  messageV0: VersionedMessage
+): Promise<
+  | {
+      addressLookupTableAccounts: AddressLookupTableAccount[];
     }
-    return args;
-}
-
+  | undefined
+> => {
+  const isALTx = messageV0.addressTableLookups.length;
+  let args = undefined;
+  if (isALTx) {
+    const altPubKeys = messageV0.addressTableLookups.map((atl) => atl.accountKey);
+    let lookupTableAccount: AddressLookupTableAccount[] = [];
+    lookupTableAccount = await Promise.all(altPubKeys.map((pubKey) => findLookUpTable(pubKey)));
+    args = lookupTableAccount.length ? { addressLookupTableAccounts: lookupTableAccount } : undefined;
+  }
+  return args;
+};
 
 async function sendTransactionV0WithLookupTable(instructions: TransactionInstruction[], payer: PublicKey): Promise<void> {
-  let lt = "9Zzn5KGrjKzJvYbHWgzz6hJkFdGUPg6nMg6RtaLTWbGK"
+  let lt = "9Zzn5KGrjKzJvYbHWgzz6hJkFdGUPg6nMg6RtaLTWbGK";
 
   let lookupTablePubkey = new PublicKey(lt);
   // let lookupTablePubkey: PublicKey = new PublicKey("HA2sXbDdotvyZX6LF3wBd8vgqt591b1qR4Yu6chG7ctE")
@@ -576,6 +581,10 @@ const debugConsole = async (...text: any[]) => {
       data += "-" + JSON.stringify(x) + "\n";
     });
     consoleDiv.value.innerHTML = data;
+  }
+  const consoleBtn = document.querySelector<HTMLElement>("#console>div.clear-console-btn");
+  if (consoleBtn) {
+    consoleBtn.style.display = "block";
   }
 };
 
@@ -739,279 +748,208 @@ function getAddress(address: string) {
 }
 const clearUiconsole = (): void => {
   if (consoleDiv.value) consoleDiv.value.innerHTML = "";
+  const consoleBtn = document.querySelector<HTMLElement>("#console>div.clear-console-btn");
+  if (consoleBtn) {
+    consoleBtn.style.display = "none";
+  }
+};
+const copyAccountAddress = () => {
+  navigator.clipboard.writeText(pubkey.value);
+  isCopied.value = true;
+  setTimeout(() => (isCopied.value = false), 1000);
 };
 </script>
 
 <template>
   <div id="app">
-    <div class="grid text-center justify-center pt-20" v-if="!pubkey">
-      <h7 class="font-bold text-3xl">Login and resets</h7>
-      <h6 class="font-semibold font-color">Build Environment : {{ buildEnv }}</h6>
-      <h6 class="pb-4 font-color">Note: This is a testing application. Please open console for debugging</h6>
-      <div class="pb-2">
-        <h3 class="font-semibold font-color">Select build environment</h3>
-        <select name="buildEnv" v-model="buildEnv" class="select-menu bg-dropdown p-1">
+    <div class="flex flex-col items-center justify-center h-screen" v-if="!pubkey">
+      <h1 class="font-semibold text-3xl mb-5">Login and Resets</h1>
+      <p class="text-lg font-medium text-gray-600 capitalize">Build Environment : {{ buildEnv }}</p>
+      <p class="text-sm font-normal text-gray-500 mb-8">Note: This is a testing application. Please open console for debugging</p>
+      <div class="flex flex-col">
+        <label class="btn-label">Select build environment</label>
+        <select name="buildEnv" v-model="buildEnv" class="login-input w-[320px] border-app-gray-400 !border">
           <option value="production">Production</option>
           <option value="testing">Testing</option>
           <option value="development">Development</option>
         </select>
       </div>
       <div>
-        <button @click="login(false)" class="btn-login">Login</button>
+        <button @click="login(false)" class="custom-btn mt-4 w-[320px]">Login</button>
       </div>
-      <h6 class="py-2 font-color">or</h6>
-      <div class="pb-2">
-        <h3 class="font-semibold font-color">White Labelling</h3>
+      <h6 class="py-2 text-sm text-gray-400">or</h6>
+      <div class="pb-2 flex items-start justify-start w-[320px]">
+        <label class="btn-label text-start">White Labelling</label>
+      </div>
+      <div class="w-[320px]">
+        <button @click="login(true)" class="custom-btn w-full">Login With White Labelling</button>
+      </div>
+      <h6 class="py-2 text-sm text-gray-400">or</h6>
+      <div class="w-[320px] flex flex-col">
+        <label class="btn-label text-start">Private Key</label>
+        <input
+          placeholder="Enter private key from web3auth to login"
+          v-model="privateKey"
+          class="login-input text-sm w-[320px] border-app-gray-400 !border"
+        />
       </div>
       <div>
-        <button @click="login(true)" class="btn-login">Login With White Labelling</button>
-      </div>
-      <h6 class="py-2 font-color">or</h6>
-      <div class="py-2">
-        <h3 class="font-semibold font-color">Private Key</h3>
-        <input placeholder="Enter private key from web3auth to login" v-model="privateKey" class="btn-login px-4 py-2" />
-      </div>
-      <div>
-        <button @click="loginWithPrivateKey" class="btn-login">Login with Private Key</button>
+        <button @click="loginWithPrivateKey" class="custom-btn mt-4 w-[320px]">Login with Private Key</button>
       </div>
     </div>
-    <div v-else>
-      <div class="flex box md:rows-span-2 m-6 items-center py-4">
-        <div class="ml-6">
-          <h7 class="text-2xl font-semibold">demo-solana.tor.us</h7>
-          <h6 class="text-left">Build environment : {{ buildEnv }}</h6>
+    <div v-else class="dashboard-container">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <div>
+          <h1 class="dashboard-heading">demo-solana.tor.us</h1>
+          <p class="dashboard-subheading">Build environment : {{ buildEnv }}</p>
         </div>
-        <div class="ml-auto">
-          <button
-            type="button"
-            class="copy-btn"
-            @click="
-              () => {
-                copyToClip(pubkey);
-              }
-            "
-          >
-            <img class="pr-1" src="../assets/copy.svg" />
-            <span>{{ copied ? "Copied!" : getAddress(pubkey) }}</span>
+        <div class="dashboard-action-container">
+          <button class="dashboard-action-address" @click.stop="copyAccountAddress" :title="pubkey">
+            <img :src="require('../../assets/copy.svg')" alt="logout" height="14" width="14" />{{ getAddress(pubkey) }}
           </button>
-          <button type="button" class="wifi-btn">
-            <img src="../assets/wifi.svg" />
-            <div class="font-semibold pl-1">{{ getNetworkType(network) }}</div>
-          </button>
-          <button type="button" @click="logout" class="btn-logout">
-            <img src="../assets/logout.svg" class="pr-3 pl-0" />
+          <div class="dashboard-action-badge">
+            <img :src="require('../../assets/wifi.svg')" alt="logout" height="14" width="14" />{{ getNetworkType(network) }}
+          </div>
+          <button class="dashboard-action-logout" @click.stop="logout">
+            <img :src="require('../../assets/logout.svg')" alt="logout" height="20" width="20" />
             Logout
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-5 gap-7 m-6 height-fit">
-        <div class="grid grid-cols-2 col-span-5 md:col-span-2 text-left gap-2 p-4 box md:pb-74">
-          <div class="col-span-2">
-            <h7 class="text-xl font-semibold">Torus APIs</h7>
-            <div>
-              <label for="default-toggle" class="inline-flex relative items-center cursor-pointer">
-                <input type="checkbox" id="default-toggle" class="sr-only peer" @click="toggleButton" />
-                <div
-                  class="w-11 h-6 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
-                ></div>
-                <span class="ml-3 text-sm font-medium">Show Torus Button</span>
-              </label>
+      <!-- Dashboard Action Container -->
+      <div class="dashboard-details-container">
+        <div class="dashboard-details-btn-container">
+          <h1 class="text-xl font-bold text-gray-900 mb-6">Torus APIs</h1>
+          <div class="mb-6">
+            <label for="default-toggle" class="inline-flex relative items-center cursor-pointer">
+              <input type="checkbox" id="default-toggle" class="sr-only peer" @click="toggleButton" />
+              <div
+                class="w-11 h-6 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
+              ></div>
+              <span class="ml-3 text-sm font-normal text-gray-400">Show Torus Button</span>
+            </label>
+          </div>
+          <div class="details-container">
+            <div class="flex-row bottom-gutter">
+              <div>
+                <p class="btn-label">User info</p>
+                <button class="custom-btn" @click="getUserInfo">Get User Info</button>
+              </div>
+              <div>
+                <p class="btn-label">Payment Transaction</p>
+                <button class="custom-btn" @click="changeProvider">Fetch Latest block</button>
+              </div>
+              <div>
+                <p class="btn-label">Top up Wallet</p>
+                <button class="custom-btn" @click="topup">Top up</button>
+              </div>
             </div>
-          </div>
-          <div class="col-span-1">
-            <div class="font-semibold">User Info</div>
-            <div><button class="btn" @click="getUserInfo">Get User Info</button></div>
-          </div>
-          <div class="col-span-1">
-            <div class="font-semibold">Provider</div>
-            <div><button class="btn" @click="changeProvider">Change Provider</button></div>
-          </div>
-          <div class="col-span-1">
-            <div class="font-semibold">Top-up wallet</div>
-            <div><button @click="topup" class="btn">Top Up</button></div>
-          </div>
-          <!-- <div class="col-span-1">
-          <div class="font-semibold">Signing</div>
-          <div><button class="btn" @click="signMessage">Sign message</button></div>
-        </div> -->
-          <div class="col-span-2">
-            <h7 class="text-xl font-semibold">Blockchain APIs</h7>
-          </div>
-          <div class="col-span-2 text-left">
-            <div class="font-semibold">Signing</div>
-            <div class="grid grid-cols-2 gap-2">
-              <button @click="signTransaction" class="btn">Sign Versioned Transaction</button>
-              <button @click="() => signTransactionLegacy(false)" class="btn">Sign Legacy Transaction</button>
-              <button @click="signAllTransaction" class="btn">Sign All Versioned Transactions</button>
-              <button @click="() => signAllTransactionLegacy(false)" class="btn">Sign All Legacy Transactions</button>
-              <button @click="signMessage" class="btn">Sign Message</button>
-              <button @click="testInstr" class="btn">SendVersioned ALT Table Transaction</button>
-              <button @click="sendMultipleInstructionTransaction" class="btn">Multiple Instruction tx</button>
+            <h1 class="text-xl font-bold text-gray-900 mb-6">Blockchain APIs</h1>
+            <p class="btn-label">Signing</p>
+            <div class="flex-row bottom-gutter">
+              <button class="custom-btn" @click="signTransaction">Sign transaction</button>
+              <button class="custom-btn" @click="() => signTransactionLegacy(false)">Sign legacy transaction</button>
             </div>
-          </div>
-          <div class="col-span-2 text-left">
-            <div class="font-semibold">Transactions</div>
-            <div class="grid grid-cols-2 gap-2">
-              <button @click="transfer" class="btn">Send Transaction</button>
-              <button @click="() => transferLegacy(false)" class="btn">Send Legacy Transaction</button>
-              <button @click="transferSPL" class="btn">Send SPL Transaction</button>
+            <div class="flex-row bottom-gutter">
+              <button class="custom-btn" @click="signAllTransaction">Sign all versioned txn</button>
+              <button class="custom-btn" @click="() => signAllTransactionLegacy(false)">Sign all legacy txn</button>
             </div>
-          </div>
-          <div class="col-span-2 text-left">
-            <div class="font-semibold">
-              SPL transfer example:
-              <span class="text-[grey] text-xs">Get testnet usdc <a href="https://usdcfaucet.com/" target="blank">here</a></span>
+            <div class="flex-row bottom-gutter">
+              <button class="custom-btn" @click="signMessage">Sign Message</button>
+              <button class="custom-btn" @click="sendMultipleInstructionTransaction">Multiple Instruction txn</button>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button @click="sendusdc" :disabled="network !== testnet" class="btn">Send usdc</button>
-              <button @click="airdrop" :disabled="network !== testnet" class="btn-large">Request SOL Airdrop (Testnet only)</button>
+            <div class="flex-row bottom-gutter">
+              <button class="custom-btn" @click="testInstr">Send versioned ALT table transaction</button>
             </div>
-          </div>
-          <div class="col-span-2 text-left">
-            <div class="font-semibold">Custom Program Example (Solana-Lookup) (Testnet only)</div>
-            <div class="grid grid-cols-2 gap-2">
-              <button @click="lookupDepositSol" :disabled="network !== testnet" class="btn">Deposit SOL</button>
-              <button @click="lookupRedeemSol" :disabled="network !== testnet" class="btn">Redeem SOL</button>
-
-              <button @click="() => mintToken(mintAddress)" :disabled="network !== testnet" class="btn">MintToken</button>
-              <button @click="() => lookupDepositSPL(mintAddress)" :disabled="network !== testnet" class="btn">Deposit SPL</button>
-              <button @click="() => lookupRedeemSPL(mintAddress)" :disabled="network !== testnet" class="btn">Redeem SPL</button>
+            <p class="btn-label">Transactions</p>
+            <div class="flex-row bottom-gutter">
+              <button class="custom-btn" @click="transfer">Send Transaction</button>
+              <button class="custom-btn" @click="() => transferLegacy(false)">Send Legacy txn</button>
+            </div>
+            <div class="flex-row bottom-gutter">
+              <button class="custom-btn" @click="transferSPL">Send SPL Transaction</button>
+            </div>
+            <p class="btn-label">
+              SPL transfer example :
+              <span class="text-xs text-gray-500 font-normal">
+                Get testnet usdc <a href="https://usdcfaucet.com/" target="blank" class="text-blue-600 underline">here</a>
+              </span>
+            </p>
+            <div class="flex-row bottom-gutter">
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="sendusdc"
+                :disabled="network !== testnet"
+              >
+                Send USDC
+              </button>
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="airdrop"
+                :disabled="network !== testnet"
+              >
+                Request SOL Airdrop
+              </button>
+            </div>
+            <p class="btn-label">Custom Program Example (Solana-Lookup) (Testnet only)</p>
+            <div class="flex-row bottom-gutter">
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="lookupDepositSol"
+                :disabled="network !== testnet"
+              >
+                Depositor SOL
+              </button>
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="lookupRedeemSol"
+                :disabled="network !== testnet"
+              >
+                Redeem SOL
+              </button>
+            </div>
+            <div class="flex-row bottom-gutter">
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="() => mintToken(mintAddress)"
+                :disabled="network !== testnet"
+              >
+                MintToken
+              </button>
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="() => lookupDepositSPL(mintAddress)"
+                :disabled="network !== testnet"
+              >
+                Deposit SPL
+              </button>
+            </div>
+            <div class="flex-row bottom-gutter">
+              <button
+                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                @click="() => lookupRedeemSPL(mintAddress)"
+                :disabled="network !== testnet"
+              >
+                Redeem SPL
+              </button>
             </div>
           </div>
         </div>
-        <div class="box-grey" id="console">
-          <p ref="consoleDiv" style="white-space: pre-line"></p>
-          <div><button class="clear-button" @click="clearUiconsole">Clear console</button></div>
+        <!-- Dashboard Console Container -->
+        <div class="dashboard-details-console-container" id="console">
+          <h1 class="console-heading"></h1>
+          <pre ref="consoleDiv" class="console-container"></pre>
+          <div class="clear-console-btn">
+            <button class="custom-btn console-btn" @click="clearUiconsole">Clear console</button>
+          </div>
         </div>
       </div>
     </div>
-    <!-- <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p> -->
   </div>
 </template>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.box {
-  @apply bg-white max-h-screen;
-  border: 1px solid #f3f3f4;
-  border-radius: 20px;
-  box-shadow: 4px 4px 20px rgba(46, 91, 255, 0.1);
-}
-
-.box-grey {
-  @apply col-span-5 md:col-span-3 overflow-hidden min-h-[400px] bg-[#f3f3f4] rounded-3xl relative;
-  border: 1px solid #f3f3f4;
-  box-shadow: 4px 4px 20px rgba(46, 91, 255, 0.1);
-}
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-#console-wrapper {
-  margin-top: auto;
-}
-
-/* #console {
-  border: 1px solid black;
-  height: 80px;
-  padding: 2px;
-  position: relative;
-  text-align: left;
-  width: 100%;
-  border-radius: 5px;
-  overflow: scroll;
-} */
-
-#console > p {
-  margin: 0.5em;
-  word-wrap: break-word;
-}
-#font-italic {
-  font-style: italic;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-.break-word {
-  overflow-wrap: break-word;
-}
-.select-menu {
-  @apply h-12 w-80 rounded-3xl text-center bg-white bg-no-repeat;
-  border: solid 1px;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-position: right 16px top 50%;
-}
-.btn {
-  @apply min-h-[44px] w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
-  border: 1px solid #6f717a;
-}
-.btn-large {
-  @apply min-h-[44px] w-full m-0 bg-white rounded-3xl text-[#6F717A] text-xs lg:text-base font-medium;
-  border: 1px solid #6f717a;
-}
-.btn:disabled {
-  @apply bg-gray-100 opacity-30;
-}
-.btn-large:disabled {
-  @apply bg-gray-100 opacity-30;
-}
-.copy-btn {
-  @apply h-6 px-2 m-2 text-sm inline-flex items-center overflow-hidden bg-[#e9e9ea] rounded-3xl text-[#7F8FA4] leading-4 font-bold;
-}
-
-.wifi-btn {
-  @apply h-6 text-sm inline-flex items-center text-center p-2 rounded-3xl bg-[#cde0ff];
-}
-.btn-login {
-  @apply h-12 w-80 bg-white rounded-3xl;
-  border: 1px solid #6f717a;
-}
-.btn-logout {
-  @apply h-12 w-32 bg-white rounded-3xl pl-6 m-2 text-sm inline-flex items-center;
-  border: 1px solid #f3f3f4;
-}
-.clear-button {
-  @apply absolute md:fixed right-8 bottom-2 md:right-8 md:bottom-12 w-28 h-7 bg-[#f3f3f4] rounded-md;
-  border: 1px solid #0f1222;
-}
-.height-fit {
-  @apply min-h-fit;
-  height: 75vh;
-}
-#console {
-  text-align: left;
-  overflow: auto;
-}
-#console > p {
-  @apply m-2;
-}
-.btn {
-  @apply min-h-[44px] w-full m-0 bg-white rounded-3xl text-[#6F717A] text-sm lg:text-base font-medium;
-  border: 1px solid #6f717a;
-}
-.custom-switch {
-  padding-left: 2.25rem;
-}
-.custom-control {
-  position: relative;
-  display: block;
-  min-height: 1.5rem;
-  padding-left: 1.5rem;
-}
-.font-color {
-  @apply text-[#595857];
-}
+@import "./Dashboard.css";
 </style>
