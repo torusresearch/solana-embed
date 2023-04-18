@@ -768,7 +768,7 @@ const copyAccountAddress = () => {
       <p class="text-sm font-normal text-gray-500 mb-8">Note: This is a testing application. Please open console for debugging</p>
       <div class="flex flex-col">
         <label class="btn-label">Select build environment</label>
-        <select name="buildEnv" v-model="buildEnv" class="login-input w-[320px] border-app-gray-400 !border">
+        <select name="buildEnv" v-model="buildEnv" class="login-input w-[320px] border-app-gray-400 !border bg-dropdown">
           <option value="production">Production</option>
           <option value="testing">Testing</option>
           <option value="development">Development</option>
@@ -837,8 +837,8 @@ const copyAccountAddress = () => {
                 <button class="custom-btn" @click="getUserInfo">Get User Info</button>
               </div>
               <div>
-                <p class="btn-label">Payment Transaction</p>
-                <button class="custom-btn" @click="changeProvider">Fetch Latest block</button>
+                <p class="btn-label">Provider</p>
+                <button class="custom-btn" @click="changeProvider">Change Provider</button>
               </div>
               <div>
                 <p class="btn-label">Top up Wallet</p>
@@ -848,7 +848,7 @@ const copyAccountAddress = () => {
             <h1 class="text-xl font-bold text-gray-900 mb-6">Blockchain APIs</h1>
             <p class="btn-label">Signing</p>
             <div class="flex-row bottom-gutter">
-              <button class="custom-btn" @click="signTransaction">Sign transaction</button>
+              <button class="custom-btn" @click="signTransaction">Sign versioned txn</button>
               <button class="custom-btn" @click="() => signTransactionLegacy(false)">Sign legacy transaction</button>
             </div>
             <div class="flex-row bottom-gutter">
