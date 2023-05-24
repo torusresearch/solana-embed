@@ -4,7 +4,7 @@ const { ProvidePlugin } = require("webpack");
 module.exports = {
   transpileDependencies: true,
   devServer: {
-    port: 3000
+    port: 3000,
   },
   configureWebpack: (config) => {
     config.resolve.fallback = {
@@ -13,6 +13,8 @@ module.exports = {
       assert: require.resolve("assert"),
       os: require.resolve("os-browserify/browser"),
       http: require.resolve("stream-http"),
+      https: false,
+      zlib: false,
     };
     config.resolve.alias = {
       ...config.resolve.alias,
