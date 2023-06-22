@@ -44,10 +44,11 @@ const privateKey = ref();
 const network = ref("");
 const isTopupHidden = ref(false);
 const pubkey = ref("");
-const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("development");
+const buildEnv = ref<TORUS_BUILD_ENV_TYPE>("testing");
 const showButton = ref(false);
 const copied = ref(false);
 const consoleDiv = ref<HTMLDivElement>();
+const isExpanded = ref(true);
 
 const testnet = SUPPORTED_NETWORKS["testnet"].displayName;
 
@@ -765,7 +766,7 @@ const copyAccountAddress = () => {
     <div class="flex flex-col items-center justify-center h-screen" v-if="!pubkey">
       <h1 class="font-semibold text-3xl mb-5">Login and Resets</h1>
       <p class="text-lg font-medium text-gray-600 capitalize">Build Environment : {{ buildEnv }}</p>
-      <p class="text-sm font-normal text-gray-500 mb-8">Note: This is a testing application. Please open console for debugging</p>
+      <p class="text-sm font-normal text-gray-500 mb-8 px-4 text-center">Note: This is a testing application. Please open console for debugging</p>
       <div class="flex flex-col">
         <label class="btn-label">Select build environment</label>
         <select name="buildEnv" v-model="buildEnv" class="login-input w-[320px] border-app-gray-400 !border bg-dropdown">
@@ -800,16 +801,18 @@ const copyAccountAddress = () => {
     <div v-else class="dashboard-container">
       <!-- Dashboard Header -->
       <div class="dashboard-header">
-        <div>
+        <div class="dashboard-heading-mobile w-full">
           <h1 class="dashboard-heading">demo-solana.tor.us</h1>
-          <p class="dashboard-subheading">Build environment : {{ buildEnv }}</p>
+          <p class="dashboard-subheading !font-bold sm:!font-normal">Build environment : {{ buildEnv }}</p>
         </div>
-        <div class="dashboard-action-container">
-          <button class="dashboard-action-address" @click.stop="copyAccountAddress" :title="pubkey">
-            <img :src="require('../../assets/copy.svg')" alt="logout" height="14" width="14" />{{ getAddress(pubkey) }}
-          </button>
-          <div class="dashboard-action-badge">
-            <img :src="require('../../assets/wifi.svg')" alt="logout" height="14" width="14" />{{ getNetworkType(network) }}
+        <div class="dashboard-action-container flex flex-col sm:!flex-row items-center justify-end w-full gap-2">
+          <div class="flex items-center gap-2 justify-between">
+            <button :class="['dashboard-action-address', { '!text-green-500': isCopied }]" @click.stop="copyAccountAddress" :title="pubkey">
+              <img :src="require('../../assets/copy.svg')" alt="logout" height="14" width="14" />{{ isCopied ? "Copied" : getAddress(pubkey) }}
+            </button>
+            <div class="dashboard-action-badge">
+              <img :src="require('../../assets/wifi.svg')" alt="network" height="14" width="14" />{{ getNetworkType(network) }}
+            </div>
           </div>
           <button class="dashboard-action-logout" @click.stop="logout">
             <img :src="require('../../assets/logout.svg')" alt="logout" height="20" width="20" />
@@ -820,8 +823,11 @@ const copyAccountAddress = () => {
       <!-- Dashboard Action Container -->
       <div class="dashboard-details-container">
         <div class="dashboard-details-btn-container">
-          <h1 class="text-xl font-bold text-gray-900 mb-6">Torus APIs</h1>
-          <div class="mb-6">
+          <h1 class="text-xl font-bold text-gray-900 p-6 flex justify-between items-center">
+            <span>Torus APIs</span>
+            <span><img alt="down" class="cursor-pointer" src="../../assets/down.svg" @click="isExpanded = !isExpanded" /></span>
+          </h1>
+          <div :class="['px-6', { 'pb-6': !isExpanded }]">
             <label for="default-toggle" class="inline-flex relative items-center cursor-pointer">
               <input type="checkbox" id="default-toggle" class="sr-only peer" @click="toggleButton" />
               <div
@@ -830,42 +836,42 @@ const copyAccountAddress = () => {
               <span class="ml-3 text-sm font-normal text-gray-400">Show Torus Button</span>
             </label>
           </div>
-          <div class="details-container">
-            <div class="flex-row bottom-gutter">
+          <div v-if="isExpanded" class="details-container">
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
               <div>
                 <p class="btn-label">User info</p>
-                <button class="custom-btn" @click="getUserInfo">Get User Info</button>
+                <button class="custom-btn w-full" @click="getUserInfo">Get User Info</button>
               </div>
               <div>
                 <p class="btn-label">Provider</p>
-                <button class="custom-btn" @click="changeProvider">Change Provider</button>
+                <button class="custom-btn w-full" @click="changeProvider">Change Provider</button>
               </div>
               <div>
                 <p class="btn-label">Top up Wallet</p>
-                <button class="custom-btn" @click="topup">Top up</button>
+                <button class="custom-btn w-full" @click="topup">Top up</button>
               </div>
             </div>
             <h1 class="text-xl font-bold text-gray-900 mb-6">Blockchain APIs</h1>
             <p class="btn-label">Signing</p>
-            <div class="flex-row bottom-gutter">
-              <button class="custom-btn" @click="signTransaction">Sign versioned txn</button>
-              <button class="custom-btn" @click="() => signTransactionLegacy(false)">Sign legacy transaction</button>
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
+              <button class="custom-btn w-full" @click="signTransaction">Sign versioned txn</button>
+              <button class="custom-btn w-full" @click="() => signTransactionLegacy(false)">Sign legacy transaction</button>
+            </div>
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
+              <button class="custom-btn w-full" @click="signAllTransaction">Sign all versioned txn</button>
+              <button class="custom-btn w-full" @click="() => signAllTransactionLegacy(false)">Sign all legacy txn</button>
+            </div>
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
+              <button class="custom-btn w-full" @click="signMessage">Sign Message</button>
+              <button class="custom-btn w-full" @click="sendMultipleInstructionTransaction">Multiple Instruction txn</button>
             </div>
             <div class="flex-row bottom-gutter">
-              <button class="custom-btn" @click="signAllTransaction">Sign all versioned txn</button>
-              <button class="custom-btn" @click="() => signAllTransactionLegacy(false)">Sign all legacy txn</button>
-            </div>
-            <div class="flex-row bottom-gutter">
-              <button class="custom-btn" @click="signMessage">Sign Message</button>
-              <button class="custom-btn" @click="sendMultipleInstructionTransaction">Multiple Instruction txn</button>
-            </div>
-            <div class="flex-row bottom-gutter">
-              <button class="custom-btn" @click="testInstr">Send versioned ALT table transaction</button>
+              <button class="custom-btn" @click="testInstr">Send versioned ALT table txn</button>
             </div>
             <p class="btn-label">Transactions</p>
-            <div class="flex-row bottom-gutter">
-              <button class="custom-btn" @click="transfer">Send Transaction</button>
-              <button class="custom-btn" @click="() => transferLegacy(false)">Send Legacy txn</button>
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
+              <button class="custom-btn w-full" @click="transfer">Send Transaction</button>
+              <button class="custom-btn w-full" @click="() => transferLegacy(false)">Send Legacy txn</button>
             </div>
             <div class="flex-row bottom-gutter">
               <button class="custom-btn" @click="transferSPL">Send SPL Transaction</button>
@@ -876,16 +882,16 @@ const copyAccountAddress = () => {
                 Get testnet usdc <a href="https://usdcfaucet.com/" target="blank" class="text-blue-600 underline">here</a>
               </span>
             </p>
-            <div class="flex-row bottom-gutter">
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
               <button
-                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                class="custom-btn w-full disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
                 @click="sendusdc"
                 :disabled="network !== testnet"
               >
                 Send USDC
               </button>
               <button
-                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                class="custom-btn w-full disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
                 @click="airdrop"
                 :disabled="network !== testnet"
               >
@@ -893,16 +899,16 @@ const copyAccountAddress = () => {
               </button>
             </div>
             <p class="btn-label">Custom Program Example (Solana-Lookup) (Testnet only)</p>
-            <div class="flex-row bottom-gutter">
+            <div class="flex gap-4 flex-col sm:!flex-row bottom-gutter">
               <button
-                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                class="custom-btn w-full disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
                 @click="lookupDepositSol"
                 :disabled="network !== testnet"
               >
                 Depositor SOL
               </button>
               <button
-                class="custom-btn disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
+                class="custom-btn w-full disabled:!text-gray-200 disabled:border-gray-200 disabled:cursor-not-allowed"
                 @click="lookupRedeemSol"
                 :disabled="network !== testnet"
               >
