@@ -1,31 +1,25 @@
 <template>
-  <HelloWorld/>
+  <Dashboard />
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import { defineComponent } from "vue";
+import Dashboard from "./components/Dashboard";
 
 export default defineComponent({
-  name: 'App',
+  name: "App",
   components: {
-    HelloWorld
-  }
+    Dashboard,
+  },
 });
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-html, body, #app {
-  height: 100%;
+html,
+body,
+* {
   padding: 0;
   margin: 0;
-  box-sizing: border-box;
+  font-family: "Poppins", sans-serif !important;
 }
 </style>
