@@ -103,7 +103,8 @@ export function storageAvailable(type: "localStorage" | "sessionStorage"): boole
     storage.setItem(x, x);
     storage.removeItem(x);
     return true;
-  } catch (e) {
+  } catch (error: unknown) {
+    const e = error as { code?: number; name?: string };
     return (
       e &&
       // everything except Firefox

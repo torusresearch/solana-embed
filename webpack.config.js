@@ -10,18 +10,3 @@ exports.baseConfig = {
     },
   },
 };
-
-// module.exports = [cjsConfig]
-
-// V5
-// experiments: {
-//   outputModule: true
-// }
-
-// node: {
-//   global: true,
-// },
-// resolve: {
-//   alias: { crypto: 'crypto-browserify', stream: 'stream-browserify', vm: 'vm-browserify' },
-//   aliasFields: ['browser'],
-// },

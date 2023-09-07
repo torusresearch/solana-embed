@@ -140,7 +140,7 @@ entry-point: `index.js`
 ## Requirements
 
 - This package requires a peer dependency of `@babel/runtime`
-- Node 14+
+- Node 18+
 
 ## License
 

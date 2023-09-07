@@ -6,7 +6,7 @@ import { BasePostMessageStream, getRpcPromiseCallback, JRPCRequest } from "@toru
 import { version } from "../package.json";
 import TorusCommunicationProvider from "./communicationProvider";
 import configuration from "./config";
-import { documentReady, htmlToElement, isLegacyTransactionInstance } from "./embedUtils";
+import { htmlToElement, isLegacyTransactionInstance } from "./embedUtils";
 import TorusInPageProvider from "./inPageProvider";
 import {
   BUTTON_POSITION,
@@ -150,44 +150,40 @@ class Torus {
     );
 
     this.styleLink = htmlToElement<HTMLLinkElement>(`<link href="${torusUrl}/css/widget.css" rel="stylesheet" type="text/css">`);
-    const handleSetup = async () => {
-      return new Promise<void>((resolve, reject) => {
-        try {
-          window.document.head.appendChild(this.styleLink);
-          window.document.body.appendChild(this.torusIframe);
-          window.document.body.appendChild(this.torusAlertContainer);
-          this.torusIframe.addEventListener("load", async () => {
-            const dappMetadata = await getSiteMetadata();
-            // send init params here
-            this.torusIframe.contentWindow.postMessage(
-              {
-                buttonPosition,
-                apiKey,
-                network,
-                dappMetadata,
-                extraParams,
-                whiteLabel,
-              },
-              torusIframeUrl.origin
-            );
-            await this._setupWeb3({
-              torusUrl,
-            });
-            if (showTorusButton) this.showTorusButton();
-            if (whiteLabel?.topupHide) this.isTopupHidden = whiteLabel.topupHide;
-            else this.hideTorusButton();
-            this.isInitialized = true;
-            (window as any).torus = this;
-            resolve();
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this.torusIframe.addEventListener("load", async () => {
+          const dappMetadata = await getSiteMetadata();
+          // send init params here
+          this.torusIframe.contentWindow.postMessage(
+            {
+              buttonPosition,
+              apiKey,
+              network,
+              dappMetadata,
+              extraParams,
+              whiteLabel,
+            },
+            torusIframeUrl.origin
+          );
+          await this._setupWeb3({
+            torusUrl,
           });
-        } catch (error) {
-          reject(error);
-        }
-      });
-    };
-
-    await documentReady();
-    await handleSetup();
+          if (showTorusButton) this.showTorusButton();
+          if (whiteLabel?.topupHide) this.isTopupHidden = whiteLabel.topupHide;
+          else this.hideTorusButton();
+          this.isInitialized = true;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).torus = this;
+          resolve();
+        });
+        window.document.head.appendChild(this.styleLink);
+        window.document.body.appendChild(this.torusIframe);
+        window.document.body.appendChild(this.torusAlertContainer);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   async login(params: TorusLoginParams = {}): Promise<string[]> {
@@ -202,7 +198,7 @@ class Torus {
         // We use this method because we want to update inPage provider state with account info
         this.provider._rpcRequest(
           { method: "solana_requestAccounts", params: [this.requestedLoginProvider, params.login_hint] },
-          getRpcPromiseCallback(resolve, reject)
+          getRpcPromiseCallback(resolve as (value?: unknown) => void, reject) as (...args: unknown[]) => void
         );
       });
 
@@ -485,7 +481,7 @@ class Torus {
       inPageProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>[], cb);
     };
 
-    communicationProvider.tryWindowHandle = (payload: JRPCRequest<unknown>, cb: (...args: unknown[]) => void) => {
+    communicationProvider.tryWindowHandle = ((payload: JRPCRequest<unknown>, cb: (...args: unknown[]) => void) => {
       const _payload = payload;
       if (!Array.isArray(_payload) && COMMUNICATION_UNSAFE_METHODS.includes(_payload.method)) {
         const windowId = getWindowId();
@@ -497,26 +493,31 @@ class Torus {
         (_payload.params as Record<string, unknown>).windowId = windowId;
       }
       communicationProvider._rpcEngine.handle(_payload as JRPCRequest<unknown>, cb);
-    };
+    }) as (payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[], cb: (...args: unknown[]) => void) => void;
 
     // detect solana_requestAccounts and pipe to enable for now
-    const detectAccountRequestPrototypeModifier = (m) => {
+    const detectAccountRequestPrototypeModifier = (
+      m: keyof Omit<TorusInPageProvider, "isTorus" | "selectedAddress" | "chainId" | "SafeEventEmitter" | "jsonRpcConnectionEvents" | "_rpcEngine">
+    ) => {
       const originalMethod = inPageProvider[m];
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
-      inPageProvider[m] = function providerFunc(request, cb) {
+      inPageProvider[m] = function providerFunc(request: JRPCRequest<string[]>, cb: (...args: unknown[]) => void) {
         const { method, params = [] } = request;
         if (method === "solana_requestAccounts") {
-          if (!cb) return self.login({ loginProvider: params[0] });
+          if (!cb) return self.login({ loginProvider: params[0] as LOGIN_PROVIDER_TYPE });
           self
-            .login({ loginProvider: params[0] })
+            .login({ loginProvider: params[0] as LOGIN_PROVIDER_TYPE })
             // eslint-disable-next-line promise/no-callback-in-promise
             .then((res) => cb(null, res))
             // eslint-disable-next-line promise/no-callback-in-promise
             .catch((err) => cb(err));
         }
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         return originalMethod.apply(this, [request, cb]);
-      };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
     };
 
     // Detects call to solana_requestAccounts in request & sendAsync and passes to login

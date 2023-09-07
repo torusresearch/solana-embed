@@ -2,7 +2,8 @@ const path = require("path");
 const { ProvidePlugin } = require("webpack");
 
 module.exports = {
-  transpileDependencies: true,
+  transpileDependencies: false,
+  parallel: !process.env.CI,
   devServer: {
     port: 3000,
   },
