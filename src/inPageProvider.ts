@@ -122,10 +122,10 @@ class TorusInPageProvider extends BaseProvider<InPageProviderState> {
 
       if (_payload.method === "solana_accounts" || _payload.method === "solana_requestAccounts") {
         // handle accounts changing
-        cb = (err: Error, res: JRPCSuccess<string[]>) => {
+        cb = ((err: Error, res: JRPCSuccess<string[]>) => {
           this._handleAccountsChanged(res.result || [], _payload.method === "solana_accounts", isInternal);
           callback(err, res);
-        };
+        }) as (...args: unknown[]) => void;
       } else if (_payload.method === "wallet_getProviderState") {
         this._rpcEngine.handle(payload as JRPCRequest<unknown>, cb);
         return;

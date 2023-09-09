@@ -5,11 +5,12 @@ import type { Duplex } from "readable-stream";
 
 import BaseProvider from "./baseProvider";
 import configuration from "./config";
-import { documentReady, htmlToElement } from "./embedUtils";
+import { htmlToElement } from "./embedUtils";
 import {
   BUTTON_POSITION,
   CommunicationProviderState,
   EMBED_TRANSLATION_ITEM,
+  LocaleLinks,
   LOGIN_PROVIDER_TYPE,
   ProviderOptions,
   RequestArguments,
@@ -59,7 +60,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     // public state
     this.torusUrl = "";
     this.dappStorageKey = "";
-    const languageTranslations = configuration.translations[getUserLanguage()];
+    const languageTranslations = configuration.translations[getUserLanguage() as keyof LocaleLinks<{ embed: EMBED_TRANSLATION_ITEM }>];
     this.embedTranslations = languageTranslations.embed;
     this.windowRefs = {};
 
@@ -337,7 +338,6 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       this.torusAlertContainer.appendChild(torusAlert);
     };
 
-    await documentReady();
     attachOnLoad();
     bindOnLoad();
     this.torusAlertContainer.style.display = "block";

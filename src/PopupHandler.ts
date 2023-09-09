@@ -15,7 +15,9 @@ class PopupHandler extends SafeEventEmitter {
 
   iClosedWindow: boolean;
 
-  constructor({ url, target, features }: { url: URL; target?: string; features?: string }) {
+  timeout: number;
+
+  constructor({ url, target, features, timeout = 30000 }: { url: URL; target?: string; features?: string; timeout?: number }) {
     super();
     this.url = url;
     this.target = target || "_blank";
@@ -23,6 +25,7 @@ class PopupHandler extends SafeEventEmitter {
     this.window = undefined;
     this.windowTimer = undefined;
     this.iClosedWindow = false;
+    this.timeout = timeout;
     this._setupTimer();
   }
 
@@ -31,11 +34,13 @@ class PopupHandler extends SafeEventEmitter {
       setInterval(() => {
         if (this.window && this.window.closed) {
           clearInterval(this.windowTimer);
-          if (!this.iClosedWindow) {
-            this.emit("close");
-          }
-          this.iClosedWindow = false;
-          this.window = undefined;
+          setTimeout(() => {
+            if (!this.iClosedWindow) {
+              this.emit("close");
+            }
+            this.iClosedWindow = false;
+            this.window = undefined;
+          }, this.timeout);
         }
         if (this.window === undefined) clearInterval(this.windowTimer);
       }, 500)

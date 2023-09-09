@@ -10,16 +10,6 @@ export const handleEvent = (handle: EventTarget, eventName: string, handler: (..
   handle.addEventListener(eventName, handlerWrapper);
 };
 
-export async function documentReady(): Promise<void> {
-  return new Promise<void>((resolve) => {
-    if (document.readyState !== "loading") {
-      resolve();
-    } else {
-      handleEvent(document, "DOMContentLoaded", resolve);
-    }
-  });
-}
-
 export const htmlToElement = <T extends Element>(html: string): T => {
   const template = window.document.createElement("template");
   const trimmedHtml = html.trim(); // Never return a text node of whitespace as the result
