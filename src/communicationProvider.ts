@@ -76,7 +76,8 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
       if (method === COMMUNICATION_NOTIFICATIONS.IFRAME_STATUS) {
         const { isFullScreen, rid } = params;
         this._displayIframe({ isFull: isFullScreen as boolean, rid: rid as string });
-      } else if (method === COMMUNICATION_NOTIFICATIONS.CREATE_WINDOW) {
+        // TODO: remove this method when wallet adds versioning and stops supporting this method
+      } else if (method === "create_window") {
         const { windowId, url } = params as Record<string, string>;
         this._createPopupBlockAlert(windowId, url);
       } else if (method === COMMUNICATION_NOTIFICATIONS.CLOSE_WINDOW) {
@@ -154,7 +155,7 @@ class TorusCommunicationProvider extends BaseProvider<CommunicationProviderState
     this.windowRefs[windowId] = handledWindow;
     // We tell the iframe that the window has been successfully opened
     this.request<{ windowId: string }, unknown>({
-      method: COMMUNICATION_JRPC_METHODS.OPENED_WINDOW,
+      method: "opened_window",
       params: { windowId },
     });
     handledWindow.once("close", () => {
