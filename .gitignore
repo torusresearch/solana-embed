@@ -26,3 +26,4 @@ disc.html
 secrets.json
 toruslabs-solana-embed*
 .eslintcache
+.env
