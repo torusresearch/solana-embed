@@ -17,6 +17,7 @@ const selectedBuildEnv = ref(WS_EMBED_BUILD_ENV.PRODUCTION);
 const account = ref("");
 const chainId = ref("0x65");
 const preferredChainConfig = ref(null);
+const isCopied = ref(false);
 
 const formattedAccountAddress = computed(() => {
   return `${account.value.substring(0, 5)}...${account.value.substring(account.value.length - 6)}`;
@@ -39,6 +40,12 @@ onBeforeMount(async () => {
   }
 });
 
+const setPreferredChainConfig = async () => {
+  preferredChainConfig.value = await solanaEmbed?.provider.request({
+    method: "solana_provider_config",
+  });
+};
+
 const initializeSolanaEmbed = async () => {
   if (solanaEmbed?.isInitialized) {
     if (selectedBuildEnv.value !== solanaEmbed.getBuildEnv) await solanaEmbed?.cleanUp();
@@ -47,11 +54,10 @@ const initializeSolanaEmbed = async () => {
 
   await solanaEmbed?.init({
     buildEnv: selectedBuildEnv.value,
+    confirmationStrategy: "default",
   });
 
-  preferredChainConfig.value = await solanaEmbed?.provider.request({
-    method: "solana_provider_config",
-  });
+  await setPreferredChainConfig();
 
   // Update provider on accountsChanged
   solanaEmbed?.provider.on("accountsChanged", async (accounts) => {
@@ -66,9 +72,10 @@ const initializeSolanaEmbed = async () => {
     }
   });
 
-  solanaEmbed?.provider.on("chainChanged", async (chainId) => {
-    console.log("check: chainChanged", chainId);
-    chainId.value = chainId;
+  solanaEmbed?.provider.on("chainChanged", async (chain) => {
+    console.log("check: chainChanged", chain);
+    chainId.value = chain;
+    await setPreferredChainConfig();
   });
 };
 
@@ -116,6 +123,21 @@ const copyAccountAddress = () => {
   setTimeout(() => {
     isCopied.value = false;
   }, 1000);
+};
+
+const clearConsole = () => {
+  const el = document.querySelector("#console>pre");
+  const h1 = document.querySelector("#console>h1");
+  const consoleBtn = document.querySelector<HTMLElement>("#console>div.clear-console-btn");
+  if (h1) {
+    h1.innerHTML = "";
+  }
+  if (el) {
+    el.innerHTML = "";
+  }
+  if (consoleBtn) {
+    consoleBtn.style.display = "none";
+  }
 };
 
 </script>
