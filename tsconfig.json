@@ -1,9 +1,5 @@
 {
   "extends": "@toruslabs/config/tsconfig.default.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "resolveJsonModule": true
-  },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

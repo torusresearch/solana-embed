@@ -6,17 +6,17 @@ jobs:
   build:
     strategy:
       matrix:
-        node: ["20.x"]
+        node: ["22.x"]
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -26,13 +26,14 @@ jobs:
 
       - name: Run Build
         run: npm run build
+        env:
+          WEB3AUTH_CLIENT_ID: ${{ secrets.WEB3AUTH_CLIENT_ID }}
 
-      - name: Pack and build example
+      - name: Build demo app
         if: github.ref == 'refs/heads/main'
         run: |
-          npm pack
-          cd examples/vue-app
-          npm run install:local
+          cd examples/demo-app
+          npm install
           npm run build
 
       # Set the credentials from repository settings/secrets
@@ -50,7 +51,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: jakejarvis/s3-sync-action@master
         env:
-          SOURCE_DIR: "./examples/vue-app/dist"
+          SOURCE_DIR: "./examples/demo-app/dist"
           AWS_REGION: "us-east-1"
           AWS_S3_BUCKET: "demo-solana.tor.us"
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

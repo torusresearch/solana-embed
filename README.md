@@ -30,18 +30,7 @@ Hop on to the [Web3Auth Dashboard](https://dashboard.web3auth.io/) and create a 
 import Torus from "@toruslabs/solana-embed";
 
 const torus = new Torus();
-await torus.init({
-  buttonPosition: "top-left", // default: bottom-left
-  buildEnv: "production", // default: production
-  enableLogging: true, // default: false
-  showTorusButton: false, // default: true
-  whitelabel: {
-    theme: { isDark: true, colors: { torusBrand1: "#00a8ff" } },
-    logoDark: "https://web3auth.io/images/w3a-L-Favicon-1.svg",
-    logoLight: "https://web3auth.io/images/w3a-D-Favicon-1.svg",
-    topupHide: true,
-  },
-});
+await torus.init();
 await torus.login();
 ```
 
@@ -140,7 +129,7 @@ entry-point: `index.js`
 ## Requirements
 
 - This package requires a peer dependency of `@babel/runtime`
-- Node 18+
+- Node 20+
 
 ## License
 

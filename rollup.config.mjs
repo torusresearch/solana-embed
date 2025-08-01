@@ -1,5 +1,13 @@
-import json from "@rollup/plugin-json";
+import replace from "@rollup/plugin-replace";
+import dotenv from "dotenv";
 
-export default {
-  plugins: [json()],
+dotenv.config();
+
+export const baseConfig = {
+  plugins: [
+    replace({
+      "process.env.WEB3AUTH_CLIENT_ID": `"${process.env.WEB3AUTH_CLIENT_ID}"`,
+      preventAssignment: true,
+    }),
+  ],
 };

@@ -1,3 +1,2 @@
 export { default } from "./embed";
-export { default as TorusInPageProvider } from "./inPageProvider";
-export * from "./interfaces";
+export { WS_EMBED_BUILD_ENV, type WS_EMBED_BUILD_ENV_TYPE } from "@web3auth/ws-embed";
