@@ -191,9 +191,13 @@ const clearConsole = () => {
         </div>
       </div>
     </div>
-    <div class="dashboard-action-container">
+    <div class="dashboard-details-container">
       <!-- Dashboard Console Container -->
-      <Solana :ws-embed="solanaEmbed" :account="account" :preferred-chain-config="preferredChainConfig" :chain-id="chainId" />
+       <div class="dashboard-details-btn-container">
+        <div class="details-container">
+          <Solana :ws-embed="solanaEmbed" :account="account" :preferred-chain-config="preferredChainConfig" :chain-id="chainId" />
+        </div>
+       </div>
       <div id="console" class="dashboard-details-console-container">
         <h1 class="console-heading"></h1>
         <pre class="console-container"></pre>
