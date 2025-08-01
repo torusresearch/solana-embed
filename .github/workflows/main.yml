@@ -26,6 +26,8 @@ jobs:
 
       - name: Run Build
         run: npm run build
+        env:
+          WEB3AUTH_CLIENT_ID: ${{ secrets.WEB3AUTH_CLIENT_ID }}
 
       - name: Build demo app
         if: github.ref == 'refs/heads/main'
