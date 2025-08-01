@@ -210,5 +210,5 @@ const clearConsole = () => {
 </template>
 
 <style scoped>
-@import "./dashboard.css";
+@import "./Dashboard.css";
 </style>
