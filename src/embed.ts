@@ -1,4 +1,4 @@
-import { Transaction, VersionedTransaction } from "@solana/web3.js";
+import type { Transaction, VersionedTransaction } from "@solana/web3.js";
 import Web3Auth, { CtorArgs, LoginWithSessionIdParams, SOLANA_METHOD_TYPES, WsEmbedParams } from "@web3auth/ws-embed";
 
 export type TransactionOrVersionedTransaction = Transaction | VersionedTransaction;
@@ -100,9 +100,6 @@ class Torus extends Web3Auth {
   }
 
   private serializeTransaction(transaction: TransactionOrVersionedTransaction): string {
-    if (transaction instanceof VersionedTransaction) {
-      return Buffer.from(transaction.serialize()).toString("base64");
-    }
     return Buffer.from(transaction.serialize({ requireAllSignatures: false })).toString("base64");
   }
 }
