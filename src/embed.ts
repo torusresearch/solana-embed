@@ -23,6 +23,11 @@ class Torus extends Web3Auth {
       chains: [],
       confirmationStrategy: "popup",
       ...params,
+      whiteLabel: {
+        logoDark: "https://images.web3auth.io/web3auth-logo-w-light.svg",
+        logoLight: "https://images.web3auth.io/web3auth-logo-w.svg",
+        ...(params.whiteLabel || {}),
+      },
     });
   }
 
